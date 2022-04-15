@@ -69,15 +69,6 @@
     <ClInclude Include="Calibration\velodyne_reader.h" />
     <ClInclude Include="OpenCV_GStreamer-master\Source\pch.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Calibration\points.fs" />
-    <None Include="Calibration\points.gs" />
-    <None Include="Calibration\points.vs" />
-    <None Include="Calibration\shadow_map.fs" />
-    <None Include="Calibration\shadow_map.gs" />
-    <None Include="Calibration\shadow_map.vs" />
-    <None Include="Calibration\triangles.gs" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

@@ -90,13 +90,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Calibration\points.fs" />
-    <None Include="Calibration\points.gs" />
-    <None Include="Calibration\points.vs" />
-    <None Include="Calibration\shadow_map.fs" />
-    <None Include="Calibration\shadow_map.gs" />
-    <None Include="Calibration\shadow_map.vs" />
-    <None Include="Calibration\triangles.gs" />
-  </ItemGroup>
 </Project>

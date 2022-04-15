@@ -358,8 +358,8 @@ vcg::Point2f tcoord(vcg::Point3f p, vcg::Matrix44f & lidt){
 
 void initializeGLStuff(){
 
-    if(point_shader.SetFromFile("./Calibration/points.vs","./Calibration/triangles.gs"/* "points.gs" */,
-        "./Calibration/points.fs")<0)
+    if(point_shader.SetFromFile("./Calibration/Shaders/points.vs","./Calibration/Shaders/triangles.gs"/* "points.gs" */,
+        "./Calibration/Shaders/points.fs")<0)
     {
         printf("SHADER ERR");
     }
@@ -377,8 +377,8 @@ void initializeGLStuff(){
     glUseProgram(0);
     GLERR();
 
-    if(shadow_shader.SetFromFile("./Calibration/shadow_map.vs",
-      "./Calibration/shadow_map.gs","./Calibration/shadow_map.fs")<0)
+    if(shadow_shader.SetFromFile("./Calibration/Shaders/shadow_map.vs",
+      "./Calibration/Shaders/shadow_map.gs","./Calibration/Shaders/shadow_map.fs")<0)
     {
         printf("shadow SHADER ERR");
     }
