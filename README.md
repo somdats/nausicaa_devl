@@ -14,5 +14,6 @@ The folder contains source code for testing the client-server API
   2) sockets - test source for client-
 
 c) Glew- openGL calls
+
 D) vcglib- supports core-implementation of the API  
 
