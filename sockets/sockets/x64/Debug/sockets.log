@@ -1,0 +1,96 @@
+﻿  client.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(41,27): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(61,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(123,28): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+  nausicaa_api.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\config.h(5,1): warning C4005: 'NAUSICAA_VR_API': macro redefinition
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp : message : see previous definition of 'NAUSICAA_VR_API'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(17,19): warning C4273: 'VRSubsystem::setCallback': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(70,24): message : see previous definition of 'setCallback'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(21,19): warning C4273: 'VRSubsystem::readConfigFile': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(77,24): message : see previous definition of 'readConfigFile'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(23,19): warning C4273: 'VRSubsystem::connectToVRServer': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(82,23): message : see previous definition of 'connectToVRServer'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(33,19): warning C4273: 'VRSubsystem::disconnectToVRServer': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(87,24): message : see previous definition of 'disconnectToVRServer'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(38,19): warning C4273: 'VRSubsystem::startStreaming': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(90,24): message : see previous definition of 'startStreaming'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(44,27): warning C4273: 'VRSubsystem::readFrame': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(93,33): message : see previous definition of 'readFrame'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(48,19): warning C4273: 'VRSubsystem::stopStreaming': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(96,24): message : see previous definition of 'stopStreaming'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(52,30): warning C4273: 'VRSubsystem::addVirtualCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(112,35): message : see previous definition of 'addVirtualCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(57,19): warning C4273: 'VRSubsystem::getVirtualCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(119,24): message : see previous definition of 'getVirtualCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(61,19): warning C4273: 'VRSubsystem::getVirtualCameraList': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(125,24): message : see previous definition of 'getVirtualCameraList'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(67,19): warning C4273: 'VRSubsystem::renderFromCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(132,24): message : see previous definition of 'renderFromCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(72,30): warning C4273: 'VRSubsystem::renderCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(138,35): message : see previous definition of 'renderCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(78,19): warning C4273: 'VRSubsystem::selectQuality': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(147,24): message : see previous definition of 'selectQuality'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(82,19): warning C4273: 'VRSubsystem::sampleGeometry': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(166,24): message : see previous definition of 'sampleGeometry'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(87,19): warning C4273: 'VRSubsystem::enableLidar': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(172,24): message : see previous definition of 'enableLidar'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(92,19): warning C4273: 'VRSubsystem::disableLidar': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(178,24): message : see previous definition of 'disableLidar'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(97,19): warning C4273: 'VRSubsystem::enableCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(184,24): message : see previous definition of 'enableCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(103,19): warning C4273: 'VRSubsystem::disableCamera': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(190,24): message : see previous definition of 'disableCamera'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(109,22): warning C4273: 'VRSubsystem::place3DGliph': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(204,27): message : see previous definition of 'place3DGliph'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(115,19): warning C4273: 'VRSubsystem::remove3DGliph': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(210,24): message : see previous definition of 'remove3DGliph'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(120,26): warning C4273: 'VRSubsystem::typeOf': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(216,31): message : see previous definition of 'typeOf'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(125,19): warning C4273: 'VRSubsystem::enableGliphs': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(227,24): message : see previous definition of 'enableGliphs'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(129,19): warning C4273: 'VRSubsystem::disableGliphs': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(232,24): message : see previous definition of 'disableGliphs'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(135,21): warning C4273: 'VirtualCamera::setViewport': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(249,24): message : see previous definition of 'setViewport'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(140,21): warning C4273: 'VirtualCamera::setFocalLength': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(252,24): message : see previous definition of 'setFocalLength'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(146,21): warning C4273: 'VirtualCamera::setAngle': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(255,24): message : see previous definition of 'setAngle'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(153,21): warning C4273: 'VirtualCamera::setAspectratio': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(258,24): message : see previous definition of 'setAspectratio'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(159,21): warning C4273: 'VirtualCamera::lookTowards': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(261,24): message : see previous definition of 'lookTowards'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(167,21): warning C4273: 'VirtualCamera::setPosition': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(264,24): message : see previous definition of 'setPosition'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(173,21): warning C4273: 'VirtualCamera::setViewDirection': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(267,24): message : see previous definition of 'setViewDirection'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(177,21): warning C4273: 'VirtualCamera::setCameraFrustrum': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(279,24): message : see previous definition of 'setCameraFrustrum'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(185,21): warning C4273: 'VirtualCamera::getFrustum': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(286,24): message : see previous definition of 'getFrustum'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(191,21): warning C4273: 'VirtualCamera::setPerspective': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(246,24): message : see previous definition of 'setPerspective'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(195,21): warning C4273: 'VirtualCamera::move': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(270,24): message : see previous definition of 'move'
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\nausicaa_api.cpp(201,21): warning C4273: 'VirtualCamera::rotate': inconsistent dll linkage
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h(273,24): message : see previous definition of 'rotate'
+  serialize.cpp
+  main.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\header\config.h(5,1): warning C4005: 'NAUSICAA_VR_API': macro redefinition
+D:\nausicaa_development\NAUSICAA_API\sockets\sockets\main.cpp : message : see previous definition of 'NAUSICAA_VR_API'
+D:\nausicaa_development\NAUSICAA_API\sockets\sockets\main.cpp(23,11): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\nausicaa_development\NAUSICAA_API\sockets\sockets\main.cpp(35,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  Generating Code...
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(160): warning C4715: 'start_stream': not all control paths return a value
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(79): warning C4715: 'send_message': not all control paths return a value
+     Creating library D:\nausicaa_development\NAUSICAA_API\sockets\x64\Debug\client.lib and object D:\nausicaa_development\NAUSICAA_API\sockets\x64\Debug\client.exp
+LINK : warning LNK4217: symbol 'connectToVRServer' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'startStreaming' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'readFrame' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'addVirtualCamera' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'renderFromCamera' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'setPosition' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'setViewDirection' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+LINK : warning LNK4217: symbol 'setCameraFrustrum' defined in 'nausicaa_api.obj' is imported by 'main.obj' in function 'main'
+  sockets.vcxproj -> D:\nausicaa_development\NAUSICAA_API\sockets\x64\Debug\client.exe
