@@ -1,0 +1,5 @@
+﻿  server.cpp
+c:\devel\nausicaa\sockets\server\server.cpp(74): warning C4715: 'incoming_message': not all control paths return a value
+c:\devel\nausicaa\sockets\server\server.cpp(57): warning C4715: 'start_server': not all control paths return a value
+  server.vcxproj -> C:\devel\nausicaa\sockets\Debug\server.exe
+  server.vcxproj -> C:\devel\nausicaa\sockets\Debug\server.pdb (Full PDB)

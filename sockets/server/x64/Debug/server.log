@@ -1,0 +1,7 @@
+﻿  server.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\server.cpp(88,53): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  main.cpp
+  Generating Code...
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\server.cpp(151): warning C4715: 'start_server_stream': not all control paths return a value
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\server.cpp(57): warning C4715: 'start_server': not all control paths return a value
+  server.vcxproj -> D:\nausicaa_development\NAUSICAA_API\sockets\x64\Debug\server.exe
