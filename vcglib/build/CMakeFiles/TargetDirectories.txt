@@ -1,0 +1,3 @@
+D:/3rdParty/vcglib/build/CMakeFiles/vcglib_ide.dir
+D:/3rdParty/vcglib/build/CMakeFiles/ALL_BUILD.dir
+D:/3rdParty/vcglib/build/CMakeFiles/ZERO_CHECK.dir
