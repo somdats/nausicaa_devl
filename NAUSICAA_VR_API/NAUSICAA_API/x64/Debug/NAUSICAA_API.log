@@ -1,0 +1,13 @@
+﻿  client.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(41,27): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(61,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(123,28): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+  nausicaa_api.cpp
+  serialize.cpp
+  .NETFramework,Version=4.6.1.AssemblyAttributes.cpp
+  Generating Code...
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(160): warning C4715: 'start_stream': not all control paths return a value
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\src\client.cpp(79): warning C4715: 'send_message': not all control paths return a value
+  client.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+     Creating library D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\x64\Debug\NAUSICAA_API.lib and object D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\x64\Debug\NAUSICAA_API.exp
+  NAUSICAA_API.vcxproj -> D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\x64\Debug\NAUSICAA_API.dll

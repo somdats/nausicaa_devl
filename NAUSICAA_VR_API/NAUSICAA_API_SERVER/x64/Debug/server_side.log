@@ -1,0 +1,10 @@
+﻿  main.cpp
+  nausicaa_api_server.cpp
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\nausicaa_api_server.cpp(27,45): warning C4267: 'initializing': conversion from 'size_t' to 'unsigned int', possible loss of data
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\nausicaa_api_server.cpp(195,18): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+  Generating Code...
+  server_side.vcxproj -> D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\x64\Debug\NAUSICAA_API_SERVER.exe

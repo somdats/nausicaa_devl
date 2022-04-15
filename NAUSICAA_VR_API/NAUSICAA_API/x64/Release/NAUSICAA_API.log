@@ -1,0 +1,4 @@
+﻿  nausicaa_api.cpp
+  nausicaa_api.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+     Creating library D:\Deliverables\NAUSICAA_API\x64\Release\NAUSICAA_API.lib and object D:\Deliverables\NAUSICAA_API\x64\Release\NAUSICAA_API.exp
+  NAUSICAA_API.vcxproj -> D:\Deliverables\NAUSICAA_API\x64\Release\NAUSICAA_API.dll

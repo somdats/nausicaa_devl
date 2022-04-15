@@ -1,0 +1,2 @@
+D:\Deliverables\NAUSICAA_API\NAUSICAA_API\x64\Debug\NAUSICAA_API.vcxproj.AssemblyReference.cache
+D:\nausicaa_development\NAUSICAA_API\NAUSICAA_VR_API\NAUSICAA_API\x64\Debug\NAUSICAA_API.vcxproj.AssemblyReference.cache
