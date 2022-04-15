@@ -917,7 +917,10 @@ void start_Communication_thread() {
     std::string msg;
     while (true) {
         if (incoming_message(msg))
+        {
+            std::cout << msg << std::endl;
             call_API_function(msg);
+        }
     }
         
 }
