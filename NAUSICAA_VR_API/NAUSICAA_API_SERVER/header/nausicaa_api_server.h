@@ -1,13 +1,15 @@
 #pragma once
-
+#include <GL/glew.h>
 #include <vector>
 #include<algorithm>
 #include<array>
 #include<iostream>
 
-
-#include <GL/glew.h>
-#include "..\..\vcglib\wrap\gl\shot.h"
+#include "wrap\gl\shot.h"
+   
+  extern std::map<unsigned int, vcg::Shotf> virtualCameras;
+   extern unsigned int activeCamera;
+   extern bool streamON;
 
 
 	constexpr int MAX_POLY_LENGTH = 64;

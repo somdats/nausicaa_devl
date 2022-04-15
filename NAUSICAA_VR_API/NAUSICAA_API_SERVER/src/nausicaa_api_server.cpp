@@ -1,24 +1,26 @@
 
+
 #include <map>
 
-#include "..\header\nausicaa_api_server.h"
 #include "..\header\deserialize.h"
 #include "..\header\server.h"
+#include "..\header\nausicaa_api_server.h"
+
 
 std::map<unsigned int, vcg::Shotf> virtualCameras;
 unsigned int activeCamera;
-
+bool streamON;
 
 void call_API_function(std::string message) {
 	std::string fname = func_name(message);
 	if (fname == std::string("startStreaming"))
 	{
-		// start the streaming
+		streamON = true;
 	}
 	else
 	if (fname == std::string("stopStreaming"))
 	{
-		// stop the streaming
+		streamON = false;
 	}
 	else
 	if (fname == std::string("addVirtualCamera"))
@@ -42,6 +44,7 @@ void call_API_function(std::string message) {
 	{
 		int id = deserialize_int(message);
 		activeCamera = id ;
+		std::cout << "rendering from camera:" << std::endl;
 	}
 	else
 	if (fname == std::string("selectQuality"))
@@ -161,9 +164,20 @@ void call_API_function(std::string message) {
 		float eyeZ = deserialize_float(message);
 
 		virtualCameras[id].SetViewPoint(vcg::Point3f(eyeX, eyeY, eyeZ));
+		std::cout << "set position done!" << std::endl;
+	}
+	if (fname == std::string("setViewDirection"))
+	{
+		int id = deserialize_int(message);
+		float dirX = deserialize_float(message);
+		float dirY = deserialize_float(message);
+		float dirZ = deserialize_float(message);
+
+		virtualCameras[id].LookTowards(vcg::Point3f(dirX, dirY, dirZ), vcg::Point3f(0.0, 1.0, 0.0));
+		std::cout << "view-direction set:" << std::endl;
 	}
 	else
-	if (fname == std::string("setViewDirection"))
+	/*if (fname == std::string("setPosition"))
 	{
 		int id = deserialize_int(message);
 		float dirX = deserialize_float(message);
@@ -172,7 +186,7 @@ void call_API_function(std::string message) {
 
 		virtualCameras[id].LookTowards(vcg::Point3f(dirX, dirY, dirZ),vcg::Point3f(0.0,1.0,0.0));
 	}
-	else
+	else*/
 	if (fname == std::string("move"))
 	{
 		int id = deserialize_int(message);
@@ -209,6 +223,7 @@ void call_API_function(std::string message) {
 		int vy = deserialize_int(message);
 
 		virtualCameras[id].Intrinsics.SetFrustum(sx, dx, bt, tp, focal, vcg::Point2i(vx, vy));
+		std::cout << " camera frustrum set" << std::endl;
 	}
 	else
 	if (fname == std::string("getFrustum"))
