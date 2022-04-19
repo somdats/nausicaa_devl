@@ -1,4 +1,4 @@
-#include "..\header\client.h"
+#include "client.h"
 /*
 Create a TCP socket
 */
@@ -7,12 +7,11 @@ Create a TCP socket
 #include<winsock2.h>
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
-struct image_buffer;
 
 WSADATA wsa;
 SOCKET s;
 struct sockaddr_in server;
-char *message, server_reply[2000];
+char* message, server_reply[2000];
 int recv_size;
 
 int connect(std::string addr) {
@@ -20,9 +19,8 @@ int connect(std::string addr) {
 	printf("\nInitialising Winsock...");
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
-		int err = WSAGetLastError();
-		printf("Failed. Error Code : %d",err );
-		return err ;
+		printf("Failed. Error Code : %d", WSAGetLastError());
+		return 1;
 	}
 
 	printf("Initialised.\n");
@@ -30,9 +28,7 @@ int connect(std::string addr) {
 	//Create a socket
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
-		int err = WSAGetLastError();
-		printf("Could not create socket : %d", err);
-		return err;
+		printf("Could not create socket : %d", WSAGetLastError());
 	}
 
 	printf("Socket created.\n");
@@ -43,15 +39,14 @@ int connect(std::string addr) {
 	server.sin_port = htons(81);
 
 	//Connect to remote server
-	if (connect(s, (struct sockaddr *)&server, sizeof(server)) < 0)
+	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
 	{
-		int err = WSAGetLastError();
-		printf("socket failed with error: %ld\n", err);
-		return err;
+		printf("socket failed with error: %ld\n", WSAGetLastError());
+		return 1;
 	}
 
 	puts("Connected");
-	return 0;
+
 }
 
 int  send_message(std::string message) {
@@ -81,16 +76,13 @@ int receive_int() {
 	if ((recv_size = recv(s, server_reply, 2000, 0)) == SOCKET_ERROR)
 	{
 		puts("recv failed");
-		return 0;
 	}
-	else {
-		server_reply[recv_size] = '\0';
-		return std::stoi(std::string(server_reply));
-	}
+	server_reply[recv_size] = '\0';
+	return std::stoi(std::string(server_reply));
 }
 
 int disconnect();
-int receive(std::string & message);
+int receive(std::string& message);
 
 //----------------------------------------------------
 
@@ -119,19 +111,19 @@ int connect_stream(std::string addr) {
 
 	printf("Socket created.\n");
 
-
+	int portS = 82;
 	serverS.sin_addr.s_addr = inet_addr(addr.c_str());
 	serverS.sin_family = AF_INET;
-	serverS.sin_port = htons(82);
+	serverS.sin_port = htons(portS);
 
 	//Connect to remote server
 	if (connect(sS, (struct sockaddr*)&serverS, sizeof(serverS)) < 0)
 	{
-		int err = WSAGetLastError();
-		printf("socket failed with error: %ld\n", err);
-		return err;
+		printf("socket failed with error: %ld\n", WSAGetLastError());
+		return 1;
 	}
-	return 0;
+
+	puts("Connected");
 
 }
 
@@ -139,7 +131,7 @@ int  start_stream() {
 
 	//Send some data
 	//message = "GET / HTTP/1.1\r\n\r\n";
-	if (send(sS, "start", 5, 0) < 0)
+	if (send(s, "start", 5, 0) < 0)
 	{
 		puts("Send failed");
 		return 1;
@@ -159,16 +151,15 @@ int  start_stream() {
 //	puts(server_reply);
 }
 
-char *   receive_image() {
+char* receive_image(int* byteCount) {
 	if ((recv_sizeS = recv(sS, server_replyS, 3000000, 0)) == SOCKET_ERROR)
 	{
 		puts("recv failed");
-		return 0;
 	}
 	server_replyS[recv_sizeS] = '\0';
-	*(int*)&server_replyS[3000000 - 4] = recv_sizeS;
-
-	return   server_replyS;
+	*byteCount = recv_sizeS;
+	printf("size of image byte: %d", *byteCount);
+	return server_replyS;
 }
 
 

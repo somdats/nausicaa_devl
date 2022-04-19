@@ -38,7 +38,7 @@ extern "C" {
 	typedef int  gliphTypeID;
 
 	//! image buffer
-	typedef char *   image_buffer;
+	typedef char* image_buffer;
 
 	//! enum direction
 	typedef enum NAUSICAA_VR_API  changeDir
@@ -56,7 +56,7 @@ extern "C" {
 
 	namespace VRSubsystem
 	{
-		
+
 
 		/** @name Setup
 		 * functions to set up the system and get the stream going
@@ -79,7 +79,7 @@ extern "C" {
 		//! connect to the VR server
 		/*!
 		*/
-		int NAUSICAA_VR_API connectToVRServer(const char * ip_addr);
+		int NAUSICAA_VR_API connectToVRServer(const char* ip_addr);
 
 		//! disconnect to the VR server
 		/*!
@@ -90,7 +90,7 @@ extern "C" {
 		void NAUSICAA_VR_API startStreaming();
 
 		//! read frame
-		image_buffer  NAUSICAA_VR_API readFrame();
+		image_buffer  NAUSICAA_VR_API readFrame(int* byteCount);
 
 		//! stop streaming
 		void NAUSICAA_VR_API stopStreaming();
@@ -234,16 +234,16 @@ extern "C" {
 		///@}
 	}
 
-		///@}
-		//!  Virtual Camera
-		/*!
-			definition of a virtual camera
-		*/
+	///@}
+	//!  Virtual Camera
+	/*!
+		definition of a virtual camera
+	*/
 	namespace VirtualCamera
 	{
 
 		/// specify the intrinsics parameters of the virtual camera
-		void NAUSICAA_VR_API setPerspective(VirtualCameraID cId,float AngleDeg, float AspectRatio, float Focal, int viewportX, int viewportY);
+		void NAUSICAA_VR_API setPerspective(VirtualCameraID cId, float AngleDeg, float AspectRatio, float Focal, int viewportX, int viewportY);
 
 		/// update (change) viewport
 		void NAUSICAA_VR_API setViewport(VirtualCameraID cId, int new_viewportX, int new_viewportY);
@@ -281,10 +281,10 @@ extern "C" {
 		/// get the id of a virtual camera
 		//VirtualCameraID virtualID()const;
 
-		
+
 		/// get the camera frustum
 		void NAUSICAA_VR_API getFrustum(VirtualCameraID cId, int& sx, int& dx, int& bt, int& tp, float& nr);
-		
+
 	}
 
 
