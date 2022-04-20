@@ -50,11 +50,5 @@ If changes are made in the client-API w.r.t git repo, Please follow the steps
 1. Copy the files locally to the "D:\Deliverables\NAUSICAA_API\NAUSICAA_API" to update it as the project is not updated w.r.t git repo.
 2. The dll is updated and needs to be provided to the user so that the update is received.
 
-
-
-
-  N.B*****
- [ The main application project is already running on the PC] 
-
   
 
