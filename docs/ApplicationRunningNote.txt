@@ -1,0 +1,54 @@
+
+
+Note for running the application with the client-server model
+
+
+1. Go to the directory:
+ ->D:\nausicaa_vs
+2. Open the nausicaa_vs.sln file, by default it opens in VS2022
+
+3. Connect the lidars and camera
+4. Run the camera application in the terminal of the nvidia jetson so that the camera streaming starts.( The command tool is already provided)
+ 
+3. Run the application or start in debug mode
+4. "start cameras" option in the "Controls" should be checked to start the camera. In brief moment, the camera feed could be seen. ON checked-in, the server side connection also starts. Please check the command prompt to see the messages of the connection. 
+  4.1 If the connection is not established, please restart the application again.
+  
+5. Check "start-lidars" to start the lidar streaming.
+
+6.The client also initiates the communication,  
+  6.1 If the connection is successful, the command messages from the client is seen on the cmd.
+
+7. Once all the desired command messages are received from client through socket connection, enable the "showfromcamera" option
+  7.1. If the virtualcamera is not set along with its position through command messages and before that the option is enabled, the application will crash.
+
+
+
+The above mentioned steps are essential to stream the content for the demo.
+
+Further, if there are changes to be made in the application along with server side codes. The relevant files are
+1. main.cpp-> In the calibration project, it is the main files  for execution.
+2. nausicaa_api_server.h - API server header file
+3. nausicaa_api_server.cpp - API server cpp file
+4. server.h - header file for socket connection (server)
+5. server.cpp - source file for soce connection (server)
+6. deserialize.h -> deserializing message header file
+7. deserialize.cpp -> deserializing message cpp file
+
+
+N.B[ If changes are made in the corresponding files (2,3,4,5) in the repository. Please copy the respective files into the local folder :" D:\nausicaa_vs\nausicaa_vs\Calibration" because the current application is not part of the git repo, therefore the changes are not automatically updated in the project] 
+
+
+
+
+The client side code is part of the project "D:\Deliverables\NAUSICAA_API" 
+The project is a C++/CLR application with the client APIs along with the client-socket model
+The source and header files are here:
+D:\Deliverables\NAUSICAA_API\NAUSICAA_API
+
+If changes are made in the client-API w.r.t git repo, Please follow the steps
+1. Copy the files locally to the "D:\Deliverables\NAUSICAA_API\NAUSICAA_API" to update it as the project is not updated w.r.t git repo.
+2. The dll is updated and needs to be provided to the user so that the update is received.
+
+  
+
