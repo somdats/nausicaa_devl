@@ -21,4 +21,8 @@ E) nausicaa_application:
 
 Contains implementation along with UI for the core application accessed using the client-server interface.
 
+F) npp
+
+  ->It is a c# sample application to check the application using the client-server interface
+
 
