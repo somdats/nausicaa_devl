@@ -11,6 +11,9 @@ std::map<unsigned int, vcg::Shotf> virtualCameras;
 unsigned int activeCamera;
 bool streamON;
 
+Server serverComm, serverStream;
+
+
 void call_API_function(std::string message) {
 	std::string fname = func_name(message);
 	if (fname == std::string("startStreaming"))
@@ -28,7 +31,7 @@ void call_API_function(std::string message) {
 		std::cout << "addVritualCamera" << std::endl;
 		unsigned int newId = virtualCameras.size();
 		virtualCameras[newId] = vcg::Shotf();
-		send(std::to_string(newId));
+		serverComm.send(std::to_string(newId));
 	}
 	else
 	if (fname == std::string("getVirtualCamera"))

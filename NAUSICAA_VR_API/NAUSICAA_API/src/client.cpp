@@ -1,4 +1,4 @@
-#include "client.h"
+#include "..\header\client.h"
 /*
 Create a TCP socket
 */
@@ -8,19 +8,18 @@ Create a TCP socket
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-WSADATA wsa;
-SOCKET s;
-struct sockaddr_in server;
-char* message, server_reply[2000];
-int recv_size;
 
-int connect(std::string addr) {
+
+int Client::connect(std::string addr, int _port) {
+	port = _port;
+	int err = 0;
 
 	printf("\nInitialising Winsock...");
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
-		printf("Failed. Error Code : %d", WSAGetLastError());
-		return 1;
+		err = WSAGetLastError();
+		printf("WSAStartup Failed. Error Code : %d",err);
+		return err;
 	}
 
 	printf("Initialised.\n");
@@ -28,7 +27,9 @@ int connect(std::string addr) {
 	//Create a socket
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
-		printf("Could not create socket : %d", WSAGetLastError());
+		err = WSAGetLastError();
+		printf("Could not create socket : %d", err);
+		return err;
 	}
 
 	printf("Socket created.\n");
@@ -36,20 +37,22 @@ int connect(std::string addr) {
 
 	server.sin_addr.s_addr = inet_addr(addr.c_str());
 	server.sin_family = AF_INET;
-	server.sin_port = htons(81);
+	server.sin_port = htons(port);
 
 	//Connect to remote server
-	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
+	if (::connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
 	{
-		printf("socket failed with error: %ld\n", WSAGetLastError());
-		return 1;
+		err = WSAGetLastError();
+		printf("socket failed with error: %ld\n",err);
+		return err;
 	}
 
 	puts("Connected");
+	return 0;
 
 }
 
-int  send_message(std::string message) {
+int   Client::send_message(std::string message) {
 
 	//Send some data
 	//message = "GET / HTTP/1.1\r\n\r\n";
@@ -72,7 +75,7 @@ int  send_message(std::string message) {
 //	server_reply[recv_size] = '\0';
 //	puts(server_reply);
 }
-int receive_int() {
+int  Client::receive_int() {
 	if ((recv_size = recv(s, server_reply, 2000, 0)) == SOCKET_ERROR)
 	{
 		puts("recv failed");
@@ -81,53 +84,8 @@ int receive_int() {
 	return std::stoi(std::string(server_reply));
 }
 
-int disconnect();
-int receive(std::string& message);
 
-//----------------------------------------------------
-
-WSADATA wsaS;
-SOCKET sS;
-struct sockaddr_in serverS;
-char* messageS, server_replyS[3000000];
-int recv_sizeS;
-
-int connect_stream(std::string addr) {
-
-	printf("\nInitialising Winsock...");
-	if (WSAStartup(MAKEWORD(2, 2), &wsaS) != 0)
-	{
-		printf("Failed. Error Code : %d", WSAGetLastError());
-		return 1;
-	}
-
-	printf("Initialised.\n");
-
-	//Create a socket
-	if ((sS = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
-	{
-		printf("Could not create socket : %d", WSAGetLastError());
-	}
-
-	printf("Socket created.\n");
-
-	int portS = 82;
-	serverS.sin_addr.s_addr = inet_addr(addr.c_str());
-	serverS.sin_family = AF_INET;
-	serverS.sin_port = htons(portS);
-
-	//Connect to remote server
-	if (connect(sS, (struct sockaddr*)&serverS, sizeof(serverS)) < 0)
-	{
-		printf("socket failed with error: %ld\n", WSAGetLastError());
-		return 1;
-	}
-
-	puts("Connected");
-
-}
-
-int  start_stream() {
+int   Client::start_stream() {
 
 	//Send some data
 	//message = "GET / HTTP/1.1\r\n\r\n";
@@ -137,29 +95,17 @@ int  start_stream() {
 		return 1;
 	}
 	puts("Data Send\n");
-
-	//Receive a reply from the server
-//	if ((recv_size = recv(s, server_reply, 2000, 0)) == SOCKET_ERROR)
-//	{
-//		puts("recv failed");
-//	}
-
-//	puts("Reply received\n");
-
-	//Add a NULL terminating character to make it a proper string before printing
-//	server_reply[recv_size] = '\0';
-//	puts(server_reply);
 }
 
-char* receive_image(int* byteCount) {
-	if ((recv_sizeS = recv(sS, server_replyS, 3000000, 0)) == SOCKET_ERROR)
+char* Client::receive_image(int* byteCount) {
+	if ((recv_size = recv(s, server_reply, 3000000, 0)) == SOCKET_ERROR)
 	{
 		puts("recv failed");
 	}
-	server_replyS[recv_sizeS] = '\0';
-	*byteCount = recv_sizeS;
+	server_reply[recv_size] = '\0';
+	*byteCount = recv_size;
 	printf("size of image byte: %d", *byteCount);
-	return server_replyS;
+	return server_reply;
 }
 
 

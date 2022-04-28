@@ -1,14 +1,29 @@
 #pragma once
 #include <string>
 
-int start_server();
-int accepting_connections();
-int accepting_connections_stream();
-int stop_server();
-int start_server_stream();
-int stop_server_stream();
-int wait_for_start(std::string& message);
+#include<io.h>
+#include<stdio.h>
+#include<winsock2.h>
+#include "..\header\server.h"
 
-int incoming_message(std::string &message);
-int send(std::string message);
-int send(char* image_buffer, int size);
+#pragma comment(lib,"ws2_32.lib") //Winsock Library
+
+
+struct Server {
+	WSADATA wsa;
+	SOCKET s, new_socket;
+	struct sockaddr_in server, client;
+	int c;
+	char* message;
+	int port;
+
+	int start_server(int );
+
+	int accepting_connections();
+
+	int incoming_message(std::string& message);
+
+	int send(std::string message);
+
+	int stop_server();
+};

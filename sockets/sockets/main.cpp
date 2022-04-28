@@ -6,16 +6,24 @@
 
 int value;
 void main() {
-	connect("127.0.0.1");
+/*
+	int err = connect("127.0.0.1");
+	if (err != 0) {
+		printf("err: %d \n", err);
+		exit(0);
+	}
 	send_message("hi");
 	value = receive_int();
 
 	printf("mes: %d \n", value);
 
 	exit(0);
-	if (VRSubsystem::connectToVRServer("146.48.84.241") ==0)
+	*/
+
+	int err = VRSubsystem::connectToVRServer("127.0.0.1");
+	if ( err !=0)
 	{
-		std::cout << "connection failed\n" << std::endl;
+		std::cout << "connection failed with err \n" <<err << std::endl;
 		exit(0);
 	};
 	int newCamera = VRSubsystem::addVirtualCamera();
@@ -28,10 +36,10 @@ void main() {
 	VRSubsystem::startStreaming();
 
 	char * frame;
+	int size;
 	while(true) {
-		frame = VRSubsystem::readFrame();
+		frame = VRSubsystem::readFrame(&size);
 		if (frame) {
-			int size = *(int*)&frame[3000000 - 4];
 			FILE* fo = fopen("frame.jpg", "wb");
 			fwrite(frame, size, 1, fo);
 			fclose(fo);
