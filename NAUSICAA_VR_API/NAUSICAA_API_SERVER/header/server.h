@@ -25,7 +25,7 @@ struct Server {
 
 	int send(std::string message);
 
-	int send(char* data, int length) {
+	int send(char* data, int length);
 
 	int stop_server();
 };
