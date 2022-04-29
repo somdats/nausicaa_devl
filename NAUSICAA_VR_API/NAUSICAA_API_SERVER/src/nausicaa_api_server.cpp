@@ -5,6 +5,7 @@
 #include "..\header\deserialize.h"
 #include "..\header\server.h"
 #include "..\header\nausicaa_api_server.h"
+#include "..\header\Common.h"
 
 
 std::map<unsigned int, vcg::Shotf> virtualCameras;

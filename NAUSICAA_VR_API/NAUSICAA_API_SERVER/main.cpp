@@ -5,11 +5,11 @@
 int main() {
 	std::string message;
 
-//	start_server();
-	start_server_stream();
-
-	while (true) {
-		if(incoming_message(message))
-			call_API_function(message);
-	}
+////	start_server();
+//	start_server_stream();
+//
+//	while (true) {
+//		if(incoming_message(message))
+//			call_API_function(message);
+//	}
 }

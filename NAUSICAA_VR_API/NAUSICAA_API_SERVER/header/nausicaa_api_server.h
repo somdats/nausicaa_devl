@@ -6,15 +6,9 @@
 #include<iostream>
 
 #include "wrap\gl\shot.h"
-   
-   extern std::map<unsigned int, vcg::Shotf> virtualCameras;
-   extern unsigned int activeCamera;
-   extern bool streamON;
-   extern bool lidarOn[2];
-   extern bool camerasOn[6];
 
-   extern Server serverComm;
-   extern Server serverStream;
+   
+
 
 	constexpr int MAX_POLY_LENGTH = 64;
 	constexpr int arr_size = 3;

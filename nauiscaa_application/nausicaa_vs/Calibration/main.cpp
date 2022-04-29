@@ -59,6 +59,7 @@
 ///server header
 #include "..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\server.h"
 #include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\nausicaa_api_server.h"
+#include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\Common.h"
 
 
 std::mutex buff_mutex;
@@ -524,6 +525,10 @@ void Display() {
 
             GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
         }
+        else 
+        if (showfromcamera) {
+            GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
+        }
 
         GLERR();
 
@@ -654,7 +659,7 @@ void Display() {
             glPopMatrix();
 
 
-            if (showfromcamera && virtualCamerasExist)
+            if (showfromcamera /*&& virtualCamerasExist*/)
                 GlShot<vcg::Shotf>::UnsetView();
 
             if (!showfromcamera && showCameras) {

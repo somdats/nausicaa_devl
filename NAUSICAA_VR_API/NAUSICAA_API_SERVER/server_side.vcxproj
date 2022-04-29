@@ -115,9 +115,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WINSOCK_DEPRECATED_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\nausicaa_development\NAUSICAA_API\glew-2.1.0\include;D:\nausicaa_development\NAUSICAA_API\vcglib;D:\nausicaa_development\NAUSICAA_API\vcglib\eigenlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\nausicaa_devl\glew-2.1.0\include;D:\nausicaa_devl\NAUSICAA_API\vcglib;D:\nausicaa_devl\vcglib\eigenlib;D:\nausicaa_devl\vcglib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,7 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\sockets\server\server.h" />
+    <ClInclude Include="header\Common.h" />
     <ClInclude Include="header\deserialize.h" />
     <ClInclude Include="header\nausicaa_api_server.h" />
     <ClInclude Include="header\server.h" />
