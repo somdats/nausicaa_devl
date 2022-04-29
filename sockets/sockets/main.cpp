@@ -26,6 +26,13 @@ void main() {
 		std::cout << "connection failed with err \n" <<err << std::endl;
 		exit(0);
 	};
+
+	int *cameras,  n;
+	VRSubsystem::getVirtualCameraList(cameras, &n);
+	printf("number of cameras: %d\n", n);
+	for (int i = 0;i < n; ++i)
+		printf("camera id: %d\n", cameras[i]);
+
 	int newCamera = VRSubsystem::addVirtualCamera();
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
