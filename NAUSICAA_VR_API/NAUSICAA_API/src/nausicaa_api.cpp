@@ -59,11 +59,12 @@ void VRSubsystem::getVirtualCamera(VirtualCameraID id) {
 	std::cout << "removed " << id << std::endl;
 }
 
-void VRSubsystem::getVirtualCameraList(VirtualCameraID* camera_list, int * n_cameras) {
+int *  VRSubsystem::getVirtualCameraList(int * n_cameras) {
 	int byteCount;
 	clientComm.send_message(message()[std::string("getVirtualCameraList")].msg);
-	camera_list = (int*) clientComm.receive_image(&byteCount);
+	int * res  =  (int*) clientComm.receive_image(&byteCount);
 	*n_cameras = byteCount / 4;
+	return res;
 }
 
 

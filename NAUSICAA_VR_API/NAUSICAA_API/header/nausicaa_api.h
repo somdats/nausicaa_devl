@@ -30,6 +30,8 @@ extern "C" {
 	//! unique identifier of a virtual camera
 	typedef int VirtualCameraID;
 
+	//! unique identifier of a virtual camera
+	typedef int* VirtualCameraIDs;
 
 	//! unique identifier of a type of gliph
 	typedef int  gliphID;
@@ -122,7 +124,7 @@ extern "C" {
 		/*!
 
 		*/
-		void NAUSICAA_VR_API getVirtualCameraList(VirtualCameraID* camera_list, int* n_cameras);
+		VirtualCameraIDs NAUSICAA_VR_API getVirtualCameraList(int* n_cameras);
 
 		//! set a virtual camera as the one to use for rendering
 		/*!
