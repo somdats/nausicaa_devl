@@ -10,6 +10,8 @@
 std::map<unsigned int, vcg::Shotf> virtualCameras;
 unsigned int activeCamera;
 bool streamON;
+bool lidarOn[2];
+bool camerasOn[6];
 
 Server serverComm, serverStream;
 
@@ -85,25 +87,25 @@ void call_API_function(std::string message) {
 	if (fname == std::string("enableLidar"))
 	{
 		int id = deserialize_int(message);
-		// enable lidar
+		lidarOn[id] = true;
 	}
 	else
 	if (fname == std::string("disableLidar"))
 	{
 		int id = deserialize_int(message);
-		// disable lidar
+		lidarOn[id] = false;
 	}
 	else
 	if (fname == std::string("enableCamera"))
 	{
-	int id = deserialize_int(message);
-	// enable camera
+		int id = deserialize_int(message);
+		camerasOn[id] = true;
 	}
 	else
 	if (fname == std::string("disableCamera"))
 	{
 		int id = deserialize_int(message);
-		// disable camera
+		camerasOn[id] = false;
 	}
 	else
 	if (fname == std::string("setPerspective"))
