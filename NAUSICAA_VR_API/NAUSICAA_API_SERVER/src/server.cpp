@@ -93,6 +93,10 @@ int Server::send(std::string message) {
 	return 0;
 }
 
+int Server::send(char *data, int length) {
+	::send(new_socket, data, length, 0);
+	return 0;
+}
 
 int Server::stop_server() {
 	closesocket(s);
