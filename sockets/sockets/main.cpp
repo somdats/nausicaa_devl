@@ -6,19 +6,7 @@
 
 int value;
 void main() {
-/*
-	int err = connect("127.0.0.1");
-	if (err != 0) {
-		printf("err: %d \n", err);
-		exit(0);
-	}
-	send_message("hi");
-	value = receive_int();
 
-	printf("mes: %d \n", value);
-
-	exit(0);
-	*/
 
 	int err = VRSubsystem::connectToVRServer("146.48.84.241");
 	if ( err !=0)
