@@ -44,7 +44,7 @@ void call_API_function(std::string message) {
 		int none = 0;
 		std::vector<int> cId;
 		for (std::map<unsigned int, vcg::Shotf>::iterator ic = virtualCameras.begin(); ic != virtualCameras.end(); ++ic)
-			cId.push((*ic).first);
+			cId.push_back((*ic).first);
 		if(!cId.empty())
 			serverComm.send(&*cId.begin(),cId.size());
 		else
