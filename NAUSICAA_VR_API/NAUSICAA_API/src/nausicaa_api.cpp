@@ -52,16 +52,18 @@ void VRSubsystem::stopStreaming() {
 
 VirtualCameraID VRSubsystem::addVirtualCamera() {
 	clientComm.send_message(message()[std::string("addVirtualCamera")].msg);
-	return clientComm.receive_int();;
+	return clientComm.receive_int();
 }
 
 void VRSubsystem::getVirtualCamera(VirtualCameraID id) {
 	std::cout << "removed " << id << std::endl;
 }
 
-void VRSubsystem::getVirtualCameraList() {
+void VRSubsystem::getVirtualCameraList(VirtualCameraID* camera_list, int * n_cameras) {
+	int byteCount;
 	clientComm.send_message(message()[std::string("getVirtualCameraList")].msg);
-	std::cout << "get VirtualCameraList" << std::endl;
+	camera_list = (int*) clientComm.receive_image(&byteCount);
+	*n_cameras = byteCount / 4;
 }
 
 

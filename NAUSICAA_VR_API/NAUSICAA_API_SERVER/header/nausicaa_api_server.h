@@ -110,7 +110,7 @@
 		/*!
 
 		*/
-		void  getVirtualCameraList();
+		void  getVirtualCameraList(VirtualCameraID* camera_list, int* n_cameras);
 
 		//! set a virtual camera as the one to use for rendering
 		/*!

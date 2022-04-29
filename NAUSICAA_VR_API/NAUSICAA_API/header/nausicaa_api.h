@@ -122,7 +122,7 @@ extern "C" {
 		/*!
 
 		*/
-		void NAUSICAA_VR_API getVirtualCameraList();
+		void NAUSICAA_VR_API getVirtualCameraList(VirtualCameraID* camera_list, int* n_cameras);
 
 		//! set a virtual camera as the one to use for rendering
 		/*!
