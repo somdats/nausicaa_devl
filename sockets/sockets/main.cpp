@@ -20,7 +20,7 @@ void main() {
 	exit(0);
 	*/
 
-	int err = VRSubsystem::connectToVRServer("127.0.0.1");
+	int err = VRSubsystem::connectToVRServer("146.48.84.241");
 	if ( err !=0)
 	{
 		std::cout << "connection failed with err \n" <<err << std::endl;

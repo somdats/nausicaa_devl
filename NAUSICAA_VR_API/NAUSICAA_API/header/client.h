@@ -6,7 +6,7 @@ struct Client{
 WSADATA wsa;
 SOCKET s;
 struct sockaddr_in server;
-char* message, server_reply[2000];
+char* message, server_reply[3000000];
 int recv_size;
 int port;
 
@@ -18,7 +18,6 @@ int receive_int();
 int disconnect();
 int receive(std::string& message);
 
-int    start_stream();
 char*  receive_image(int* byteCount);
 
 };

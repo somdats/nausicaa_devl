@@ -85,26 +85,16 @@ int  Client::receive_int() {
 }
 
 
-int   Client::start_stream() {
-
-	//Send some data
-	//message = "GET / HTTP/1.1\r\n\r\n";
-	if (send(s, "start", 5, 0) < 0)
-	{
-		puts("Send failed");
-		return 1;
-	}
-	puts("Data Send\n");
-}
 
 char* Client::receive_image(int* byteCount) {
 	if ((recv_size = recv(s, server_reply, 3000000, 0)) == SOCKET_ERROR)
 	{
 		puts("recv failed");
+		return NULL;
 	}
 	server_reply[recv_size] = '\0';
 	*byteCount = recv_size;
-	printf("size of image byte: %d", *byteCount);
+	printf("size of image byte: %d\n", *byteCount);
 	return server_reply;
 }
 
