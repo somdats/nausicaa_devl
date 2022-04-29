@@ -43,14 +43,14 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("getVirtualCameraList"))
 	{
-		int none = 0;
+		char none;
 		std::vector<int> cId;
 		for (std::map<unsigned int, vcg::Shotf>::iterator ic = virtualCameras.begin(); ic != virtualCameras.end(); ++ic)
 			cId.push_back((*ic).first);
 		if(!cId.empty())
-			serverComm.send(&*cId.begin(),cId.size());
+			serverComm.send((char*) & *cId.begin(), cId.size()*sizeof(int));
 		else
-			serverComm.send(&none, 0);
+			serverComm.send(&none, 1);
 
 	}
 	if (fname == std::string("renderFromCamera"))
