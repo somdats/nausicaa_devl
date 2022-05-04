@@ -1,12 +1,12 @@
 /*------------------------------------------------------------------------------
    Example code that shows the use of the 'cam2world" and 'world2cam" functions
    Shows also how to undistort images into perspective or panoramic images
-   
+
    NOTE, IF YOU WANT TO SPEED UP THE REMAP FUNCTION I STRONGLY RECOMMEND TO INSTALL
    INTELL IPP LIBRARIES ( http://software.intel.com/en-us/intel-ipp/ )
    YOU JUST NEED TO INSTALL IT AND INCLUDE ipp.h IN YOUR PROGRAM
-   
-   Copyright (C) 2009 DAVIDE SCARAMUZZA, ETH Zurich  
+
+   Copyright (C) 2009 DAVIDE SCARAMUZZA, ETH Zurich
    Author: Davide Scaramuzza - email: davide.scaramuzza@ieee.org
 ------------------------------------------------------------------------------*/
 
@@ -37,24 +37,24 @@ void DrawMarkersImage(cv::Mat& inImage, std::vector<cv::Point2i>markers, int mar
 cv::Mat computeOpenCVMatrixFromScaraMuzza(const ocam_model& camModel) {
     cv::Mat camMatrix = cv::Mat::zeros(3, 3, CV_32F);
 
-    camMatrix.at<float>(0, 0) =  -(camModel.pol[0]);
+    camMatrix.at<float>(0, 0) = -(camModel.pol[0]);
     camMatrix.at<float>(0, 2) = camModel.yc;
-    camMatrix.at<float>(1, 1) =  -(camModel.pol[0]);
+    camMatrix.at<float>(1, 1) = -(camModel.pol[0]);
     camMatrix.at<float>(1, 2) = camModel.xc;
     camMatrix.at<float>(2, 2) = 1;
     return camMatrix;
 
 
 
-  
+
 }
 cv::Mat getDistCoeffiecient(const ocam_model& o)
 {
     int len = o.length_pol;
     cv::Mat distCoeffs = cv::Mat(1, 4, CV_32F);
-   /* for (int i = 0; i < 4; ++i)
-        distCoeffs.at<float>(0, i) = 0.0f;*/
-    for (int i = 1; i < len ; i++)
+    /* for (int i = 0; i < 4; ++i)
+         distCoeffs.at<float>(0, i) = 0.0f;*/
+    for (int i = 1; i < len; i++)
         distCoeffs.at<float>(0, i - 1) = o.pol[i];
     std::cout << "M = " << std::endl << " " << distCoeffs << std::endl << std::endl;
     return distCoeffs;
@@ -226,14 +226,36 @@ void main()
 {
     struct ocam_model o;
     get_ocam_model(&o, fishEyeCalibrationFile.c_str());
-    cv::Mat src1 = cv::imread("D:/CamImages/25032022_new1.jpg"); //rectified_streamed_output
+    cv::Mat src1 = cv::imread("D:/CamImages/rectified_streamed_output_04052022.jpg"); //rectified_streamed_output
+    std::vector<cv::Point2i> p2, pt_ex, pt_ex2;
 
- 
+    // temporary hard-coded image pixel values -gt
+    p2.push_back(cv::Point2i(793, 344));
+    p2.push_back(cv::Point2i(1630, 202));
+    p2.push_back(cv::Point2i(633, 380));
+    p2.push_back(cv::Point2i(1380, 30));
+    /*p2.push_back(cv::Point2i(433, 1028));
+    p2.push_back(cv::Point2i(816, 1029));*/
+
+    cv::Scalar color(0, 0, 255); // BGR
+    DrawMarkersImage(src1, p2, 0, color);
+
+    // image pixel values - only PnP
+    pt_ex.push_back(cv::Point2i(793, 343));
+    pt_ex.push_back(cv::Point2i(1629, 205));
+    pt_ex.push_back(cv::Point2i(634, 381));
+    pt_ex.push_back(cv::Point2i(1379, 26));
+    /*pt_ex.push_back(cv::Point2i(383, 978));
+    pt_ex.push_back(cv::Point2i(888, 918));*/
+
+    cv::Scalar color_1(0, 255, 255);
+    DrawMarkersImage(src1, pt_ex, 5, color_1);
+    cv::imwrite("D:/CamImages/image_with_marker_04052022_f4.jpg", src1);
 
     //////////////////////
 
     double theta = 2.0 * (atan2(1948 / 2.0, 475.04) * 180 / 3.141592);
-    Eigen::Vector2d img_size(o.width,o.height);
+    Eigen::Vector2d img_size(o.width, o.height);
     Eigen::Matrix3f K_out;
     std::array<float, 5> D_out;
     float xi_out;
@@ -256,12 +278,12 @@ void main()
 
 
     }
-    
+
     for (int i = 0; i < 4; ++i)
     {
         d.at<float>(i) = D_out[i];
     }
-   
+
     std::cout << K << std::endl;
     std::cout << "distortion coefficients:" << d << std::endl;
     cv::Size s = src1.size();
@@ -270,26 +292,26 @@ void main()
         0, 0, 1));
     std::cout << Knew << std::endl;
     cv::Mat Ro = cv::Mat::eye(3, 3, CV_32F);
- /*   cv::omnidir::undistortImage(src1, dst, K, d, xi_out, cv::omnidir::RECTIFY_PERSPECTIVE, Knew, s,Ro);
-    cv::Mat R = cv::Mat::eye(3, 3, CV_32F);*/
+    /*   cv::omnidir::undistortImage(src1, dst, K, d, xi_out, cv::omnidir::RECTIFY_PERSPECTIVE, Knew, s,Ro);
+       cv::Mat R = cv::Mat::eye(3, 3, CV_32F);*/
     cv::omnidir::initUndistortRectifyMap(K, d, xi_out, Ro, Knew, s,
         CV_32F, map1, map2, cv::omnidir::RECTIFY_PERSPECTIVE);
     cv::remap(src1, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
-   // cv::fisheye::undistortImage(src1, dst, K, d, K, s);
+    // cv::fisheye::undistortImage(src1, dst, K, d, K, s);
     cv::imwrite("D:/CamImages/undistorted_perspective_test_conv_new_updated_test.jpg", dst);
 
-   // // convert ocam to mei model
+    // // convert ocam to mei model
 
-   // //cv::Mat src1 = cv::imread("D:/CamImages/25032022_new0.jpg");
-   ///* cv::namedWindow("Original fisheye camera image", 1);
-   // cv::imshow("Original fisheye camera image", src1);*/
+    // //cv::Mat src1 = cv::imread("D:/CamImages/25032022_new0.jpg");
+    ///* cv::namedWindow("Original fisheye camera image", 1);
+    // cv::imshow("Original fisheye camera image", src1);*/
 
 
-  
-    cv:: Mat cameraMatrix = computeOpenCVMatrixFromScaraMuzza(o);
+
+    cv::Mat cameraMatrix = computeOpenCVMatrixFromScaraMuzza(o);
 
     cv::Size imageSize(cv::Size(1948, 1096));
-   // cv::Mat map1, map2;
+    // cv::Mat map1, map2;
     cv::Mat distCoeffs = getDistCoeffiecient(o);
 
     ///*cv::Mat new_camera_matrix = cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0);
@@ -299,28 +321,28 @@ void main()
 
     //cv::remap(src1, dst, map1, map2, cv::INTER_LINEAR, cv::WARP_FILL_OUTLIERS, cv::Scalar(0, 0, 0));
 
-     std::vector<cv::Point3f>points;
-     // Creating the Rotation Matrix
-     cv::Mat R(3, 3, cv::DataType<float>::type);
+    std::vector<cv::Point3f>points;
+    // Creating the Rotation Matrix
+    cv::Mat R(3, 3, cv::DataType<float>::type);
 
-     R.at<float>(0, 0) = 1;
-     R.at<float>(1, 0) = 0;
-     R.at<float>(2, 0) = 0;
+    R.at<float>(0, 0) = 1;
+    R.at<float>(1, 0) = 0;
+    R.at<float>(2, 0) = 0;
 
-     R.at<float>(0, 1) = 0;
-     R.at<float>(1, 1) = 1;
-     R.at<float>(2, 1) = 0;
+    R.at<float>(0, 1) = 0;
+    R.at<float>(1, 1) = 1;
+    R.at<float>(2, 1) = 0;
 
-     R.at<float>(0, 2) = 0;
-     R.at<float>(1, 2) = 0;
-     R.at<float>(2, 2) = 1;
-     cv::Mat r, t;
-     r = cv::Mat(3, 1, CV_32F);
-     t = cv::Mat(3, 1, CV_32F);
-     cv::Rodrigues(R, r);
-     t.at<float>(0) = 0.0f;
-     t.at<float>(1) = 0.0f;
-     t.at<float>(2) = 0.0f;
+    R.at<float>(0, 2) = 0;
+    R.at<float>(1, 2) = 0;
+    R.at<float>(2, 2) = 1;
+    cv::Mat r, t;
+    r = cv::Mat(3, 1, CV_32F);
+    t = cv::Mat(3, 1, CV_32F);
+    cv::Rodrigues(R, r);
+    t.at<float>(0) = 0.0f;
+    t.at<float>(1) = 0.0f;
+    t.at<float>(2) = 0.0f;
     points.push_back(cv::Point3f(1.0, 1.0, 1.0));
     std::vector<cv::Point2f>point2D;
     cv::fisheye::projectPoints(points, point2D, r, t, cameraMatrix, distCoeffs);
@@ -335,16 +357,16 @@ void main()
     int point_sc2 = std::floor(Point2D[1]);
     printf("m_row= %2.4f, m_col=%2.4f\n", Point2D[0], Point2D[1]);
     int markerSize = 30; int thickness = 2;
-   /* cv::drawMarker(src1, cv::Point(point_cv1, point_cv2), cv::Vec3b(0, 0, 200), cv::MARKER_CROSS,markerSize,thickness );
-    cv::drawMarker(src1, cv::Point(point_sc1, point_sc2), cv::Vec3b(255, 0, 0), cv::MARKER_CROSS, markerSize, thickness);
-    cv::imwrite("D:/CamImages/undistorted_perspective_test_25032022_marker.jpg", src1); */
+    /* cv::drawMarker(src1, cv::Point(point_cv1, point_cv2), cv::Vec3b(0, 0, 200), cv::MARKER_CROSS,markerSize,thickness );
+     cv::drawMarker(src1, cv::Point(point_sc1, point_sc2), cv::Vec3b(255, 0, 0), cv::MARKER_CROSS, markerSize, thickness);
+     cv::imwrite("D:/CamImages/undistorted_perspective_test_25032022_marker.jpg", src1); */
 
 
 
-    
-   /* cv::namedWindow("Undistorted Perspective Image", 1);
-    cv::imshow("Undistorted Perspective Image", dst);
-    cv::imwrite("D:/CamImages/undistorted_perspective_test_25032022_new.jpg", dst);*/
+
+     /* cv::namedWindow("Undistorted Perspective Image", 1);
+      cv::imshow("Undistorted Perspective Image", dst);
+      cv::imwrite("D:/CamImages/undistorted_perspective_test_25032022_new.jpg", dst);*/
 
     cv::waitKey(0);
 }

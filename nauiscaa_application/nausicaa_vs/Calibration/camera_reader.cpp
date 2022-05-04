@@ -20,7 +20,7 @@ int radiusCircle = 10;
 cv::Scalar colorCircle1(255,255,255);
 int thicknessCircle1 = 2;
 int ax;
-int NP = 5;
+int NP = 3;
 
 string type2str(int type);
 
@@ -92,7 +92,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, bool scaramuzza
         // 
         calib_converter::convertOcam2Mei(invpoly, principal_point, img_size, o.c, o.d, o.e, K_out, D_out, xi_out);
        // cv::Mat dst,newMat;
-        
+        //K_out = K_out * Eigen::Vector3f(0.5f, 0.5f, 1.0f).asDiagonal();
         //cv::Mat d = cv::Mat(1, 4, CV_32F);
         //cv::Mat K(3, 3, cv::DataType<float>::type);
         cameraMatrix = cv::Mat(3, 3, CV_32F);// computeOpenCVMatrixFromScaraMuzza(o);
@@ -303,15 +303,17 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
     p2_auto.push_back(origin);
     for(int i=0; i < NP; ++i) p2_auto.push_back(axis_points[i]);
+    /*p2_auto[1] = (cv::Point2d(1719, 158));
+    p2_auto[4] = (cv::Point2d(519, 1008));*/
     
 
     // temporary hard-coded image pixel values
-    p2.push_back(cv::Point2d(831,354));
-    p2.push_back(cv::Point2d(1719, 158));
-    p2.push_back(cv::Point2d(681,401));
-    p2.push_back(cv::Point2d(1418,5));
-    p2.push_back(cv::Point2d(519,1008));
-    p2.push_back(cv::Point2d(863,1025));
+    p2.push_back(cv::Point2d(795, 344));
+    p2.push_back(cv::Point2d(1628, 207));
+    p2.push_back(cv::Point2d(632, 381));
+    p2.push_back(cv::Point2d(1380, 30));
+    p2.push_back(cv::Point2d(435, 1028));
+    p2.push_back(cv::Point2d(816, 1028));
 
 // DEBUG
 //    for(int i=0; i < 3; ++i) p2[i].y = 1096-p2[i].y;
@@ -336,10 +338,10 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 #ifdef RECTIFY_FIRST
 //        p3.erase(p3.begin()+4,p3.end());
 //        p2.erase(p2.begin()+4,p2.end());
-        bool status = cv::solvePnP(p3,p2,cameraMatrix,dc,r,t,false, SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
-        std::cout << " Status of PnP" << status << std::endl;
+        bool status = cv::solvePnP(p3, p2_auto,cameraMatrix,dc,r,t,false, SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
+        std::cout << " Status of PnP:" << status << std::endl;
         cv::TermCriteria criteria(TermCriteria::COUNT + TermCriteria::EPS, 20, 1e-8);
-        cv::solvePnPRefineLM(p3, p2, cameraMatrix, dc, r, t, criteria);
+        cv::solvePnPRefineLM(p3, p2_auto, cameraMatrix, dc, r, t, criteria);
 #else
         cv::solvePnP(p3,p2,cameraMatrix,this->distCoeffs,r,t,false,SOLVEPNP_EPNP);
 #endif
@@ -367,7 +369,7 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     std::vector < cv::Mat> camSp;
     camSp.resize(6);
     std::cout << "projection check "<< std::endl;
-    for(int i=0; i < 6; ++i){
+    for(int i=0; i < NP + 1; ++i){
            p3m.at<float>(0,0)=p3[i].x;
            p3m.at<float>(1,0)=p3[i].y;
            p3m.at<float>(2,0)=p3[i].z;
