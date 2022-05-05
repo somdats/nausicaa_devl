@@ -536,6 +536,8 @@ void Display() {
         for (int il = 0; il < N_LIDARS; ++il)
             updatePC(il);
 
+        
+
 
         if (enable_proj) {
 
@@ -546,8 +548,11 @@ void Display() {
             glEnable(GL_DEPTH_TEST);
 
             glUseProgram(shadow_shader.pr);
+            vcg::Matrix44f oglP = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10.0);
+ 
+ 
             for (int il = 0; il < 2; ++il) {
-                vcg::Matrix44f oglP = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10.0);
+                
                 toCamera = oglP * cameras[0].opengl_extrinsics() * transfLidar[il];  // opengl matrices
                 //toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics*transfLidar[il]; (opencv matrices)
 
@@ -584,7 +589,10 @@ void Display() {
 
 
         for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
+            float mm1[16];
             glPushMatrix();
+            glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
+
             glMultMatrix(transfLidar[il]);
             toCamera.SetIdentity();
 
@@ -604,6 +612,8 @@ void Display() {
             if (enable_proj) {
                 drawmode = SMOOTH;
                 glUseProgram(point_shader.pr);
+
+
                 GLERR();
                 //toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics;
 
@@ -618,10 +628,26 @@ void Display() {
 
                 glGetFloatv(GL_MODELVIEW_MATRIX, mm);
                 glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
+                
+                {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, shadowFBO.id_tex);
+
+                    toCamera = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[0].opengl_extrinsics();
+                    glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
+
+                    glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
+                    glBegin(GL_QUADS);
+                    glVertex3f(0.0, -2, 2);
+                    glVertex3f(2.0, -2, 0);
+                    glVertex3f(2.0, 0, 0);
+                    glVertex3f(0.0, 0, 2);
+                    glEnd();
+                    glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
+                }
 
                 // toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics*transfLidar[il];
                 toCamera = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[0].opengl_extrinsics() * transfLidar[il];
-
                 glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
                 glActiveTexture(GL_TEXTURE1);

@@ -74,7 +74,7 @@ int main()
         key = waitKey(30);
       
         if (key == 115) {
-            std::string fileName = (std::string("D:/CamImages_28032022/") + std::string("28032022_new") + std::to_string(n++) + ".jpg");
+            std::string fileName = (std::string("D:/CamImages_28032022/") + std::string("28032022_test") + std::to_string(n++) + ".jpg");
             bool writeSet = imwrite(fileName, frame);
             cout << "s was pressed. saving image " << n << endl;
         }
