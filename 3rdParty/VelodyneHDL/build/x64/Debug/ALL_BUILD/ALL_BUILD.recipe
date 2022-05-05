@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\x64\Debug\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\PacketBundleDecoder.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\PacketBundler.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\PacketDecoder.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\PacketDriver.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\PacketFileSender.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\test_PacketBundleDecoder.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\test_PacketBundler.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\test_PacketDecoder.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\test_PacketDriver.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\Debug\test_PacketWriter.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>D:\3rdParty\VelodyneHDL\build\x64\Debug\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
