@@ -36,8 +36,10 @@ void read_from_lidar( void*args[]){
         std::cout << "Number of points: " << latest_frame.x.size() << std::endl;
         std::string fullPath = outputPath + (std::to_string(n) + "_" + *(std::string*)args[2] + ".txt");
         FILE * fo =fopen(fullPath.c_str(),"w");
-        for(unsigned int i = 0; i < latest_frame.x.size();++i)
-            fprintf(fo,"%f %f %f %d %d %d\n",latest_frame.x[i],latest_frame.y[i],latest_frame.z[i],latest_frame.intensity[i],latest_frame.intensity[i],latest_frame.intensity[i]);
+        for (unsigned int i = 0; i < latest_frame.x.size(); ++i)
+            fprintf(fo, "%f %f %f %d %d %d %d %hu %f %u\n", latest_frame.x[i], latest_frame.y[i], latest_frame.z[i], latest_frame.intensity[i],
+                latest_frame.intensity[i], latest_frame.intensity[i], latest_frame.laser_id[i], latest_frame.azimuth[i], latest_frame.distance[i],
+                latest_frame.ms_from_top_of_hour[i]);
         fclose(fo);
         ++n;
       }
