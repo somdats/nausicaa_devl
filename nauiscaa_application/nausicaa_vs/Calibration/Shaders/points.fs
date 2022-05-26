@@ -24,16 +24,18 @@ void main()
             FragColor = vec4(1.0,0.0,0.0,1.0);
         else{
             vec4 dep  = texture2D(camDepth,tCoord.xy,1.0);
-            vec4 col;
+//            vec4 col;
 //             if (tCoord.z   > dep.x+0.1)
-                col = vec4(abs(dep.xyz-vec3(tCoord.z)),1.0);
+//                col = vec4(abs(dep.xyz-vec3(tCoord.z)),1.0);
 //                  else
 //                col  = texture2D(camTex,tCoord.xy,1.0);
-            FragColor =  col;
+//            FragColor =  col;
+            FragColor =  texture2D(camTex,tCoord.xy,1.0);
+
             }
 
 //FragColor = color;
 
-    // FragColor = vec4(textureCoord.xy,0.0,1.0);
+    // FragColor = vec4(tCoord.xy,0.0,1.0);
     // FragColor = vec4(1.0,0.5,0.0,1.0);
  }

@@ -227,21 +227,37 @@ void Camera::start_reading(){
     reading = true;
     namedWindow("receiver",1);
     setMouseCallback("receiver", CallBackFunc, this);
+
+
+
     while (reading) {
         latest_frame_mutex.unlock();
         Mat frame;
 
+
+
 #ifdef RECTIFY_FIRST
-        cap.read(frame);
+    #ifdef FAKE_INPUT
+        dst  = cv::imread( "image.jpg");
+    #else 
+        cap.read(frame); 
+    
         //Mat temp(frame.size(), frame.type());
         //dst = frame.clone();
         //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
         //std::cout << " Iam done with undistortion:" << std::endl;
         cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
         //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
+    #endif
+
 #else
-        cap.read(dst);
+    #ifdef FAKE_INPUT
+            dst = cv::imread("image.jpg");
+    #else 
+            cap.read(dst);
+    #endif
 #endif
+
         // drawing
         if(origin!=cv::Point2f(-1,-1))
             cv::circle(dst, origin, radiusCircle, cv::Scalar(255,255,255), thicknessCircle1);
@@ -263,6 +279,7 @@ void Camera::start_reading(){
         }
         latest_frame_mutex.lock();
     }
+
     latest_frame_mutex.unlock();
     cv::destroyAllWindows();
 }

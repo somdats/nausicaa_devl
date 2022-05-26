@@ -226,7 +226,7 @@ void main()
 {
     struct ocam_model o;
     get_ocam_model(&o, fishEyeCalibrationFile.c_str());
-    cv::Mat src1 = cv::imread("D:/CamImages/rectified_streamed_output_04052022.jpg"); //rectified_streamed_output
+    cv::Mat src1 = cv::imread("rectified_streamed_output_04052022.jpg"); //rectified_streamed_output
     std::vector<cv::Point2i> p2, pt_ex, pt_ex2;
 
     // temporary hard-coded image pixel values -gt

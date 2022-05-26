@@ -11,6 +11,8 @@
 #define uint unsigned int
 #endif
 
+#define FAKE_INPUT
+
 struct Lidar{
     PacketDriver driver;
     PacketDecoder decoder;
@@ -24,6 +26,10 @@ struct Lidar{
 
     void start_reading();
     void stop_reading();
+
+#ifdef FAKE_INPUT
+    std::string lidar_dump_name;
+#endif
 
 };
 #endif // VELODYNE_READER_H

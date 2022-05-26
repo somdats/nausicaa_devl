@@ -99,7 +99,7 @@ std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int texture;
 Shader point_shader, shadow_shader;
-FBO shadowFBO;
+FBO shadowFBO, cameraFBO;
 
 //selection
 vcg::Point2f corners_sel_2D[2];
@@ -379,8 +379,8 @@ void initializeGLStuff() {
     point_shader.bind("toCam");
     point_shader.bind("camTex");
     point_shader.bind("camDepth");
-    glUniform1i(point_shader["camTex"], 0);
-    glUniform1i(point_shader["camDepth"], 1);
+    glUniform1i(point_shader["camTex"], 5);
+    glUniform1i(point_shader["camDepth"], 6);
     glUseProgram(0);
     GLERR();
 
@@ -403,8 +403,11 @@ void initializeGLStuff() {
     glColor3f(1, 1, 1);
     glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 
+ 
     shadowFBO.Create(1948, 1096);
 
+    cameraFBO.Create(1280, 720);
+ 
 }
 
 void Display() {
@@ -412,8 +415,7 @@ void Display() {
     if (init) {
         init = false;
         initializeGLStuff();
-        // allocate memory for pixeldata
-        pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * width * height));
+        pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h));
     }
 
     glViewport(0, 0, width, height);
@@ -583,9 +585,19 @@ void Display() {
         }
 
 
-        glViewport(0, 0, width, height);
-        glClearColor(0.0, 0.0, 0.0, 1.0);
         //        glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+
+        if (showfromcamera && virtualCamerasExist) {
+            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO.id_fbo);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glClearDepth(1.0);
+            glViewport(0, 0, cameraFBO.w, cameraFBO.h);
+        }
+        else { 
+            glViewport(0, 0, width, height);
+            glClearColor(0.0, 0.0, 0.0, 1.0);
+        }
 
 
         for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
@@ -617,10 +629,20 @@ void Display() {
                 GLERR();
                 //toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics;
 
-                glActiveTexture(GL_TEXTURE0);
+                glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, texture);
-                cv::cvtColor(cameras[0].dst, cameras[0].dst, cv::COLOR_RGB2BGR);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, cameras[0].dst.ptr());
+
+
+                 static unsigned char* _ = 0;
+                if (_ == 0) {
+                    _ = (unsigned char*)malloc(1948 * 1096 * 3);
+                     cameras[0].latest_frame_mutex.lock();
+                    memcpy(_, cameras[0].dst.ptr(), 1948 * 1096 * 3 );
+                    cameras[0].latest_frame_mutex.unlock();
+                }
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, _);
+ 
+
                 GLERR();
 
                 glGetFloatv(GL_PROJECTION_MATRIX, pm);
@@ -629,28 +651,11 @@ void Display() {
                 glGetFloatv(GL_MODELVIEW_MATRIX, mm);
                 glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
                 
-                {
-                    glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, shadowFBO.id_tex);
-
-                    toCamera = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[0].opengl_extrinsics();
-                    glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
-
-                    glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
-                    glBegin(GL_QUADS);
-                    glVertex3f(0.0, -2, 2);
-                    glVertex3f(2.0, -2, 0);
-                    glVertex3f(2.0, 0, 0);
-                    glVertex3f(0.0, 0, 2);
-                    glEnd();
-                    glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
-                }
-
                 // toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics*transfLidar[il];
                 toCamera = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[0].opengl_extrinsics() * transfLidar[il];
                 glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
-                glActiveTexture(GL_TEXTURE1);
+                glActiveTexture(GL_TEXTURE6);
                 glBindTexture(GL_TEXTURE_2D, shadowFBO.id_tex);
             }
 
@@ -685,8 +690,7 @@ void Display() {
             glPopMatrix();
 
 
-            if (showfromcamera /*&& virtualCamerasExist*/)
-                GlShot<vcg::Shotf>::UnsetView();
+  
 
             if (!showfromcamera && showCameras) {
                 // draw cameras
@@ -700,17 +704,27 @@ void Display() {
             }
         }
 
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+
         glPopMatrix();
-        track[currentLidar].DrawPostApply();
+
+        if (showfromcamera /*&& virtualCamerasExist*/)
+         GlShot<vcg::Shotf>::UnsetView();   
+          
+          track[currentLidar].DrawPostApply();
     }
 
     glUseProgram(0);
+    
 
+
+    glActiveTexture(GL_TEXTURE0);
     TwDraw();
     ///////////////// send streaming data
-    //buff_mutex.lock();
-    glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixelData);
-    //buff_mutex.unlock();
+;
 
     /////////////////////////////
 
@@ -725,6 +739,9 @@ void Display() {
 void Reshape(int _width, int _height) {
     width = _width;
     height = _height;
+  
+ //  
+
     TwWindowSize(width, height);
 }
 
@@ -743,11 +760,6 @@ void TW_CALL alignCamera(void*) {
     p3.push_back(vcg::Point3f(2.75, 0, 0.83));
     p3.push_back(vcg::Point3f(0, -2.045, 0.83));
     p3.push_back(vcg::Point3f(0.97, -2.045, 0.47));
-
-
-
-
-
 
 
     cameras[0].calibrated = cameras[0].SolvePnP(p3);
@@ -976,16 +988,21 @@ void start_Streaming_thread() {
         /* if (streamON)
          {*/
         buff_mutex.lock();
-        int fbSize = format_nchannels * sizeof(GLubyte) * width * height;
-        cv::Mat frame = cv::Mat(height, width, CV_8UC3);
+        int fbSize = format_nchannels * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h;
+        cv::Mat frame = cv::Mat(cameraFBO.h, cameraFBO.w, CV_8UC3);
         cv::Mat dstFrame;
         frame.data = pixelData;
-        cv::flip(frame, dstFrame, 0);
+        cv::flip(frame, dstFrame, 0);  
+        
+        cv::imwrite("streamed.jpg", dstFrame);
+        
         std::vector<uchar>buf;
         cv::imencode(".jpg", dstFrame, buf);
         size_t szbuf = buf.size();
         //serverStream.send(reinterpret_cast<char*>(buf.data()));
         serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+
+      
 
         buff_mutex.unlock();
         cv::waitKey(10);

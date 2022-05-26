@@ -12,6 +12,8 @@
 #include"..\headers\calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
 
+#define FAKE_INPUT
+
 struct Camera{
     Camera(){}
     cv::VideoCapture cap;
