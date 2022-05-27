@@ -12,6 +12,7 @@
 using namespace std;
 
 #ifdef FAKE_INPUT
+#undef FAKE_INPUT
 
 void Lidar::init(uint port, std::string path_correction_file){
     lidar_dump_name = std::string("1_") + std::to_string(port) + ".txt";

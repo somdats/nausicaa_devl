@@ -13,6 +13,7 @@
 #include "opencv2/ccalib/omnidir.hpp"
 
 #define FAKE_INPUT
+#undef FAKE_INPUT
 
 struct Camera{
     Camera(){}

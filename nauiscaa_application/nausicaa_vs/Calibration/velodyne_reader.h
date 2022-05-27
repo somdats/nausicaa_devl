@@ -12,7 +12,7 @@
 #endif
 
 #define FAKE_INPUT
-
+#undef FAKE_INPUT
 struct Lidar{
     PacketDriver driver;
     PacketDecoder decoder;
