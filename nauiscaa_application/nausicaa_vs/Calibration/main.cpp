@@ -700,7 +700,7 @@ void Display() {
         glClearColor(0.0, 0.0, 0.0, 1.0);      
         drawScene();
 
-        if (fshowfromcamera) {
+        if (showfromcamera) {
             // branch show from one of the real cameras. It is just camera 0 for now but this will change to 0-6
             GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
             glViewport(width/2, height/2, width/2, height/2);
@@ -716,8 +716,8 @@ void Display() {
             glClearDepth(1.0);
             glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
-            //GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
-            GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
+            GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
+           // GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
 
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); ;
