@@ -695,7 +695,7 @@ void Display() {
             glViewport(width/2, height/2, width/2, height/2);
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); 
-        }else
+        }
         if (streamON && virtualCamerasExist)
         {
             //streaming branch that write to framebuffer   
