@@ -98,7 +98,7 @@ vcg::Matrix44f transfLidar[2];
 std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int texture;
-Shader point_shader, shadow_shader;
+Shader point_shader, shadow_shader,texture_shader;
 FBO shadowFBO, cameraFBO;
 
 //selection
@@ -392,6 +392,17 @@ void initializeGLStuff() {
     shadow_shader.Validate();
     GLERR();
     shadow_shader.bind("toCam");
+
+
+
+    if (texture_shader.SetFromFile("./Calibration/Shaders/texture.vs",
+       0, "./Calibration/Shaders/texture.fs") < 0)
+    {
+        printf("texture SHADER ERR");
+    }
+    texture_shader.Validate();
+    GLERR();
+    texture_shader.bind("uTexture");
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -689,7 +700,7 @@ void Display() {
         glClearColor(0.0, 0.0, 0.0, 1.0);      
         drawScene();
 
-        if (showfromcamera) {
+        if (fshowfromcamera) {
             // branch show from one of the real cameras. It is just camera 0 for now but this will change to 0-6
             GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
             glViewport(width/2, height/2, width/2, height/2);
@@ -705,13 +716,49 @@ void Display() {
             glClearDepth(1.0);
             glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
-            GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
+            //GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
+            GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
+
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); ;
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+
+            
+            glMatrixMode(GL_PROJECTION);
+            glPushMatrix();
+            glLoadIdentity();
+            glMatrixMode(GL_MODELVIEW);
+            glPushMatrix();
+            glLoadIdentity();
+
+            glViewport(0, 0, width, height);
+            glDisable(GL_DEPTH_TEST);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+            glUseProgram(texture_shader.pr);
+            glUniform1i(texture_shader["uTexture"], 0);
+            glBegin(GL_QUADS);
+            glVertexAttrib2f(1, 0.0, 0.0);
+            glVertex3f(0.0, -1, 0.0);
+            glVertexAttrib2f(1, 1.0, 0.0);
+            glVertex3f(1.0, -1, 0.0);
+            glVertexAttrib2f(1, 1.0, 1.0);
+            glVertex3f(1.0, 0.0, 0.0);
+            glVertexAttrib2f(1, 0.0, 1.0);
+            glVertex3f(0.0, 0.0, 0.0);
+            glEnd();
+            glUseProgram(0);
+            glEnable(GL_DEPTH_TEST);
+
+            glMatrixMode(GL_PROJECTION);
+            glPopMatrix();
+            glMatrixMode(GL_MODELVIEW);
+            glPopMatrix();
+
         }
 
         glPopMatrix();
