@@ -5,7 +5,7 @@
 #include "Logger.h"
 
 
-std::string DUMP_FOLDER_PATH  = "D:/CamImages/";
+std::string DUMP_FOLDER_PATH  = "C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\fakeinput\\PointClouds";
 
 
 std::string IMG_EXT = "jpeg";

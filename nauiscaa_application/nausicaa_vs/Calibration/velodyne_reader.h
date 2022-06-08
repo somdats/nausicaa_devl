@@ -12,7 +12,7 @@
 #endif
 
 #define FAKE_INPUT
-#undef FAKE_INPUT
+ 
 struct Lidar{
     PacketDriver driver;
     PacketDecoder decoder;
@@ -29,7 +29,10 @@ struct Lidar{
     void stop_reading();
 
 #ifdef FAKE_INPUT
+
+    std::vector<std::pair<int, std::string>> timed_pointclouds;
     std::string lidar_dump_name;
+    void read_from_file(std::string filepath);
 #endif
 
 };
