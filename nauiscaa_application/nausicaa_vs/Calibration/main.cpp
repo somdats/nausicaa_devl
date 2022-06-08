@@ -61,6 +61,41 @@
 #include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\nausicaa_api_server.h"
 #include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\Common.h"
 
+#include"Logger.h"
+
+#if VIDEO_STREAM
+
+#include"OutputStream.h"
+#include"VideoCodec.h"
+#include"FrameProcessor.h"
+
+#include"Config.h"
+
+using namespace ffmpegCodec;
+
+int fps = 30, bitrate = 3000000;
+std::string h264profile = "high444";
+std::string outputServer = "udp://146.48.84.241:83";
+
+// encoder name
+std::string codecName = "h264";
+
+
+VideoCodec vCodec(codecName.c_str());
+
+// instantiate output-stream
+std::string codecFormat = "H264";
+
+OutputStream outStream(codecFormat.c_str(), outputServer.c_str(), codecName.c_str());
+
+AVFormatContext* fmtContext = nullptr;
+
+AVCodecContext* cdcCntx = nullptr;
+
+FrameProcessor fmProcessor;
+
+#endif
+
 
 std::mutex buff_mutex;
 
@@ -485,7 +520,8 @@ void drawScene() {
             glBindTexture(GL_TEXTURE_2D, shadowFBO.id_tex);
         }
 
-        glColor3f(il == 0, il == 0, il == 1);
+       // glColor3f(il == 0, il == 0, il == 1);
+        glColor3f(il == 0 || 1, il == 0, 0);
 
         GLERR();
         glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
@@ -1051,6 +1087,11 @@ void start_Streaming_thread() {
         size_t szbuf = buf.size();
         //serverStream.send(reinterpret_cast<char*>(buf.data()));
         serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+#if  VIDEO_STREAM
+        outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
+#endif //  VIDEO_STREAM
+
+     
 
       
 
@@ -1062,6 +1103,7 @@ void start_Streaming_thread() {
 }
 
 void TW_CALL initLidars(void*) {
+
     transfLidar[0].SetIdentity();
     transfLidar[1].SetIdentity();
     lidars[0].lidar.init(2368, "./Calibration/32db.xml");
@@ -1073,8 +1115,17 @@ void TW_CALL initLidars(void*) {
 }
 
 void TW_CALL initCameras(void*) {
+//#if SAVE_IMG
+//     timeCamera1 = std::chrono::system_clock::now();
+//#endif
     cameras[0].init(5000, camIniFile, true);
     t2 = std::thread(&start_reading_camera0);
+//#if SAVE_IMG
+//    std::string tCam;
+//    bool stat =  getTimeStamp(timeCamera1, tCam);
+//    if (stat)
+//        saveImages(DUMP_FOLDER_PATH, tCam, cameras[0].dst);
+//#endif
     tComm = std::thread(&start_Communication_thread);
     tStream = std::thread(&start_Streaming_thread);
     tacc = std::thread(&acceptCommunicationThread);
@@ -1089,6 +1140,10 @@ void TW_CALL runTest(void*) {
     ::initCameras(0);
     ::loadImPoints(0);
     ::alignCamera(0);
+}
+// to be used 
+void TW_CALL startVideoStreaming(void*) {
+    int vs = 1;
 }
 
 void Terminate() {
@@ -1113,6 +1168,28 @@ void TW_CALL stop(void*) {
 
 int main(int argc, char* argv[])
 {
+#if VIDEO_STREAM
+    ////streaming class instantiation///////////////
+    fmtContext = outStream.getFormatContext();
+    int wd = 1280, he = 720;
+    vCodec.setCodecParameter(wd, he, fps, bitrate, fmtContext->oformat->flags);
+    vCodec.InitializeCodecStream(*outStream.getStream(), h264profile);
+
+    cdcCntx = vCodec.getCodecContext();
+
+    outStream.setExtras(cdcCntx->extradata, cdcCntx->extradata_size);
+
+    av_dump_format(fmtContext, 0, outputServer.c_str(), 1);
+
+
+    outStream.WriteHeader();
+    outStream.setStreamFrameRate(cdcCntx->framerate);
+    //instantiate frame-processor
+    fmProcessor.resetDimension(wd, he);
+    fmProcessor.initializeFrame(*cdcCntx);
+    fmProcessor.initializeSampleScaler(*cdcCntx);
+    fmProcessor.StreamInformation(*(outStream.getStream()));
+#endif
 
     //activeCamera = -1;
     TwBar* bar; // Pointer to the tweak bar
@@ -1190,6 +1267,7 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
 
     TwAddButton(bar, "test", ::runTest, 0, " label='RUNTEST' group='Test' help=`test` ");
+    TwAddButton(bar, "Stream", ::startVideoStreaming, 0, "label='VIDEOSTREAM' group='Streaming' help=`streaming` ");
 
 
     // ShapeEV associates Shape enum values with labels that will be displayed instead of enum values

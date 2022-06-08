@@ -8,12 +8,22 @@
 #define RECTIFY_FIRST
 
 
-using namespace cv;
+
 
 #include <iostream>
 #include <fstream>
 #include <time.h>
+
+#include"Logger.h"
+
+#if SAVE_IMG
+std::chrono::system_clock::time_point timeCamera1;
+#endif // SAVE_IMG
+
+using namespace cv;
+
 using namespace std;
+
 
 
 int radiusCircle = 10;
@@ -54,6 +64,9 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 void Camera::init(uint port, std::string camera_intrinsics_file, bool scaramuzza){
     /////////////Scaramuzza camera parameter read///////////////////
+#if SAVE_IMG
+    timeCamera1 = std::chrono::system_clock::now();
+#endif
     origin = cv::Point(-1, -1);
     for (int i = 0; i < 3; ++i) axis_points[i] = cv::Point(-1, -1);
     if (scaramuzza)
@@ -247,6 +260,15 @@ void Camera::start_reading(){
         //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
         //std::cout << " Iam done with undistortion:" << std::endl;
         cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+
+#if SAVE_IMG
+        
+        std::string tCam;
+        bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
+        if (stat)
+            logger::saveImages(DUMP_FOLDER_PATH, tCam, dst);
+#endif // SAVE_IMG 
+
         //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
     #endif
 
@@ -255,6 +277,7 @@ void Camera::start_reading(){
             dst = cv::imread("image.jpg");
     #else 
             cap.read(dst);
+
     #endif
 #endif
 

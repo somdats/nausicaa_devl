@@ -21,6 +21,7 @@ struct Lidar{
     std::mutex latest_frame_mutex;
 
     bool reading;
+    int lidarPort;
 
     void init(uint port, std::string path_correction_file);
 

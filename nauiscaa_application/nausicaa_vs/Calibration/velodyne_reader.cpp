@@ -6,7 +6,11 @@
 #include <boost/shared_ptr.hpp>
 #include<deque>
 
+#include"Logger.h"
 
+#if SAVE_PC
+std::chrono::system_clock::time_point timeLidar;
+#endif
 
 
 using namespace std;
@@ -48,6 +52,11 @@ void Lidar::start_reading() {
 void Lidar::init(uint port, std::string path_correction_file) {
     driver.InitPacketDriver(port);
     decoder.SetCorrectionsFile(path_correction_file.c_str());
+    lidarPort = port;
+
+#if SAVE_PC
+    timeLidar = std::chrono::system_clock::now();
+#endif
 }
 
 
@@ -66,6 +75,13 @@ void Lidar::start_reading(){
         frames = decoder.GetFrames();
         latest_frame_mutex.lock();
         decoder.GetLatestFrame(&latest_frame);
+
+#if SAVE_PC
+        std::string l1Cam;
+        bool stat = logger::getTimeStamp(timeLidar, l1Cam);
+        if (stat)
+            logger::savePointCloud(lidarPort, l1Cam, DUMP_FOLDER_PATH, latest_frame);
+#endif
         latest_frame_mutex.unlock();
     }
 }
