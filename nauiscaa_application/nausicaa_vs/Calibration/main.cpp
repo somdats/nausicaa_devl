@@ -1118,7 +1118,7 @@ void TW_CALL initCameras(void*) {
 //#if SAVE_IMG
 //     timeCamera1 = std::chrono::system_clock::now();
 //#endif
-    cameras[0].init(5000, camIniFile, true);
+    cameras[0].init(5000, camIniFile,700, true);
     t2 = std::thread(&start_reading_camera0);
 //#if SAVE_IMG
 //    std::string tCam;
@@ -1168,6 +1168,11 @@ void TW_CALL stop(void*) {
 
 int main(int argc, char* argv[])
 {
+    DUMP_FOLDER_PATH = "D:/Personal/";
+    /*PacketDecoder::HDLFrame lidarFrame2;
+  
+    logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
+    logger::savePointCloudASCII("D:/CamImages", lidarFrame2);*/
 #if VIDEO_STREAM
     ////streaming class instantiation///////////////
     fmtContext = outStream.getFormatContext();

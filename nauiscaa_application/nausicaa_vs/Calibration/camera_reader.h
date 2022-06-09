@@ -27,6 +27,7 @@ struct Camera{
     vcg::Matrix44f gl_cameraMatrix44;
     struct ocam_model o;
     int scaleFactor = 4;
+    int camID;
     
 
     float _debk;
@@ -223,7 +224,7 @@ this->_debk = k*ks;
     axis_points[6];   // point along the projection of the 3d axis in image space (pixels)
 
 
-    void init(uint port, std::string camera_intrinsics_file, bool scaramuzza = true);
+    void init(uint port, std::string camera_intrinsics_file, int cameraID,  bool scaramuzza = true);
 
     void export_camera_match(CameraMatch & c);
 

@@ -8,16 +8,20 @@
 
 #include"Logger.h"
 #include <direct.h>
-#include <filesystem>
+#include<experimental/filesystem>
 #include <chrono>
 #include <thread>
 
 #if SAVE_PC
 std::chrono::system_clock::time_point timeLidar;
+FILE* flid1 = nullptr;
+FILE*  flid2 = nullptr;
 #endif
 
 
 using namespace std;
+
+
 
 
 
@@ -59,7 +63,7 @@ void Lidar::read_from_file(std::string filepath) {
 
 void Lidar::init(uint port, std::string path_correction_file) {
 #ifdef FAKE_INPUT
-   std::filesystem::directory_iterator ite(DUMP_FOLDER_PATH);
+   std::experimental::filesystem::directory_iterator ite(DUMP_FOLDER_PATH);
    for (const auto& file : ite) {
        std::string base_filename = file.path().string().substr(file.path().string().find_last_of("/\\") + 1);
        std::string time_part = base_filename.substr(0, base_filename.find_last_of("_"));
@@ -100,6 +104,35 @@ void Lidar::start_reading(){
     int i = 0;
 #endif
 
+#if SAVE_PC
+    if (logger::isExistDirectory(DUMP_FOLDER_PATH))
+    {
+        std::string pcDir = DUMP_FOLDER_PATH + "PointClouds";
+        if (!logger::isExistDirectory(pcDir))
+            fs::create_directory(pcDir);
+
+        std:: string lidarDir = pcDir + "/" + std::to_string(lidarPort);
+        if (!logger::isExistDirectory(lidarDir))
+            fs::create_directory(lidarDir);
+
+        std::string timeStampFileName = lidarDir + "/" +  "timestamps.txt";
+        if (fs::exists(timeStampFileName))
+            fs::remove(timeStampFileName);
+
+        if (lidarPort == 2368 && std::string(timeStampFileName).find(std::to_string(2368)) != std::string::npos)
+            flid1 = fopen(timeStampFileName.c_str(), "wb");
+        if(lidarPort == 2369 && std::string(timeStampFileName).find(std::to_string(2369)) != std::string::npos)
+            flid2 = fopen(timeStampFileName.c_str(), "wb");
+
+    }
+    else
+    {
+        std::cout << "root path does not exist:" << DUMP_FOLDER_PATH << std::endl;
+      
+    }
+#endif // SAVE_PC
+
+
     while(reading){
 
 #ifdef FAKE_INPUT
@@ -125,7 +158,13 @@ void Lidar::start_reading(){
         std::string l1Cam;
         bool stat = logger::getTimeStamp(timeLidar, l1Cam);
         if (stat)
-            logger::savePointCloud(lidarPort, l1Cam, DUMP_FOLDER_PATH, latest_frame);
+        {
+            logger::savePointCloudBinary(lidarPort, l1Cam, DUMP_FOLDER_PATH, latest_frame);
+            if (lidarPort == 2368)
+                fprintf(flid1, "%s\n", l1Cam.c_str());
+            if (lidarPort == 2369)
+                fprintf(flid2, "%s\n", l1Cam.c_str());
+        }
 #endif
      
     }
@@ -134,6 +173,10 @@ void Lidar::start_reading(){
 void Lidar::stop_reading(){
     latest_frame_mutex.lock();
     reading = false;
+#if SAVE_PC
+    fclose(flid1);
+    fclose(flid2);
+#endif // SAVE_PC
     latest_frame_mutex.unlock();
 }
 

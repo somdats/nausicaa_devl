@@ -18,6 +18,12 @@
 
 #if SAVE_IMG
 std::chrono::system_clock::time_point timeCamera1;
+FILE* fi1 = nullptr;
+FILE* fi2 = nullptr;
+FILE* fi3 = nullptr;
+FILE* fi4 = nullptr;
+FILE* fi5 = nullptr;
+FILE* fi6 = nullptr;
 #endif // SAVE_IMG
 
 using namespace cv;
@@ -62,8 +68,9 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
 }
 
-void Camera::init(uint port, std::string camera_intrinsics_file, bool scaramuzza){
+void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza){
     /////////////Scaramuzza camera parameter read///////////////////
+    camID = cameraID;
 #if SAVE_IMG
     timeCamera1 = std::chrono::system_clock::now();
 #endif
@@ -241,7 +248,41 @@ void Camera::start_reading(){
     namedWindow("receiver",1);
     setMouseCallback("receiver", CallBackFunc, this);
 
+#if SAVE_IMG
+    if (logger::isExistDirectory(DUMP_FOLDER_PATH))
+    {
+        std::string imgDir = DUMP_FOLDER_PATH + "Images";
+       
+        if (!logger::isExistDirectory(imgDir))
+            fs::create_directory(imgDir);
 
+        std::string camDir = imgDir + "/" + std::to_string(camID);
+        if (!logger::isExistDirectory(camDir))
+            fs::create_directory(camDir);
+      
+        std::string timeStampFileName = camDir + "/" + "timestamps.txt";
+        if (fs::exists(timeStampFileName))
+            fs::remove(timeStampFileName);
+
+        if (camID == 700 && std::string(timeStampFileName).find(std::to_string(700)) != std::string::npos)
+            fi1 = fopen(timeStampFileName.c_str(), "wb");
+        if (camID == 701 && std::string(timeStampFileName).find(std::to_string(701)) != std::string::npos)
+            fi2 = fopen(timeStampFileName.c_str(), "wb");
+        if (camID == 702 && std::string(timeStampFileName).find(std::to_string(702)) != std::string::npos)
+            fi3 = fopen(timeStampFileName.c_str(), "wb");
+        if (camID == 703 && std::string(timeStampFileName).find(std::to_string(703)) != std::string::npos)
+            fi4 = fopen(timeStampFileName.c_str(), "wb");
+        if (camID == 704 && std::string(timeStampFileName).find(std::to_string(704)) != std::string::npos)
+            fi5 = fopen(timeStampFileName.c_str(), "wb");
+        if (camID == 705 && std::string(timeStampFileName).find(std::to_string(705)) != std::string::npos)
+            fi6 = fopen(timeStampFileName.c_str(), "wb");
+    }
+    else
+    {
+        std::cout << "root path does not exist:" << DUMP_FOLDER_PATH << std::endl;
+
+    }
+#endif // SAVE_IMG
 
     while (reading) {
         latest_frame_mutex.unlock();
@@ -262,11 +303,26 @@ void Camera::start_reading(){
         cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
 
 #if SAVE_IMG
-        
+
         std::string tCam;
         bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
         if (stat)
-            logger::saveImages(DUMP_FOLDER_PATH, tCam, dst);
+        {
+            logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(camID));
+            if (camID == 700)
+                fprintf(fi1, "%s\n", tCam.c_str());
+            if (camID == 701)
+                fprintf(fi2, "%s\n", tCam.c_str());
+            if(camID == 702)
+                fprintf(fi3, "%s\n", tCam.c_str());
+            if(camID == 703)
+                fprintf(fi4, "%s\n", tCam.c_str());
+            if(camID == 704)
+                fprintf(fi5, "%s\n", tCam.c_str());
+            if(camID == 705)
+                fprintf(fi6, "%s\n", tCam.c_str());
+            
+        }
 #endif // SAVE_IMG 
 
         //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
@@ -309,6 +365,14 @@ void Camera::start_reading(){
 void Camera::stop_reading(){
    latest_frame_mutex.lock();
    reading = false;
+#if SAVE_IMG
+   fclose(fi1);
+   fclose(fi2);
+   fclose(fi3);
+   fclose(fi4);
+   fclose(fi5);
+   fclose(fi6);
+#endif
    latest_frame_mutex.unlock();
 }
 

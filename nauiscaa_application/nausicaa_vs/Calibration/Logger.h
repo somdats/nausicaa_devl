@@ -44,7 +44,10 @@ namespace logger
 	bool isExistDirectory(std::string DirPath);
 	bool saveImages(std::string dirPath, std::string timeStamp, const cv::Mat& data, std::string camID = "");
 	bool savePointCloud(int currLidar, std::string timeStamp, std::string dirPath, const PacketDecoder::HDLFrame latestFrame);
+	bool savePointCloudASCII(std::string dirName, const PacketDecoder::HDLFrame latestFrame);
+	bool savePointCloudBinary(int currLidar, std::string timeStamp, std::string dirPath, const PacketDecoder::HDLFrame latestFrame);
 	bool getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::string& time, bool pc = true);
+	void LoadPointCloudBinary(std::string fileName, PacketDecoder::HDLFrame& latestFrame);
 }
 
 
