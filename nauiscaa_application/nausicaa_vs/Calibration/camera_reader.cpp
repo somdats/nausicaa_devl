@@ -74,6 +74,23 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 #if SAVE_IMG
     timeCamera1 = std::chrono::system_clock::now();
 #endif
+#ifdef FAKE_INPUT
+    
+    std::string toFolder = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameraID) + "\\";
+    std::string timestamps = toFolder + "timestamps.txt";
+    FILE* ft = fopen(timestamps.c_str(), "r");
+    while (!feof(ft)) {
+        char time_alfanumeric[20];
+        fscanf(ft, "%s", time_alfanumeric);
+        std::string ta = std::string(time_alfanumeric);
+        std::string ms = ta.substr(ta.length() - 9, 6); // take the milliseconds
+        timed_images.push_back(std::make_pair(atoi(ms.c_str()), toFolder + ta + ".jpeg"));
+    }
+    fclose(ft);
+
+    std::sort(timed_images.begin(), timed_images.end());
+
+#endif
     origin = cv::Point(-1, -1);
     for (int i = 0; i < 3; ++i) axis_points[i] = cv::Point(-1, -1);
     if (scaramuzza)
@@ -240,8 +257,15 @@ string type2str(int type) {
 }
 
 void Camera::start_reading(){
+#ifdef FAKE_INPUT
+    int start_time = clock();
+    int offset = timed_images[0].first;
+    int i = 0;
+#else
+
     VideoCapture cap("udpsrc port=5000 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink",
             CAP_GSTREAMER);
+#endif
 
     latest_frame_mutex.lock();
     reading = true;
@@ -292,7 +316,18 @@ void Camera::start_reading(){
 
 #ifdef RECTIFY_FIRST
     #ifdef FAKE_INPUT
-        dst  = cv::imread( "image.jpg");
+ 
+        if (clock() - start_time > timed_images[i].first - offset) {
+            std::this_thread::sleep_for(10ms);
+            latest_frame_mutex.lock();
+            dst = cv::imread(timed_images[i].second.c_str());
+            latest_frame_mutex.unlock();
+            ++i;
+            if (i == timed_images.size()) {
+                start_time = clock();
+                i = 0;
+            }
+        }  
     #else 
         cap.read(frame); 
     

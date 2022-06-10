@@ -30,7 +30,7 @@
   */
 
 
-
+#include "defines.h"
 #include <GL/glew.h>
 #include "shader_basic.h"
 #include "fbo.h"
@@ -1168,7 +1168,7 @@ void TW_CALL stop(void*) {
 
 int main(int argc, char* argv[])
 {
-    DUMP_FOLDER_PATH = "D:/Personal/";
+    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data";
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);

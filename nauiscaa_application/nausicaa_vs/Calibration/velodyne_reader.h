@@ -1,6 +1,8 @@
 #ifndef VELODYNE_READER_H
 #define VELODYNE_READER_H
 
+#include "defines.h"
+
 #include <PacketDriver.h>
 #include <PacketDecoder.h>
 
@@ -11,8 +13,8 @@
 #define uint unsigned int
 #endif
 
-#define FAKE_INPUT
-#undef FAKE_INPUT
+
+ 
  
 struct Lidar{
     PacketDriver driver;

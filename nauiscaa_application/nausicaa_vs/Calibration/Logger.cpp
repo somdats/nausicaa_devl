@@ -202,6 +202,7 @@ void logger:: LoadPointCloudBinary(std::string fileName, PacketDecoder::HDLFrame
 
 	latestFrame.ms_from_top_of_hour.resize(num_points);
 	fread(latestFrame.ms_from_top_of_hour.data(), sizeof(std::vector<unsigned int>::value_type), latestFrame.ms_from_top_of_hour.size(), fo);
+	fclose(fo);
 }
 
 bool logger::getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::string& time, bool pc)

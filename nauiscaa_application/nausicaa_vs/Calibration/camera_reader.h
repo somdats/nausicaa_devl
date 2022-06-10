@@ -1,6 +1,8 @@
 #ifndef CAMERA_READER_H
 #define CAMERA_READER_H
 
+#include "defines.h"
+
 #include <opencv2/opencv.hpp>
 
 #include <mutex>
@@ -13,7 +15,7 @@
 #include "opencv2/ccalib/omnidir.hpp"
 
 #define FAKE_INPUT
-#undef FAKE_INPUT
+ 
 
 struct Camera{
     Camera(){}
@@ -232,6 +234,9 @@ this->_debk = k*ks;
     void stop_reading();
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
 
+#ifdef FAKE_INPUT
+    std::vector<std::pair<int, std::string>> timed_images;
+#endif
 };
 
 #endif // CAMERA_READER_H
