@@ -127,10 +127,11 @@ struct LineC : public vcg::Line3f {
 
 // instantiate server
 Server servC, servS;
-Camera  cameras[2];
+Camera  cameras[6];
 
 int currentLidar = 0;
 int currentPlane = 0;
+int currentCamera = 0;
 extern int ax;
 bool showPlanes = true;
 bool showCameras = false;
@@ -400,15 +401,6 @@ void draw_frame(vcg::Matrix44f m) {
     glEnd();
 }
 
-vcg::Point2f tcoord(vcg::Point3f p, vcg::Matrix44f& lidt) {
-    vcg::Point4f p4 = vcg::Point4f(p[0], p[1], p[2], 1);
-    p4 = lidt * p4;
-    p4 = cameras[0].extrinsics * p4;
-    p4 = cameras[0].cameraMatrix44 * p4;
-    p4 /= p4.Z();
-    return vcg::Point2f(p4[0] / 1948, p4[1] / 1096);
-}
-
 
 void initializeGLStuff() {
 
@@ -500,7 +492,7 @@ void drawScene() {
 
 
             GLERR();
-            //toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics;
+            //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics;
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture);
@@ -509,9 +501,9 @@ void drawScene() {
             static unsigned char* _ = 0;
             if (_ == 0) {
                 _ = (unsigned char*)malloc(1948 * 1096 * 3);
-                cameras[0].latest_frame_mutex.lock();
-                memcpy(_, cameras[0].dst.ptr(), 1948 * 1096 * 3);
-                cameras[0].latest_frame_mutex.unlock();
+                cameras[currentCamera].latest_frame_mutex.lock();
+                memcpy(_, cameras[currentCamera].dst.ptr(), 1948 * 1096 * 3);
+                cameras[currentCamera].latest_frame_mutex.unlock();
             }
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, _);
 
@@ -524,8 +516,8 @@ void drawScene() {
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
-            // toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics*transfLidar[il];
-            toCamera = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[0].opengl_extrinsics() * transfLidar[il];
+            // toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il];
+            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * transfLidar[il];
             glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
             glActiveTexture(GL_TEXTURE6);
@@ -570,10 +562,10 @@ void drawScene() {
             // draw cameras
             glColor3f(0, 1, 0);
             glPushMatrix();
-            vcg::Point3f p = cameras[0].calibrated.GetViewPoint();
+            vcg::Point3f p = cameras[currentCamera].calibrated.GetViewPoint();
             glTranslatef(p[0], p[1], p[2]);
             gluSphere(gluNewQuadric(), 0.02, 10, 10);
-            draw_frame(cameras[0].calibrated.Extrinsics.Rot());
+            draw_frame(cameras[currentCamera].calibrated.Extrinsics.Rot());
             glPopMatrix();
         }
     }
@@ -709,14 +701,14 @@ void Display() {
             glEnable(GL_DEPTH_TEST);
 
             glUseProgram(shadow_shader.pr);
-            vcg::Matrix44f oglP = cameras[0].opencv2opengl_camera(cameras[0].cameraMatrix, 1948, 1096, 0.5, 10.0);
+            vcg::Matrix44f oglP = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10.0);
  
 
             // these shadow maps will have to be created for each camera
             for (int il = 0; il < 2; ++il) {
                 
-                toCamera = oglP * cameras[0].opengl_extrinsics() * transfLidar[il];  // opengl matrices
-                //toCamera = cameras[0].cameraMatrix44*cameras[0].extrinsics*transfLidar[il]; (opencv matrices)
+                toCamera = oglP * cameras[currentCamera].opengl_extrinsics() * transfLidar[il];  // opengl matrices
+                //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il]; (opencv matrices)
 
                 glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
@@ -750,7 +742,7 @@ void Display() {
 
         if (showfromcamera) {
             // branch show from one of the real cameras. It is just camera 0 for now but this will change to 0-6
-            GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
+            GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.5, 10);
             glViewport(width/2, height/2, width/2, height/2);
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); 
@@ -764,8 +756,8 @@ void Display() {
             glClearDepth(1.0);
             glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
-            GlShot<vcg::Shotf>::SetView(virtualCameras[0], 0.5, 10);
-           // GlShot<vcg::Shotf>::SetView(cameras[0].calibrated, 0.5, 10);
+            GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], 0.5, 10);
+           // GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.5, 10);
 
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); ;
@@ -869,9 +861,7 @@ void TW_CALL alignCamera(void*) {
     p3.push_back(vcg::Point3f(0, -2.045, 0.83));
     p3.push_back(vcg::Point3f(0.97, -2.045, 0.47));
 
-
-    cameras[0].calibrated = cameras[0].SolvePnP(p3);
-
+    cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(p3);
 }
 void TW_CALL computeTranformation(void*) {
 
@@ -929,24 +919,24 @@ void TW_CALL saveAxis(void*) {
 }
 
 void TW_CALL saveImPoints(void*) {
-    FILE* fo = fopen("ip.bin", "wb");
-    fwrite(&cameras[0].origin.x, 4, 1, fo);
-    fwrite(&cameras[0].origin.y, 4, 1, fo);
+    FILE* fo = fopen((std::string("ip_")+std::to_string(currentCamera) + ".bin").c_str(), "wb");
+    fwrite(&cameras[currentCamera].origin.x, 4, 1, fo);
+    fwrite(&cameras[currentCamera].origin.y, 4, 1, fo);
     for (int i = 0; i < 5; ++i) {
-        fwrite(&cameras[0].axis_points[i].x, 4, 1, fo);
-        fwrite(&cameras[0].axis_points[i].y, 4, 1, fo);
+        fwrite(&cameras[currentCamera].axis_points[i].x, 4, 1, fo);
+        fwrite(&cameras[currentCamera].axis_points[i].y, 4, 1, fo);
     }
     fclose(fo);
 }
 
 void TW_CALL loadImPoints(void*) {
-    FILE* fo = fopen("ip.bin", "rb");
+    FILE* fo = fopen((std::string("ip_") + std::to_string(currentCamera) + ".bin").c_str(), "rb");
     if (fo) {
-        fread(&cameras[0].origin.x, 4, 1, fo);
-        fread(&cameras[0].origin.y, 4, 1, fo);
+        fread(&cameras[currentCamera].origin.x, 4, 1, fo);
+        fread(&cameras[currentCamera].origin.y, 4, 1, fo);
         for (int i = 0; i < 5; ++i) {
-            fread(&cameras[0].axis_points[i].x, 4, 1, fo);
-            fread(&cameras[0].axis_points[i].y, 4, 1, fo);
+            fread(&cameras[currentCamera].axis_points[i].x, 4, 1, fo);
+            fread(&cameras[currentCamera].axis_points[i].y, 4, 1, fo);
         }
     }
     fclose(fo);
@@ -1052,7 +1042,7 @@ void TW_CALL CopyCDStringToClient(char** destPtr, const char* src)
         strncpy(*destPtr, src, srcLen);
     (*destPtr)[srcLen] = '\0'; // null-terminated string
 }
-std::thread t0, t1, t2, tComm, tStream, tacc, taccSt;
+std::thread t0, t1, t2,t3,t4,t5,t6,t7, tComm, tStream, tacc, taccSt;
 
 void start_reading0() {
     lidars[0].lidar.start_reading();
@@ -1062,6 +1052,21 @@ void start_reading1() {
 }
 void start_reading_camera0() {
     cameras[0].start_reading();
+}
+void start_reading_camera1() {
+    cameras[1].start_reading();
+}
+void start_reading_camera2() {
+    cameras[2].start_reading();
+}
+void start_reading_camera3() {
+    cameras[3].start_reading();
+}
+void start_reading_camera4() {
+    cameras[4].start_reading();
+}
+void start_reading_camera5() {
+    cameras[5].start_reading();
 }
 
 void acceptCommunicationThread() {
@@ -1140,9 +1145,15 @@ void TW_CALL initCameras(void*) {
 //#if SAVE_IMG
 //     timeCamera1 = std::chrono::system_clock::now();
 //#endif
-    cameras[0].init(5000, camIniFile,700, true);
+    for(int i =0; i < 6; ++i)
+        cameras[i].init(5000+i, camIniFile,700, true);
     t2 = std::thread(&start_reading_camera0);
-//#if SAVE_IMG
+    t3 = std::thread(&start_reading_camera1);
+    t4 = std::thread(&start_reading_camera2);
+    t5 = std::thread(&start_reading_camera3);
+    t6 = std::thread(&start_reading_camera4);
+    t7 = std::thread(&start_reading_camera5);
+    //#if SAVE_IMG
 //    std::string tCam;
 //    bool stat =  getTimeStamp(timeCamera1, tCam);
 //    if (stat)
@@ -1184,11 +1195,18 @@ void TW_CALL time_startstop(void*) {
 void Terminate() {
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
-    if (cameras[0].reading) cameras[0].stop_reading();
+
+    for(int i = 0; i < 6; ++i)
+        if (cameras[i].reading) cameras[i].stop_reading();
 
     if (t0.joinable())t0.join();
     if (t1.joinable())t1.join();
     if (t2.joinable()) t2.join();
+    if (t3.joinable()) t2.join();
+    if (t4.joinable()) t2.join();
+    if (t5.joinable()) t2.join();
+    if (t6.joinable()) t2.join();
+    if (t7.joinable()) t2.join();
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
@@ -1198,7 +1216,8 @@ void Terminate() {
 void TW_CALL stop(void*) {
     if (lidars[0].lidar.reading) { lidars[0].lidar.stop_reading(); }
     if (lidars[1].lidar.reading) { lidars[1].lidar.stop_reading(); }
-    if (cameras[0].reading) { cameras[0].stop_reading(); }
+    for(int i = 0; i < 6; ++i)  
+       if (cameras[i].reading) { cameras[i].stop_reading(); }
 }
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
