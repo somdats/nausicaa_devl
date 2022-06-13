@@ -63,6 +63,17 @@
 
 #include"Logger.h"
 
+#ifdef SCENE_REPLAY
+    
+unsigned long long start_time;
+unsigned long long end_time;
+unsigned long long restart_time;
+unsigned int partial_time;
+bool time_running = false;
+unsigned int  virtual_time;
+
+#endif
+
 #if VIDEO_STREAM
 
 #include"OutputStream.h"
@@ -70,6 +81,7 @@
 #include"FrameProcessor.h"
 
 #include"Config.h"
+
 
 using namespace ffmpegCodec;
 
@@ -79,7 +91,6 @@ std::string outputServer = "udp://146.48.84.241:83";
 
 // encoder name
 std::string codecName = "h264";
-
 
 VideoCodec vCodec(codecName.c_str());
 
@@ -135,6 +146,7 @@ float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int texture;
 Shader point_shader, shadow_shader,texture_shader;
 FBO shadowFBO, cameraFBO;
+TwBar* bar; // Pointer to the tweak bar
 
 //selection
 vcg::Point2f corners_sel_2D[2];
@@ -819,7 +831,17 @@ void Display() {
 
     // Recall Display at next frame
     glutPostRedisplay();
-
+    
+#ifdef SCENE_REPLAY
+    if (time_running) {
+        virtual_time = clock() - restart_time + partial_time;
+        if (virtual_time > end_time - start_time)
+        {
+            restart_time = clock();
+            partial_time = virtual_time = 0;
+        }
+    }
+#endif
 }
 
 void Reshape(int _width, int _height) {
@@ -1146,6 +1168,19 @@ void TW_CALL startVideoStreaming(void*) {
     int vs = 1;
 }
 
+#ifdef SCENE_REPLAY
+void TW_CALL time_startstop(void*) {
+    time_running = !time_running;
+    if (time_running) {
+        restart_time = clock();
+        virtual_time = partial_time;
+    }
+    else
+        partial_time += clock() - restart_time;
+    TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running)?"stop":"play");
+}
+#endif
+
 void Terminate() {
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
@@ -1165,6 +1200,28 @@ void TW_CALL stop(void*) {
     if (lidars[1].lidar.reading) { lidars[1].lidar.stop_reading(); }
     if (cameras[0].reading) { cameras[0].stop_reading(); }
 }
+
+void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
+    std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
+    FILE* ft = fopen(timestamps.c_str(), "r");
+    char time_alfanumeric[20];
+    unsigned long long first = -1;
+    std::string ta, ms;
+    
+
+    while (!feof(ft)) {
+        fscanf(ft, "%s", time_alfanumeric);
+        ta = std::string(time_alfanumeric);
+        
+        if (first == -1) {
+            first = std::stoull(ta.c_str());
+            f = std::max(first, f);
+        }
+    }
+    l   = std::min(std::stoull(ta.c_str()),l);
+    fclose(ft);
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -1197,7 +1254,7 @@ int main(int argc, char* argv[])
 #endif
 
     //activeCamera = -1;
-    TwBar* bar; // Pointer to the tweak bar
+   
 
     // Initialize AntTweakBar
     // (note that AntTweakBar could also be intialized after GLUT, no matter)
@@ -1282,6 +1339,17 @@ int main(int argc, char* argv[])
     // add 'g_CurrentShape' to 'bar': this is a variable of type ShapeType. Its key shortcuts are [<] and [>].
     TwAddVarRW(bar, "Draw Mode", drawMode, &drawmode, " keyIncr='<' keyDecr='>' group=`Rendering` help='Change draw mode.' ");
 
+#ifdef SCENE_REPLAY
+    end_time = std::numeric_limits<unsigned long long >::max();
+   
+    read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
+    read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
+    read_first_and_last_timestamp(std::string("Images") + "\\700\\timestamps.txt", start_time, end_time);
+    
+
+    TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
+    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
+#endif
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
 

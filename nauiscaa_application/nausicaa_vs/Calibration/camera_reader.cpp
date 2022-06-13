@@ -74,7 +74,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 #if SAVE_IMG
     timeCamera1 = std::chrono::system_clock::now();
 #endif
-#ifdef FAKE_INPUT
+#ifdef SCENE_REPLAY
     
     std::string toFolder = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameraID) + "\\";
     std::string timestamps = toFolder + "timestamps.txt";
@@ -83,8 +83,8 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
         char time_alfanumeric[20];
         fscanf(ft, "%s", time_alfanumeric);
         std::string ta = std::string(time_alfanumeric);
-        std::string ms = ta.substr(ta.length() - 9, 6); // take the milliseconds
-        timed_images.push_back(std::make_pair(atoi(ms.c_str()), toFolder + ta + ".jpeg"));
+
+        timed_images.push_back(std::make_pair(std::stoull(ta), toFolder + ta + ".jpeg"));
     }
     fclose(ft);
 
@@ -257,10 +257,9 @@ string type2str(int type) {
 }
 
 void Camera::start_reading(){
-#ifdef FAKE_INPUT
-    int start_time = clock();
-    int offset = timed_images[0].first;
+#ifdef SCENE_REPLAY
     int i = 0;
+    while (timed_images[i].first < start_time)++i;
 #else
 
     VideoCapture cap("udpsrc port=5000 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink",
@@ -315,9 +314,9 @@ void Camera::start_reading(){
 
 
 #ifdef RECTIFY_FIRST
-    #ifdef FAKE_INPUT
- 
-        if (clock() - start_time > timed_images[i].first - offset) {
+    #ifdef SCENE_REPLAY
+        
+        if (time_running && (virtual_time > timed_images[i].first - start_time)) {
             std::this_thread::sleep_for(10ms);
             latest_frame_mutex.lock();
             dst = cv::imread(timed_images[i].second.c_str());
@@ -364,7 +363,7 @@ void Camera::start_reading(){
     #endif
 
 #else
-    #ifdef FAKE_INPUT
+    #ifdef SCENE_REPLAY
             dst = cv::imread("image.jpg");
     #else 
             cap.read(dst);

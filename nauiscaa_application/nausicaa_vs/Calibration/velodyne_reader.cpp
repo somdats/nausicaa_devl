@@ -30,7 +30,7 @@ using namespace std;
  
 
 void Lidar::init(uint port, std::string path_correction_file) {
-#ifdef FAKE_INPUT
+#ifdef SCENE_REPLAY
     std::string toFolder = DUMP_FOLDER_PATH + "\\PointClouds\\" + std::to_string(port) + "\\";
    std::string timestamps = toFolder +"timestamps.txt";
    FILE* ft = fopen(timestamps.c_str(), "r");
@@ -38,8 +38,7 @@ void Lidar::init(uint port, std::string path_correction_file) {
        char time_alfanumeric[20];
        fscanf(ft, "%s", time_alfanumeric);
        std::string ta = std::string(time_alfanumeric);
-       std::string ms = ta.substr(ta.length() - 9, 6); // take the milliseconds
-       timed_pointclouds.push_back(std::make_pair(atoi(ms.c_str()), toFolder+ta+".bin"));
+       timed_pointclouds.push_back(std::make_pair(std::stoull(ta), toFolder+ta+".bin"));
    }
    fclose(ft);
 
@@ -58,19 +57,17 @@ void Lidar::init(uint port, std::string path_correction_file) {
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 
 void Lidar::start_reading(){
-#ifndef FAKE_INPUT
+#ifndef SCENE_REPLAY
     std::string* data = new std::string();
     unsigned int* dataLength = new unsigned int();
     std::deque<PacketDecoder::HDLFrame> frames;
+#else
+    int i = 0;
+    while (timed_pointclouds[i].first < start_time)++i;
 #endif
 
     reading = true;
 
-#ifdef FAKE_INPUT
-    int start_time = clock();
-    int offset = timed_pointclouds[0].first;
-    int i = 0;
-#endif
 
 #if SAVE_PC
     if (logger::isExistDirectory(DUMP_FOLDER_PATH))
@@ -103,8 +100,11 @@ void Lidar::start_reading(){
 
     while(reading){
 
-#ifdef FAKE_INPUT
-        if (clock() - start_time > timed_pointclouds[i].first-offset) {
+#ifdef SCENE_REPLAY
+        unsigned long long delta = timed_pointclouds[i].first - start_time;
+        unsigned long long delta1 = clock() - restart_time + partial_time;
+
+        if (time_running && (virtual_time > timed_pointclouds[i].first-start_time)) {
             std::this_thread::sleep_for(10ms);
             latest_frame_mutex.lock();
             logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);

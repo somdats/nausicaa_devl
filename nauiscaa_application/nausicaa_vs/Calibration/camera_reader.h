@@ -14,7 +14,6 @@
 #include"..\headers\calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
 
-#define FAKE_INPUT
  
 
 struct Camera{
@@ -234,7 +233,7 @@ this->_debk = k*ks;
     void stop_reading();
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
 
-#ifdef FAKE_INPUT
+#ifdef SCENE_REPLAY
     std::vector<std::pair<int, std::string>> timed_images;
 #endif
 };
