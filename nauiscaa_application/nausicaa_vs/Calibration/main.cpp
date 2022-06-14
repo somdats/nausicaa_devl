@@ -72,10 +72,10 @@ unsigned long long restart_time;
 unsigned int partial_time;
 bool time_running = false;
 unsigned int  virtual_time;
+#endif
+
 int CameraCount;
 #define NUMCAM 2
-
-#endif
 
 #if VIDEO_STREAM
 
@@ -130,7 +130,7 @@ struct LineC : public vcg::Line3f {
 
 // instantiate server
 Server servC, servS;
-Camera  cameras[6];
+::Camera  cameras[6];
 
 int currentLidar = 0;
 int currentPlane = 0;
