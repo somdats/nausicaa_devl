@@ -20,7 +20,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #ifndef SAVE_IMG
-#define SAVE_IMG 0
+#define SAVE_IMG 1
 #endif
 
 #ifndef SAVE_PC
@@ -35,6 +35,7 @@ extern  std::string DUMP_FOLDER_PATH;
 
 extern  std::string IMG_EXT;
 extern  std::string PC_EXT;
+extern int CameraCount;
 
 
 

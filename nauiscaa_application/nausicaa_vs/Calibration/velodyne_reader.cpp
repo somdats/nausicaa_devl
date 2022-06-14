@@ -22,7 +22,8 @@ FILE*  flid2 = nullptr;
 using namespace std;
 
 
-
+//#undef SCENE_REPLAY
+//#undef FAKE_IMAGE
 
 
 

@@ -29,6 +29,7 @@ struct Camera{
     struct ocam_model o;
     int scaleFactor = 4;
     int camID;
+    uint inStPort;
     
 
     float _debk;

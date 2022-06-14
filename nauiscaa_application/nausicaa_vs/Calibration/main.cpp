@@ -64,6 +64,7 @@
 #include"Logger.h"
 
 #ifdef SCENE_REPLAY
+//#undef SCENE_REPLAY
     
 unsigned long long start_time;
 unsigned long long end_time;
@@ -71,6 +72,8 @@ unsigned long long restart_time;
 unsigned int partial_time;
 bool time_running = false;
 unsigned int  virtual_time;
+int CameraCount;
+#define NUMCAM 2
 
 #endif
 
@@ -1145,14 +1148,20 @@ void TW_CALL initCameras(void*) {
 //#if SAVE_IMG
 //     timeCamera1 = std::chrono::system_clock::now();
 //#endif
-    for(int i =0; i < 6; ++i)
-        cameras[i].init(5000+i, camIniFile,700, true);
+    for (int i = 0; i < NUMCAM; ++i)
+    {
+        cameras[i].init(5000 + i, camIniFile, 700 + i, true);
+        CameraCount++; // temporary hack to get the number of activated cameras
+    }
     t2 = std::thread(&start_reading_camera0);
     t3 = std::thread(&start_reading_camera1);
-    t4 = std::thread(&start_reading_camera2);
-    t5 = std::thread(&start_reading_camera3);
-    t6 = std::thread(&start_reading_camera4);
-    t7 = std::thread(&start_reading_camera5);
+    // disable the condition when all the camera functions
+    if (CameraCount > 2) {
+        t4 = std::thread(&start_reading_camera2);
+        t5 = std::thread(&start_reading_camera3);
+        t6 = std::thread(&start_reading_camera4);
+        t7 = std::thread(&start_reading_camera5);
+    }
     //#if SAVE_IMG
 //    std::string tCam;
 //    bool stat =  getTimeStamp(timeCamera1, tCam);
@@ -1196,17 +1205,21 @@ void Terminate() {
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
 
-    for(int i = 0; i < 6; ++i)
+    for(int i = 0; i < NUMCAM; ++i)
         if (cameras[i].reading) cameras[i].stop_reading();
 
     if (t0.joinable())t0.join();
     if (t1.joinable())t1.join();
     if (t2.joinable()) t2.join();
-    if (t3.joinable()) t2.join();
-    if (t4.joinable()) t2.join();
-    if (t5.joinable()) t2.join();
-    if (t6.joinable()) t2.join();
-    if (t7.joinable()) t2.join();
+    if (t3.joinable()) t3.join();
+    // temporary hack ( remove when all camera functions)
+    if (CameraCount > 2)
+    {
+        if (t4.joinable()) t4.join();
+        if (t5.joinable()) t5.join();
+        if (t6.joinable()) t6.join();
+        if (t7.joinable()) t7.join();
+    }
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
@@ -1244,7 +1257,7 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
-    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data";
+    DUMP_FOLDER_PATH = "D:/camImages/CamData/";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
