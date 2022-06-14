@@ -64,8 +64,6 @@
 #include"Logger.h"
 
 #ifdef SCENE_REPLAY
-//#undef SCENE_REPLAY
-    
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
@@ -75,7 +73,7 @@ unsigned int  virtual_time;
 #endif
 
 int CameraCount;
-#define NUMCAM 2
+#define NUMCAM 1
 
 #if VIDEO_STREAM
 
@@ -1045,31 +1043,15 @@ void TW_CALL CopyCDStringToClient(char** destPtr, const char* src)
         strncpy(*destPtr, src, srcLen);
     (*destPtr)[srcLen] = '\0'; // null-terminated string
 }
-std::thread t0, t1, t2,t3,t4,t5,t6,t7, tComm, tStream, tacc, taccSt;
+std::thread  tComm, tStream, tacc, taccSt;
+std::thread tLidars[2],tCameras[6];
 
-void start_reading0() {
-    lidars[0].lidar.start_reading();
+void start_lidar(int iL) {
+    lidars[iL].lidar.start_reading();
 }
-void start_reading1() {
-    lidars[1].lidar.start_reading();
-}
-void start_reading_camera0() {
-    cameras[0].start_reading();
-}
-void start_reading_camera1() {
-    cameras[1].start_reading();
-}
-void start_reading_camera2() {
-    cameras[2].start_reading();
-}
-void start_reading_camera3() {
-    cameras[3].start_reading();
-}
-void start_reading_camera4() {
-    cameras[4].start_reading();
-}
-void start_reading_camera5() {
-    cameras[5].start_reading();
+
+void start_camera(int iC) {
+    cameras[iC].start_reading();
 }
 
 void acceptCommunicationThread() {
@@ -1139,8 +1121,8 @@ void TW_CALL initLidars(void*) {
     lidars[0].lidar.init(2368, "./Calibration/32db.xml");
     lidars[1].lidar.init(2369, "./Calibration/16db.xml");
 
-    t0 = std::thread(&start_reading0);
-    t1 = std::thread(&start_reading1);
+    tLidars[0] = std::thread(&start_lidar,0);
+    tLidars[1] = std::thread(&start_lidar,1);
     cv::waitKey(1000);
 }
 
@@ -1153,15 +1135,11 @@ void TW_CALL initCameras(void*) {
         cameras[i].init(5000 + i, camIniFile, 700 + i, true);
         CameraCount++; // temporary hack to get the number of activated cameras
     }
-    t2 = std::thread(&start_reading_camera0);
-    t3 = std::thread(&start_reading_camera1);
     // disable the condition when all the camera functions
-    if (CameraCount > 2) {
-        t4 = std::thread(&start_reading_camera2);
-        t5 = std::thread(&start_reading_camera3);
-        t6 = std::thread(&start_reading_camera4);
-        t7 = std::thread(&start_reading_camera5);
-    }
+
+    for(int i = 0 ; i < CameraCount;++i)
+        tCameras[i] = std::thread(&start_camera, i);
+
     //#if SAVE_IMG
 //    std::string tCam;
 //    bool stat =  getTimeStamp(timeCamera1, tCam);
@@ -1208,18 +1186,12 @@ void Terminate() {
     for(int i = 0; i < NUMCAM; ++i)
         if (cameras[i].reading) cameras[i].stop_reading();
 
-    if (t0.joinable())t0.join();
-    if (t1.joinable())t1.join();
-    if (t2.joinable()) t2.join();
-    if (t3.joinable()) t3.join();
-    // temporary hack ( remove when all camera functions)
-    if (CameraCount > 2)
-    {
-        if (t4.joinable()) t4.join();
-        if (t5.joinable()) t5.join();
-        if (t6.joinable()) t6.join();
-        if (t7.joinable()) t7.join();
-    }
+    for(int i = 0; i < 2;++i)
+       if (tLidars[i].joinable())tLidars[i].join();
+   
+    for (int i = 0; i < CameraCount;++i)
+            if (tCameras[i].joinable()) tCameras[i].join();
+
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
@@ -1257,7 +1229,7 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
-    DUMP_FOLDER_PATH = "D:/camImages/CamData/";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
@@ -1373,7 +1345,7 @@ int main(int argc, char* argv[])
 
 #ifdef SCENE_REPLAY
     end_time = std::numeric_limits<unsigned long long >::max();
-   
+    start_time = 0;
     read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
     read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
     read_first_and_last_timestamp(std::string("Images") + "\\700\\timestamps.txt", start_time, end_time);

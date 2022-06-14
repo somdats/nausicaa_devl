@@ -20,7 +20,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #ifndef SAVE_IMG
-#define SAVE_IMG 1
+#define SAVE_IMG 0
 #endif
 
 #ifndef SAVE_PC
