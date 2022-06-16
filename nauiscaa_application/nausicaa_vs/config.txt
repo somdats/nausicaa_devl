@@ -1,0 +1,2 @@
+NUMCAM=2
+Dump_path= D:/
