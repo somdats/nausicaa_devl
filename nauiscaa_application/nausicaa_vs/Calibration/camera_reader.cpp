@@ -80,7 +80,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 #endif
 #ifdef SCENE_REPLAY
     
-    std::string toFolder = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(port) + "\\";
+    std::string toFolder = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameraID) + "\\";
     std::string timestamps = toFolder + "timestamps.txt";
     FILE* ft = fopen(timestamps.c_str(), "r");
     while (!feof(ft)) {
@@ -410,7 +410,8 @@ void Camera::start_reading(){
 //        cv::line(dst, cv::Point2f(vcg_cam.CenterPx.X(),0),cv::Point2f(vcg_cam.CenterPx.X(),vcg_cam.ViewportPx.Y()), cv::Scalar(255,255,0), 2);
 
         //
-        imshow("receiver", dst);
+        if(dst.rows>0)
+            imshow("receiver", dst);
 
         if (waitKey(1) == 'b') {
              break;

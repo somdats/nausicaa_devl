@@ -15,18 +15,6 @@ namespace fs = std::experimental::filesystem;
 
 
 
-//#ifndef VIDEO_STREAM
-//#define VIDEO_STREAM 0
-//#endif
-
-//#ifndef SAVE_IMG
-//#define SAVE_IMG 1
-//#endif
-//
-//#ifndef SAVE_PC
-//#define SAVE_PC 1
-//#endif
-
 #define EPSILON_DIFF_IMG 0.03
 #define EPSILON_DIFF_PC 0.03
 

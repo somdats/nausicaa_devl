@@ -235,7 +235,7 @@ this->_debk = k*ks;
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
 
 #ifdef SCENE_REPLAY
-    std::vector<std::pair<int, std::string>> timed_images;
+    std::vector<std::pair<unsigned long long, std::string>> timed_images;
 #endif
 };
 
