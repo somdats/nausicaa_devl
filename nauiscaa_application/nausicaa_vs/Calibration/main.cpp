@@ -64,6 +64,7 @@
 #include"Logger.h"
 
 #ifdef SCENE_REPLAY
+
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
@@ -1230,7 +1231,9 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
-    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+
+    DUMP_FOLDER_PATH = "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);

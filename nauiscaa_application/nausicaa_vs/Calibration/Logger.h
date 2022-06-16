@@ -10,22 +10,10 @@
 #include<opencv2/imgcodecs.hpp>
 
 #include"velodyne_reader.h"
-
+#include"defines.h"
 namespace fs = std::experimental::filesystem;
 
 
-
-#ifndef VIDEO_STREAM
-#define VIDEO_STREAM 0
-#endif
-
-#ifndef SAVE_IMG
-#define SAVE_IMG 0
-#endif
-
-#ifndef SAVE_PC
-#define SAVE_PC 0
-#endif
 
 #define EPSILON_DIFF_IMG 0.03
 #define EPSILON_DIFF_PC 0.03

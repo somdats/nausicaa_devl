@@ -1,6 +1,7 @@
 #pragma once
 
 #include"Logger.h"
+#include"defines.h"
 
 #include <opencv2/opencv.hpp>
 #if VIDEO_STREAM
