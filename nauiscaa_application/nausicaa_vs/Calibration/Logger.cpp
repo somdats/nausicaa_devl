@@ -240,3 +240,30 @@ bool logger::getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::
 	return false;
 }
 
+vecPair logger:: readConfigFile(std::string configFile) {
+
+	std::ifstream cFile(configFile);
+	vecPair configData;
+	if (cFile.is_open())
+	{
+		std::string line;
+		while (std::getline(cFile, line)) {
+			line.erase(std::remove_if(line.begin(), line.end(), isspace),
+				line.end());
+			if (line[0] == '#' || line.empty())
+				continue;
+			auto delimiterPos = line.find("=");
+			std::string name = line.substr(0, delimiterPos);
+			std::string value = line.substr(delimiterPos + 1);
+			std::cout << name << " " << value << '\n';
+			configData.push_back(std::make_pair(name, value));
+		}
+
+	}
+	else {
+		std::cerr << "Couldn't open config file for reading.\n";
+	}
+
+	return configData;
+
+}

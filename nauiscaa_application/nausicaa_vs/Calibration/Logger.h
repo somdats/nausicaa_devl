@@ -24,6 +24,8 @@ extern  std::string DUMP_FOLDER_PATH;
 extern  std::string IMG_EXT;
 extern  std::string PC_EXT;
 extern int CameraCount;
+typedef  std::vector< std::pair<std::string, std::string>>vecPair;
+
 
 
 
@@ -37,6 +39,7 @@ namespace logger
 	bool savePointCloudBinary(int currLidar, std::string timeStamp, std::string dirPath, const PacketDecoder::HDLFrame latestFrame);
 	bool getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::string& time, bool pc = true);
 	void LoadPointCloudBinary(std::string fileName, PacketDecoder::HDLFrame& latestFrame);
+	vecPair readConfigFile(std::string configFile);
 }
 
 
