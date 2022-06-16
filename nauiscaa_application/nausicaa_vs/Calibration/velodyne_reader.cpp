@@ -64,7 +64,9 @@ void Lidar::start_reading(){
     std::deque<PacketDecoder::HDLFrame> frames;
 #else
     int i = 0;
+    int first_i;
     while (timed_pointclouds[i].first < start_time)++i;
+    first_i = i;
 #endif
 
     reading = true;
@@ -102,20 +104,23 @@ void Lidar::start_reading(){
     while(reading){
 
 #ifdef SCENE_REPLAY
-        unsigned long long delta = timed_pointclouds[i].first - start_time;
+        unsigned long long delta = timed_pointclouds[i % timed_pointclouds.size()].first - start_time;
         unsigned long long delta1 = clock() - restart_time + partial_time;
 
-        if (time_running && (virtual_time > timed_pointclouds[i].first-start_time)) {
-            std::this_thread::sleep_for(10ms);
-            latest_frame_mutex.lock();
-            logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
-            latest_frame_mutex.unlock();
-            ++i;
-            if (i == timed_pointclouds.size()) {
-                start_time = clock();
-                i = 0;
+        int ii = first_i;
+
+        if (time_running) {
+            while ((ii < timed_pointclouds.size()) && virtual_time > timed_pointclouds[ii].first - start_time) ++ii;
+            if (ii != i)
+            {
+                i = ii;
+                std::this_thread::sleep_for(10ms);
+                latest_frame_mutex.lock();
+                logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
+                latest_frame_mutex.unlock();
             }
         }
+
 #else
         driver.GetPacket(data, dataLength);
         decoder.DecodePacket(data, dataLength);

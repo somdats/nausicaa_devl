@@ -813,6 +813,7 @@ void Display() {
 
 
     glActiveTexture(GL_TEXTURE0);
+    TwRefreshBar(bar);
     TwDraw();
     ///////////////// send streaming data
 ;

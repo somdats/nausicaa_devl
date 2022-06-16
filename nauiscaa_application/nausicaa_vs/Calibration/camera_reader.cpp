@@ -263,7 +263,9 @@ string type2str(int type) {
 void Camera::start_reading(){
 #ifdef SCENE_REPLAY
     int i = 0;
+    int first_i;
     while (timed_images[i].first < start_time)++i;
+    first_i = i;
 #else
     std::string Camerafull0args;
     //VideoCapture cap;
@@ -335,18 +337,21 @@ void Camera::start_reading(){
 
 #ifdef RECTIFY_FIRST
     #ifdef SCENE_REPLAY
-        
-        if (time_running && (virtual_time > timed_images[i].first - start_time)) {
-            std::this_thread::sleep_for(10ms);
-            latest_frame_mutex.lock();
-            dst = cv::imread(timed_images[i].second.c_str());
-            latest_frame_mutex.unlock();
-            ++i;
-            if (i == timed_images.size()) {
-                start_time = clock();
-                i = 0;
+        unsigned long long delta = timed_images[i % timed_images.size()].first - start_time;
+        unsigned long long delta1 = clock() - restart_time + partial_time;
+
+        int ii = first_i;
+        if (time_running) {
+            while ((ii < timed_images.size()) && virtual_time > timed_images[ii].first - start_time) ++ii;
+            if (ii != i)
+            {
+                i = ii;
+                std::this_thread::sleep_for(10ms);
+                latest_frame_mutex.lock();
+                dst = cv::imread(timed_images[i].second.c_str());
+                latest_frame_mutex.unlock();
             }
-        }  
+        }
     #else 
         cap.read(frame); 
     

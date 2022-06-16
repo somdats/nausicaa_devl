@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\3rdParty\vcglib\wrap\gui\trackball.cpp" />
+    <ClCompile Include="..\..\3rdParty\vcglib\wrap\gui\trackmode.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\deserialize.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\nausicaa_api_server.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\server.cpp" />
@@ -26,11 +28,11 @@
     <ClCompile Include="Calibration\fbo.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Calibration\Logger.cpp" />
     <ClCompile Include="Calibration\main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Calibration\point_and_axis_calibration.cpp" />
     <ClCompile Include="Calibration\velodyne_reader.cpp" />
     <ClCompile Include="cameraCalibration\cameraCalibration.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -38,9 +40,11 @@
     </ClCompile>
     <ClCompile Include="cameraCalibration\main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="cameraCalibration\OmnidirectionalCalibration.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="OpenCV_GStreamer-master\Source\Receiver.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -48,12 +52,18 @@
     </ClCompile>
     <ClCompile Include="OpenCV_GStreamer-master\Source\receiver_opencv.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\calib_converter.cpp" />
-    <ClCompile Include="src\ocam_functions.cpp" />
-    <ClCompile Include="src\trackball.cpp" />
-    <ClCompile Include="src\trackmode.cpp" />
+    <ClCompile Include="src\calib_converter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\dummy.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\ocam_functions.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="veloread\main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -61,13 +71,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration\camera_reader.h" />
+    <ClInclude Include="Calibration\defines.h" />
     <ClInclude Include="Calibration\fbo.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Calibration\point_and_axis_calibration.h" />
     <ClInclude Include="Calibration\shader_basic.h" />
     <ClInclude Include="Calibration\velodyne_reader.h" />
     <ClInclude Include="OpenCV_GStreamer-master\Source\pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Calibration\Shaders\texture.fs" />
+    <None Include="Calibration\Shaders\texture.vs" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -165,16 +179,21 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\3rdParty\vcglib;D:\3rdParty\VelodyneHDL;D:\3rdParty\boost_1_78_0\boost_1_78_0;D:\3rdParty\opencv_source\include;D:\3rdParty\opencv_build;D:\3rdParty\opencv_source\modules\core\include;D:\3rdParty\opencv_source\modules\calib3d\include;D:\3rdParty\opencv_source\modules\features2d\include;D:\3rdParty\opencv_source\;D:\3rdParty\opencv_source\modules\flann\include;D:\3rdParty\opencv_source\modules\dnn\include;D:\3rdParty\opencv_source\modules\highgui\include;D:\3rdParty\opencv_source\modules\imgcodecs\include;D:\3rdParty\opencv_source\modules\videoio\include;D:\3rdParty\opencv_source\modules\imgproc\include;D:\3rdParty\opencv_source\modules\ml\include;D:\3rdParty\opencv_source\modules\objdetect\include;D:\3rdParty\opencv_source\modules\objc\include;D:\3rdParty\opencv_source\modules\photo\include;D:\3rdParty\opencv_source\modules\video\include;D:\3rdParty\opencv_source\modules\ts\include;D:\3rdParty\opencv_source\modules\stitching\include;D:\3rdParty\opencv_source\modules\world\include;D:\3rdParty\eigen-3.4.0\eigen-3.4.0;D:\3rdParty\vcglib\wrap\newuoa\include;C:\Users\Somnath Dutta\Downloads\glew-2.1.0 (1)\glew-2.1.0\include;D:\3rdParty\freeglut-3.2.1\include;C:\Users\Somnath Dutta\Downloads\AntTweakBar_116\AntTweakBar\include;D:\nausicaa_vs\nausicaa_vs;D:\3rdParty\opencv_contrib\modules\ccalib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\3rdParty\vcglib;..\..\3rdParty\VelodyneHDL;..\..\3rdParty\boost_1_78_0;..\..\3rdParty\opencv-4.5.5\include;..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\3rdParty\freeglut-3.2.1\include;D:\nausicaa_vs\nausicaa_vs;%(AdditionalIncludeDirectories);..\..\3rdParty\glew-2.1.0\include;..\..\3rdParty\Anttweakbar\include;..\..\3rdParty\freeglut\include;..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers</AdditionalIncludeDirectories>
+      <BrowseInformation>true</BrowseInformation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Somnath Dutta\Downloads\AntTweakBar_116\AntTweakBar\lib\debug;C:\Users\Somnath Dutta\Downloads\glew-2.1.0 (1)\glew-2.1.0\build\lib\Debug;D:\3rdParty\freeglut-3.2.1\build\lib\Debug;D:\3rdParty\opencv_build\lib\Debug;D:\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>AntTweakBar64.lib;glew32d.lib;freeglutd.lib;opengl32.lib;glu32.lib;opencv_calib3d455d.lib;opencv_core455d.lib;opencv_dnn455d.lib;opencv_features2d455d.lib;opencv_flann455d.lib;opencv_gapi455d.lib;opencv_highgui455d.lib;opencv_imgcodecs455d.lib;opencv_imgproc455d.lib;opencv_ml455d.lib;opencv_objdetect455d.lib;opencv_photo455d.lib;opencv_stitching455d.lib;opencv_ts455d.lib;opencv_video455d.lib;opencv_videoio455d.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;D:\3rdParty\opencv_build_extras\lib\Debug\opencv_ccalib455d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\3rdParty\AntTweakBar\lib;..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\3rdParty\freeglut\lib\x64;..\..\3rdParty\opencv-4.5.5\x64\vc17\lib;..\..\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglut.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_calib3d455d.lib;opencv_ccalib455d.lib;opencv_core455d.lib;opencv_imgcodecs455d.lib;opencv_imgproc455d.lib;opencv_highgui455d.lib;opencv_ximgproc455d.lib;opencv_features2d455d.lib;opencv_videoio455d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -182,17 +201,18 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\3rdParty\vcglib;D:\3rdParty\VelodyneHDL;D:\3rdParty\boost_1_78_0\boost_1_78_0;D:\3rdParty\opencv_source\include;D:\3rdParty\opencv_build;D:\3rdParty\opencv_source\modules\core\include;D:\3rdParty\opencv_source\modules\calib3d\include;D:\3rdParty\opencv_source\modules\features2d\include;D:\3rdParty\opencv_source;D:\3rdParty\opencv_source\modules\flann\include;D:\3rdParty\opencv_source\modules\dnn\include;D:\3rdParty\opencv_source\modules\highgui\include;D:\3rdParty\opencv_source\modules\imgcodecs\include;D:\3rdParty\opencv_source\modules\videoio\include;D:\3rdParty\opencv_source\modules\imgproc\include;D:\3rdParty\opencv_source\modules\ml\include;D:\3rdParty\opencv_source\modules\objdetect\include;D:\3rdParty\opencv_source\modules\objc\include;D:\3rdParty\opencv_source\modules\photo\include;D:\3rdParty\opencv_source\modules\video\include;D:\3rdParty\opencv_source\modules\ts\include;D:\3rdParty\opencv_source\modules\stitching\include;D:\3rdParty\opencv_source\modules\world\include;D:\3rdParty\eigen-3.4.0\eigen-3.4.0;D:\3rdParty\vcglib\wrap\newuoa\include;D:\3rdParty\glew-2.1.0\glew-2.1.0\include;D:\3rdParty\freeglut-3.2.1\include;D:\3rdParty\AntTweakBar\include;D:\3rdParty\opencv_contrib\modules\ccalib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\3rdParty\vcglib;..\..\3rdParty\VelodyneHDL;..\..\3rdParty\boost_1_78_0;..\..\3rdParty\opencv-4.5.5\include;..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\3rdParty\freeglut-3.2.1\include;D:\nausicaa_vs\nausicaa_vs;%(AdditionalIncludeDirectories);..\..\3rdParty\glew-2.1.0\include;..\..\3rdParty\Anttweakbar\include;..\..\3rdParty\freeglut\include;..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\3rdParty\AntTweakBar\lib;D:\3rdParty\glew-2.1.0\glew-2.1.0\lib\Release\x64;D:\3rdParty\freeglut-3.2.1\build\lib\Release;D:\3rdParty\opencv_build\lib\Release;D:\3rdParty\VelodyneHDL\build\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;AntTweakBar64.lib;glew32.lib;glew32s.lib;freeglut.lib;freeglut_static.lib;opencv_calib3d455.lib;opencv_core455.lib;opencv_dnn455.lib;opencv_features2d455.lib;opencv_flann455.lib;opencv_gapi455.lib;opencv_highgui455.lib;opencv_imgcodecs455.lib;opencv_imgproc455.lib;opencv_ml455.lib;opencv_objdetect455.lib;opencv_photo455.lib;opencv_stitching455.lib;opencv_ts455.lib;opencv_video455.lib;opencv_videoio455.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;D:\3rdParty\opencv_build_extras\lib\Release\opencv_ccalib455d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\3rdParty\AntTweakBar\lib;..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\3rdParty\freeglut\lib\x64;..\..\3rdParty\opencv-4.5.5\x64\vc17\lib;..\..\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglut.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_calib3d455.lib;opencv_ccalib455.lib;opencv_core455.lib;opencv_imgcodecs455.lib;opencv_imgproc455.lib;opencv_highgui455.lib;opencv_ximgproc455.lib;opencv_features2d455.lib;opencv_videoio455.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

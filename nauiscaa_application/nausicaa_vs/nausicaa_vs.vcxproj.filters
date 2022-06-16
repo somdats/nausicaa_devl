@@ -24,9 +24,6 @@
     <ClCompile Include="Calibration\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Calibration\point_and_axis_calibration.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Calibration\velodyne_reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,12 +51,6 @@
     <ClCompile Include="src\ocam_functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\trackball.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\trackmode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\deserialize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,15 +60,24 @@
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\3rdParty\vcglib\wrap\gui\trackball.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\vcglib\wrap\gui\trackmode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dummy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibration\Logger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration\camera_reader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Calibration\fbo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Calibration\point_and_axis_calibration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Calibration\velodyne_reader.h">
@@ -89,5 +89,12 @@
     <ClInclude Include="Calibration\shader_basic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Calibration\defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Calibration\Shaders\texture.fs" />
+    <None Include="Calibration\Shaders\texture.vs" />
   </ItemGroup>
 </Project>
