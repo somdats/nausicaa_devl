@@ -9,16 +9,39 @@
 
 using namespace ffmpegCodec;
 
-VideoCodec::VideoCodec(const char* codecName)
+namespace {
+	bool string_start_with(const std::string& s, const std::string& prefix) {
+		return (s.compare(0, prefix.size(), prefix) == 0);
+	}
+}
+
+VideoCodec::VideoCodec(const char* codecName, std::string url)
 {
+	// extract protocol Name from url
+	if (string_start_with(url, "rtsp://")) {
+		protocol = "rtsp";
+	}
+	if (string_start_with(url, "udp://"))
+	{
+		protocol = "udp";
+	}
+
+	if (string_start_with(url, "rtp://"))
+	{
+		protocol = "rtp";
+	}
+
 
 	// get encoder typename and convert to appropriatde AVCodec 
 	AVCodecID codecID;
 	if (std::string(codecName) == "h264")
 		codecID = AV_CODEC_ID_H264;
 	else if (std::string(codecName) == "mpeg")
+		codecID = AV_CODEC_ID_MPEG2VIDEO;
+	else if (protocol == std::string("rtsp"))
 		codecID = AV_CODEC_ID_MPEG4;
-	AVCodec *codec = const_cast<AVCodec*>(avcodec_find_encoder(codecID));
+
+	AVCodec* codec = const_cast<AVCodec*>(avcodec_find_encoder(codecID));
 
 	if (!codec)
 	{
@@ -114,18 +137,18 @@ AVCodecContext* VideoCodec:: getCodecContext()
 	return codecContext;
 }
 
-void VideoCodec::InitializeCodecStream(AVStream& stream, std::string codecProfile, std::string presetVal)
+void VideoCodec::InitializeCodecStream(AVStream& stream, std::string presetVal, std::string codecProfile)
 {
 	int ret = avcodec_parameters_from_context(stream.codecpar, codecContext);
 	if (ret < 0)
 	{
 		throw FFmpegException("Could not initialize stream codec parameters!");
-		
+
 	}
 
 	// open video encoder
 	AVCodec* codec = const_cast<AVCodec*>(avcodec_find_encoder(avCodec));
-	if (avCodec == 27)  // H264 codec
+	if (avCodec == AV_CODEC_ID_H264 && protocol != std::string("rtsp"))  // H264 codec
 	{
 		av_dict_set(&dict, "profile", codecProfile.c_str(), 0);
 		av_dict_set(&dict, "preset", presetVal.c_str(), 0); // "superfast"
@@ -133,13 +156,29 @@ void VideoCodec::InitializeCodecStream(AVStream& stream, std::string codecProfil
 
 
 		ret = avcodec_open2(codecContext, codec, &dict);
+		if (ret < 0)
+		{
+			throw FFmpegException("Could not open video encoder!");
+		}
+		return;
 	}
-	else
-		ret = avcodec_open2(codecContext, codec, NULL);
-	if (ret < 0)
+	if (protocol == std::string("rtsp"))
 	{
-		throw FFmpegException("Could not open video encoder!");
+		av_dict_set(&dict, "rtsp_transport", "tcp", 0);
+		av_dict_set(&dict, "muxdelay", "0.1", 0);
+		ret = avcodec_open2(codecContext, codec, &dict);
+		if (ret < 0)
+		{
+			throw FFmpegException("Could not open video encoder!");
+		}
+		return;
 	}
-	
+
+	ret = avcodec_open2(codecContext, codec, NULL);
+
+	return;
+
+
+
 }
 #endif

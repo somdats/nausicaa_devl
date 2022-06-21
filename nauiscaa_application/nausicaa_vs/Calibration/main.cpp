@@ -94,7 +94,7 @@ std::string outputServer = "udp://146.48.84.241:83";
 // encoder name
 std::string codecName = "h264";
 
-VideoCodec vCodec(codecName.c_str());
+VideoCodec vCodec(codecName.c_str(), outputServer);
 
 // instantiate output-stream
 std::string codecFormat = "H264";
@@ -1279,7 +1279,7 @@ int main(int argc, char* argv[])
     fmtContext = outStream.getFormatContext();
     int wd = 1280, he = 720;
     vCodec.setCodecParameter(wd, he, fps, bitrate, fmtContext->oformat->flags);
-    vCodec.InitializeCodecStream(*outStream.getStream(), h264profile);
+    vCodec.InitializeCodecStream(*outStream.getStream());
 
     cdcCntx = vCodec.getCodecContext();
 

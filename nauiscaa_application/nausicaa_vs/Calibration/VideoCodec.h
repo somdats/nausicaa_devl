@@ -16,13 +16,13 @@ namespace ffmpegCodec {
 	class VideoCodec {
 
 	public:
-		VideoCodec(const char* codecName);
+		VideoCodec(const char* codecName, std::string url);
 		VideoCodec(AVCodecID codecId);
 		~VideoCodec();
 		void setCodecParameter(int width, int height, int fps, int bitrate,int flags, AVPixelFormat format = AV_PIX_FMT_YUV420P);
 		AVDictionary* setDict(std::string codec_profile);
 		AVCodecContext* getCodecContext();
-		void InitializeCodecStream(AVStream& stream, std::string codecProfile, std::string presetVal = "slow");
+		void InitializeCodecStream(AVStream& stream, std::string presetVal = "slow", std::string codecProfile = "high444");
 
 	private:
 		void CleanUp();
@@ -31,6 +31,7 @@ namespace ffmpegCodec {
 
 		bool opened = false;
 		AVCodecID avCodec;
+		std::string protocol;
 
 	protected:
 		AVCodecContext* codecContext = nullptr;
