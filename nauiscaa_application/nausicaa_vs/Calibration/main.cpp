@@ -931,7 +931,7 @@ void TW_CALL saveImPoints(void*) {
         for( int i = 0; i < cameras[currentCamera].p3.size(); ++i)
         {
             fprintf(fo, "%f %f %f %f %f\n", cameras[currentCamera].p3[i].X(),
-                cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(),
+                cameras[currentCamera].p3[i].Y(), cameras[currentCamera].p3[i].Z(),
                 cameras[currentCamera].p2i[i].x, cameras[currentCamera].p2i[i].y);
         }
         fclose(fo);
