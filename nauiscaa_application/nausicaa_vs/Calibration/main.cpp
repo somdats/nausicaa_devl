@@ -74,7 +74,7 @@ unsigned int  virtual_time;
 #endif
 
 int CameraCount;
-#define NUMCAM 1
+int NUMCAM;
 
 #if VIDEO_STREAM
 
@@ -1264,8 +1264,10 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
-
-    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\data\\nausicaa\\Data14062022_3";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+    std::string inFile = "config.txt";
+    vecPair configData = logger::readConfigFile(inFile);
+    NUMCAM = stoi(configData[0].second);
+    DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
 
     /*PacketDecoder::HDLFrame lidarFrame2;
   

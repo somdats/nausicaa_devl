@@ -1,4 +1,5 @@
 #pragma once
+#include"defines.h"
 
 #if VIDEO_STREAM
 extern "C"

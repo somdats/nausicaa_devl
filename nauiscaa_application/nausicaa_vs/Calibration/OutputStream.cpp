@@ -1,6 +1,8 @@
-#if VIDEO_STREAM
 #include"ffmpegException.h"
 #include"OutputStream.h"
+
+#if VIDEO_STREAM
+
 
 using namespace ffmpegCodec;
 

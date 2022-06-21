@@ -3,6 +3,8 @@
 #include<string>
 #include"Config.h"
 #include"defines.h"
+
+
 #if VIDEO_STREAM
 class FFmpegException : std::exception
 {
