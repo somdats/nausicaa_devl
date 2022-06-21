@@ -94,7 +94,7 @@ std::string outputServer = "udp://146.48.84.241:83";
 // encoder name
 std::string codecName = "h264";
 
-VideoCodec vCodec(codecName.c_str());
+VideoCodec vCodec(codecName.c_str(), outputServer);
 
 // instantiate output-stream
 std::string codecFormat = "H264";
