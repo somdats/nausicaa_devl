@@ -94,6 +94,9 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 
     std::sort(timed_images.begin(), timed_images.end());
 
+  
+
+
 #endif
     origin = cv::Point(-1, -1);
     for (int i = 0; i < 3; ++i) axis_points[i] = cv::Point(-1, -1);

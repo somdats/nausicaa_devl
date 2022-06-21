@@ -856,15 +856,7 @@ void TW_CALL rotateAxis(void*) {
 
 }
 void TW_CALL alignCamera(void*) {
-    std::vector<vcg::Point3f> p3;
-    p3.push_back(vcg::Point3f(0, 0, 0));
-    p3.push_back(vcg::Point3f(3.95, 0, 0));
-    p3.push_back(vcg::Point3f(0, -0.89, 0.83));
-    p3.push_back(vcg::Point3f(2.75, 0, 0.83));
-    p3.push_back(vcg::Point3f(0, -2.045, 0.83));
-    p3.push_back(vcg::Point3f(0.97, -2.045, 0.47));
-
-    cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(p3);
+    cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
 }
 void TW_CALL computeTranformation(void*) {
 
@@ -914,7 +906,11 @@ void TW_CALL computeFrame(void*) {
 
 
 void TW_CALL saveAxis(void*) {
-    FILE* fo = fopen("calib.txt", "wb");
+    std::string calibration_file = std::string("Calib.bin");
+#ifdef SCENE_REPLAY
+    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+#endif
+    FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
         for (int a = 0; a < 3; a++)
             fwrite(&axis[il][a], 1, sizeof(LineC), fo);
@@ -922,31 +918,68 @@ void TW_CALL saveAxis(void*) {
 }
 
 void TW_CALL saveImPoints(void*) {
-    FILE* fo = fopen((std::string("ip_")+std::to_string(currentCamera) + ".bin").c_str(), "wb");
-    fwrite(&cameras[currentCamera].origin.x, 4, 1, fo);
-    fwrite(&cameras[currentCamera].origin.y, 4, 1, fo);
-    for (int i = 0; i < 5; ++i) {
-        fwrite(&cameras[currentCamera].axis_points[i].x, 4, 1, fo);
-        fwrite(&cameras[currentCamera].axis_points[i].y, 4, 1, fo);
+    std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
+#ifdef SCENE_REPLAY
+    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
+#endif
+
+    FILE* fo = fopen(correspondences_file.c_str(), "w");
+    if (fo) {
+        char trash[1000];
+        fprintf(fo,"#correspondences x3d y3d z3d x2d y2d (x2d == y2s == -1 means not defined yet)\n");
+
+        int i = 0;
+
+        fprintf(fo, "%f %f %f %f %f", cameras[currentCamera].p3[i].X(), 
+                    cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(), 
+                    cameras[currentCamera].origin.x, cameras[currentCamera].origin.y);
+
+
+        while (!feof(fo)) {
+            ++i;
+            fprintf(fo, "%f %f %f %f %f", cameras[currentCamera].p3[i].X(),
+                cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(),
+                cameras[currentCamera].origin.x, cameras[currentCamera].origin.y);
+        }
+        fclose(fo);
     }
-    fclose(fo);
 }
 
 void TW_CALL loadImPoints(void*) {
-    FILE* fo = fopen((std::string("ip_") + std::to_string(currentCamera) + ".bin").c_str(), "rb");
+    std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
+#ifdef SCENE_REPLAY
+    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
+#endif
+
+    FILE* fo = fopen(correspondences_file.c_str(), "r");
     if (fo) {
-        fread(&cameras[currentCamera].origin.x, 4, 1, fo);
-        fread(&cameras[currentCamera].origin.y, 4, 1, fo);
-        for (int i = 0; i < 5; ++i) {
-            fread(&cameras[currentCamera].axis_points[i].x, 4, 1, fo);
-            fread(&cameras[currentCamera].axis_points[i].y, 4, 1, fo);
+        char trash[1000];
+        fgets(trash, 1000, fo);
+        cameras[currentCamera].p3.resize(4);
+
+        int i = 0;
+        float x, y, z, u, v;
+        fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
+        cameras[currentCamera].p3[i++] = vcg::Point3f(x, y, z);
+        cameras[currentCamera].origin = cv::Point2f(u, v);
+
+        while (!feof(fo)) {
+            int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
+            if (r == 5) {
+                cameras[currentCamera].p3[i++] = vcg::Point3f(x, y, z);
+                cameras[currentCamera].origin = cv::Point2f(u, v);
+            }
         }
+        fclose(fo);
     }
-    fclose(fo);
 }
 
 void TW_CALL loadAxis(void*) {
-    FILE* fo = fopen("calib.txt", "rb");
+    std::string calibration_file = std::string("Calib.bin");
+#ifdef SCENE_REPLAY
+    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+#endif
+    FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
         for (int a = 0; a < 3; a++)
             fread(&axis[il][a], 1, sizeof(LineC), fo);
@@ -1134,7 +1167,7 @@ void TW_CALL initCameras(void*) {
 //#endif
     for (int i = 0; i < NUMCAM; ++i)
     {
-        cameras[i].init(5000 + i, camIniFile, 700 + i, true);
+        cameras[i].init(5000 + i, camIniFile, 5000 + i, true);
         CameraCount++; // temporary hack to get the number of activated cameras
     }
     // disable the condition when all the camera functions
@@ -1232,7 +1265,7 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 int main(int argc, char* argv[])
 {
 
-    DUMP_FOLDER_PATH = "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+    DUMP_FOLDER_PATH = "C:\\Users\\Fabio Ganovelli\\Documents\\data\\nausicaa\\Data14062022_3";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
 
     /*PacketDecoder::HDLFrame lidarFrame2;
   
@@ -1352,8 +1385,9 @@ int main(int argc, char* argv[])
     start_time = 0;
     read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
     read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
-    read_first_and_last_timestamp(std::string("Images") + "\\700\\timestamps.txt", start_time, end_time);
-    
+    read_first_and_last_timestamp(std::string("Images") + "\\5000\\timestamps.txt", start_time, end_time);
+    read_first_and_last_timestamp(std::string("Images") + "\\5001\\timestamps.txt", start_time, end_time);
+
 
     TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
     TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
