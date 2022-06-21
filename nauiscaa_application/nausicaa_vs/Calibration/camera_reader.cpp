@@ -50,7 +50,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
          if(flags & EVENT_FLAG_CTRLKEY)
              {
                  cam->p2i[cam->ax] = cv::Point(x,y);
-                 cam->ax=(cam->ax+1)%cam->NP;
+                 cam->ax=(cam->ax+1)%cam->p3.size();
              }
      }
 
@@ -94,7 +94,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 
 #endif
   
-    for (int i = 0; i < 6; ++i) p2i[i] = cv::Point(-1, -1);
+
     if (scaramuzza)
     {
         cv::Size imageSize(cv::Size(1948, 1096));
@@ -400,7 +400,7 @@ void Camera::start_reading(){
 #endif
 
         // drawing
-        for(int i=0; i < NP; ++i)
+        for(int i=0; i < this->p3.size(); ++i)
             if(p2i[i]!=cv::Point2f(-1,-1)){
                 cv::Scalar col(255,255,255);
                 cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
@@ -489,8 +489,6 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
 
 #ifdef RECTIFY_FIRST
-        p3.erase(p3.begin()+4,p3.end());
-        p2.erase(p2.begin()+4,p2.end());
         bool status = cv::solvePnP(p3, p2_auto,cameraMatrix,dc,r,t,false, SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
         std::cout << " Status of PnP:" << status << std::endl;
         cv::TermCriteria criteria(TermCriteria::COUNT + TermCriteria::EPS, 20, 1e-8);
@@ -520,9 +518,9 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     cv::Mat p3m;
     p3m=cv::Mat(3,1,CV_32F);
     std::vector < cv::Mat> camSp;
-    camSp.resize(6);
+    camSp.resize(this->p3.size());
     std::cout << "projection check "<< std::endl;
-    for(int i=0; i < NP + 1; ++i){
+    for(int i=0; i < this->p3.size(); ++i) {
            p3m.at<float>(0,0)=p3[i].x;
            p3m.at<float>(1,0)=p3[i].y;
            p3m.at<float>(2,0)=p3[i].z;
@@ -589,13 +587,13 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
 
     // TEST VCG CAMERA
-    for(int i = 0 ; i < NP; ++i){
+    //for(int i = 0 ; i < this->p3.size(); ++i) {
 
-        vcg::Point2f pr = shot.Project(p3vcg[i]);
+    //    vcg::Point2f pr = shot.Project(p3vcg[i]);
 
-        printf("%f %f %f ->",p3vcg[i][0],p3vcg[i][1],p3vcg[i][2]);
-        printf("%f %f --- %f %f\n",pr[0],pr[1],p2[i].x,p2[i].y);
-    }
+    //    printf("%f %f %f ->",p3vcg[i][0],p3vcg[i][1],p3vcg[i][2]);
+    //    printf("%f %f --- %f %f\n",pr[0],pr[1],p2[i].x,p2[i].y);
+    //}
     return shot;
 
 }

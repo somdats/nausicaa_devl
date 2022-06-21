@@ -31,7 +31,7 @@ struct Camera{
     int camID;
     uint inStPort;
     int ax;
-    int NP;
+ 
 
 
     float _debk;
