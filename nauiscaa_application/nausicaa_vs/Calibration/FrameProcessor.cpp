@@ -1,7 +1,9 @@
-#if VIDEO_STREAM
+
+
 #include"ffmpegException.h"
 #include"FrameProcessor.h"
 
+#if VIDEO_STREAM
 
 using namespace ffmpegCodec;
 

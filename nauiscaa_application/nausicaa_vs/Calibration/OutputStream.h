@@ -1,5 +1,7 @@
 #pragma once
 
+#include"defines.h"
+
 
 #if VIDEO_STREAM
 #include"Config.h"
