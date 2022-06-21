@@ -21,6 +21,7 @@ struct Camera{
     cv::VideoCapture cap;
     cv::Mat map1, map2;
     cv::Mat dst;
+    unsigned char* oglTextureData;
 
     vcg::Camera<float> vcg_cam;
     cv::Mat cameraMatrix;

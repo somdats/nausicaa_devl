@@ -500,14 +500,15 @@ void drawScene() {
             glBindTexture(GL_TEXTURE_2D, texture);
 
 
-            static unsigned char* _ = 0;
-            if (_ == 0) {
-                _ = (unsigned char*)malloc(1948 * 1096 * 3);
-                cameras[currentCamera].latest_frame_mutex.lock();
-                memcpy(_, cameras[currentCamera].dst.ptr(), 1948 * 1096 * 3);
-                cameras[currentCamera].latest_frame_mutex.unlock();
-            }
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, _);
+            // TEMPORARY PATCH (TO DEBUG)
+            if (cameras[currentCamera].oglTextureData == 0) 
+                cameras[currentCamera].oglTextureData = (unsigned char*)malloc(1948 * 1096 * 3);
+
+            cameras[currentCamera].latest_frame_mutex.lock();
+            memcpy(cameras[currentCamera].oglTextureData, cameras[currentCamera].dst.ptr(), 1948 * 1096 * 3);
+            cameras[currentCamera].latest_frame_mutex.unlock();
+             
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, cameras[currentCamera].oglTextureData);
 
 
             GLERR();
@@ -557,19 +558,6 @@ void drawScene() {
         glUseProgram(0);
         glPopMatrix();
 
-
-
-
-        if (!showfromcamera && showCameras) {
-            // draw cameras
-            glColor3f(0, 1, 0);
-            glPushMatrix();
-            vcg::Point3f p = cameras[currentCamera].calibrated.GetViewPoint();
-            glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.02, 10, 10);
-            draw_frame(cameras[currentCamera].calibrated.Extrinsics.Rot());
-            glPopMatrix();
-        }
     }
     /* END DRAW SCENE */
 }
@@ -740,7 +728,21 @@ void Display() {
 
         glViewport(0, 0, width, height);
         glClearColor(0.0, 0.0, 0.0, 1.0);      
-        drawScene();
+       
+         drawScene();
+
+        if (!showfromcamera && showCameras) {
+            // draw cameras
+            glColor3f(0, 1, 0);
+            glPushMatrix();
+            vcg::Point3f p = cameras[currentCamera].calibrated.GetViewPoint();
+            glTranslatef(p[0], p[1], p[2]);
+            gluSphere(gluNewQuadric(), 0.02, 10, 10);
+            draw_frame(cameras[currentCamera].calibrated.Extrinsics.Rot());
+            glPopMatrix();
+        }
+
+
 
         if (showfromcamera) {
             // branch show from one of the real cameras. It is just camera 0 for now but this will change to 0-6
@@ -1178,19 +1180,6 @@ void TW_CALL initCameras(void*) {
 
 }
 
-void TW_CALL runTest(void*) {
-    ::initLidars(0);
-    ::loadAxis(0);
-    ::computeTranformation(0);
-    ::initCameras(0);
-    ::loadImPoints(0);
-    ::alignCamera(0);
-}
-// to be used 
-void TW_CALL startVideoStreaming(void*) {
-    int vs = 1;
-}
-
 #ifdef SCENE_REPLAY
 void TW_CALL time_startstop(void*) {
     time_running = !time_running;
@@ -1200,9 +1189,31 @@ void TW_CALL time_startstop(void*) {
     }
     else
         partial_time += clock() - restart_time;
-    TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running)?"stop":"play");
+    TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
 #endif
+
+void TW_CALL runTest(void*) {
+    ::initLidars(0);
+#ifdef SCENE_REPLAY
+    time_startstop(0);
+#endif
+    ::loadAxis(0);
+    ::computeTranformation(0);
+    ::initCameras(0);
+    for (int ic = 0; ic < NUMCAM;++ic) {
+        currentCamera = ic;
+        ::loadImPoints(0);
+        ::alignCamera(0);
+    }
+    ::enable_proj = true;
+}
+// to be used 
+void TW_CALL startVideoStreaming(void*) {
+    int vs = 1;
+}
+
+
 
 void Terminate() {
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
@@ -1352,6 +1363,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "save", ::saveAxis, 0, " label='saveAxis' group=`Register Lidars` help=`rotate frame` ");
     TwAddButton(bar, "load", ::loadAxis, 0, " label='loadAxis' group=`Register Lidars` help=`rotate frame` ");
 
+    TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
     TwAddButton(bar, "saveIP", ::saveImPoints, 0, " label='saveImPoints' group=`Align Cameras` help=` ` ");
     TwAddButton(bar, "loadIP", ::loadImPoints, 0, " label='loadImPoints' group=`Align Cameras` help=` ` ");

@@ -400,20 +400,16 @@ void Camera::start_reading(){
 #endif
 
         // drawing
-        for(int i=0; i < this->p3.size(); ++i)
-            if(p2i[i]!=cv::Point2f(-1,-1)){
-                cv::Scalar col(255,255,255);
-                cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
-                cv::putText(dst, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2, false);
-            }
-
-//        cv::circle(dst, cv::Point2f(vcg_cam.CenterPx.X(),vcg_cam.CenterPx.Y()), radiusCircle*2, cv::Scalar(255,255,0), 3);
-//        cv::line(dst, cv::Point2f(vcg_cam.CenterPx.X(),0),cv::Point2f(vcg_cam.CenterPx.X(),vcg_cam.ViewportPx.Y()), cv::Scalar(255,255,0), 2);
-
-        //
-        if(dst.rows>0)
+        if (dst.rows > 0) {
+            for (int i = 0; i < this->p3.size(); ++i)
+                if (p2i[i] != cv::Point2f(-1, -1)) {
+                    cv::Scalar col(255, 255, 255);
+                    cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
+                    cv::putText(dst, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2, false);
+                }
             imshow(std::to_string(this->camID).c_str(), dst);
 
+        }
         if (waitKey(1) == 'b') {
              break;
         }
