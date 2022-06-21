@@ -39,7 +39,7 @@ int radiusCircle = 10;
 cv::Scalar colorCircle1(255,255,255);
 int thicknessCircle1 = 2;
 
-int NP = 6;
+
 
 string type2str(int type);
 
@@ -50,7 +50,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
          if(flags & EVENT_FLAG_CTRLKEY)
              {
                  cam->p2i[cam->ax] = cv::Point(x,y);
-                 cam->ax=(cam->ax+1)%NP;
+                 cam->ax=(cam->ax+1)%cam->NP;
              }
      }
 
@@ -471,9 +471,9 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     std::vector<cv::Mat> rvecs, tvecs;
 
  
-    for(int i=0; i < NP; ++i) p2_auto.push_back(p2i[i]);
+    for(int i=0; i < p3vcg.size(); ++i) p2_auto.push_back(p2i[i]);
 
-    for(int i=0; i < NP; ++i) p3.push_back(cv::Point3f(p3vcg[i].X(),p3vcg[i].Y(),p3vcg[i].Z()));
+    for(int i=0; i < p3vcg.size(); ++i) p3.push_back(cv::Point3f(p3vcg[i].X(),p3vcg[i].Y(),p3vcg[i].Z()));
 
     cv::Mat rot_cv(3,3,CV_32F);
 
@@ -489,8 +489,8 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
 
 #ifdef RECTIFY_FIRST
-//        p3.erase(p3.begin()+4,p3.end());
-//        p2.erase(p2.begin()+4,p2.end());
+        p3.erase(p3.begin()+4,p3.end());
+        p2.erase(p2.begin()+4,p2.end());
         bool status = cv::solvePnP(p3, p2_auto,cameraMatrix,dc,r,t,false, SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
         std::cout << " Status of PnP:" << status << std::endl;
         cv::TermCriteria criteria(TermCriteria::COUNT + TermCriteria::EPS, 20, 1e-8);
@@ -589,7 +589,7 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
 
     // TEST VCG CAMERA
-    for(int i = 0 ; i < NP+1; ++i){
+    for(int i = 0 ; i < NP; ++i){
 
         vcg::Point2f pr = shot.Project(p3vcg[i]);
 

@@ -31,6 +31,8 @@ struct Camera{
     int camID;
     uint inStPort;
     int ax;
+    int NP;
+
 
     float _debk;
 
@@ -222,7 +224,7 @@ this->_debk = k*ks;
 
     bool reading;
 
-    cv::Point2f p2i[6];             // 2D point correspondences
+    std::vector < cv::Point2f> p2i;             // 2D point correspondences
     std::vector<vcg::Point3f> p3;   // 3D point correspondences
 
     void init(uint port, std::string camera_intrinsics_file, int cameraID,  bool scaramuzza = true);

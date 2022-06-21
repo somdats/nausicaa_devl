@@ -928,12 +928,9 @@ void TW_CALL saveImPoints(void*) {
         char trash[1000];
         fprintf(fo,"#correspondences x3d y3d z3d x2d y2d (x2d == y2s == -1 means not defined yet)\n");
 
-        int i = 0;
-
-
-        while (!feof(fo)) {
-            ++i;
-            fprintf(fo, "%f %f %f %f %f", cameras[currentCamera].p3[i].X(),
+        for( int i = 0; i < cameras[currentCamera].p3.size(); ++i)
+        {
+            fprintf(fo, "%f %f %f %f %f\n", cameras[currentCamera].p3[i].X(),
                 cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(),
                 cameras[currentCamera].p2i[i].x, cameras[currentCamera].p2i[i].y);
         }
@@ -951,7 +948,7 @@ void TW_CALL loadImPoints(void*) {
     if (fo) {
         char trash[1000];
         fgets(trash, 1000, fo);
-        cameras[currentCamera].p3.resize(4);
+        cameras[currentCamera].p3.resize(0);
 
         int i = 0;
         float x, y, z, u, v;
@@ -959,8 +956,8 @@ void TW_CALL loadImPoints(void*) {
         while (!feof(fo)) {
             int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
             if (r == 5) {
-                cameras[currentCamera].p3[i] = vcg::Point3f(x, y, z);
-                cameras[currentCamera].p2i[i++] = cv::Point2f(u, v);
+                cameras[currentCamera].p3.push_back(vcg::Point3f(x, y, z));
+                cameras[currentCamera].p2i.push_back(cv::Point2f(u, v));
             }
         }
         fclose(fo);
