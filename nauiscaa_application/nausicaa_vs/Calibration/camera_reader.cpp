@@ -39,7 +39,7 @@ int radiusCircle = 10;
 cv::Scalar colorCircle1(255,255,255);
 int thicknessCircle1 = 2;
 int ax;
-int NP = 3;
+int NP = 6;
 
 string type2str(int type);
 
@@ -49,12 +49,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      if  ( event == EVENT_LBUTTONDOWN  ){
          if(flags & EVENT_FLAG_CTRLKEY)
              {
-                  cam->origin = cv::Point(x,y);
-             }
-         else
-             if(flags & EVENT_FLAG_SHIFTKEY)
-             {
-                 cam->axis_points[ax] = cv::Point(x,y);
+                 cam->p2i[ax] = cv::Point(x,y);
                  ax=(ax+1)%NP;
              }
      }
@@ -98,8 +93,8 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 
 
 #endif
-    origin = cv::Point(-1, -1);
-    for (int i = 0; i < 3; ++i) axis_points[i] = cv::Point(-1, -1);
+  
+    for (int i = 0; i < 6; ++i) p2i[i] = cv::Point(-1, -1);
     if (scaramuzza)
     {
         cv::Size imageSize(cv::Size(1948, 1096));
@@ -405,13 +400,10 @@ void Camera::start_reading(){
 #endif
 
         // drawing
-        if(origin!=cv::Point2f(-1,-1))
-            cv::circle(dst, origin, radiusCircle, cv::Scalar(255,255,255), thicknessCircle1);
         for(int i=0; i < NP; ++i)
-            if(axis_points[i]!=cv::Point2f(-1,-1)){
+            if(p2i[i]!=cv::Point2f(-1,-1)){
                 cv::Scalar col(255*(i==2),255*(i==1),255*(i==0));
-                cv::circle(dst, axis_points[i], radiusCircle, col, thicknessCircle1);
-                cv::line(dst, origin, axis_points[i], col, 2);
+                cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
             }
 
 //        cv::circle(dst, cv::Point2f(vcg_cam.CenterPx.X(),vcg_cam.CenterPx.Y()), radiusCircle*2, cv::Scalar(255,255,0), 3);
@@ -449,18 +441,18 @@ void Camera::stop_reading(){
 }
 
 void Camera::export_camera_match(CameraMatch & c){
-    const vcg::Point2f & cn = vcg_cam.CenterPx;
-    const int h = vcg_cam.ViewportPx[1];
+    //const vcg::Point2f & cn = vcg_cam.CenterPx;
+    //const int h = vcg_cam.ViewportPx[1];
 
-    c.o = vcg::Point3f(-(origin.x-cn.X()),-((h-origin.y)-cn.Y()), vcg_cam.FocalMm);
-    c.o_im  = vcg::Point2f(origin.x,(h-origin.y));
+    //c.o = vcg::Point3f(-(origin.x-cn.X()),-((h-origin.y)-cn.Y()), vcg_cam.FocalMm);
+    //c.o_im  = vcg::Point2f(origin.x,(h-origin.y));
 
-    for(int i = 0; i < 3; ++i){
-       c.axis_im[i] = vcg::Point2f(this->axis_points[i].x,(h-this->axis_points[i].y))-cn;
-       c.axis_im[i].Normalize();
-    }
-    c.xax = vcg::Point2f(this->axis_points[0].x,this->axis_points[0].y);
-    c.camera =  vcg_cam ;
+    //for(int i = 0; i < 3; ++i){
+    //   c.axis_im[i] = vcg::Point2f(this->axis_points[i].x,(h-this->axis_points[i].y))-cn;
+    //   c.axis_im[i].Normalize();
+    //}
+    //c.xax = vcg::Point2f(this->axis_points[0].x,this->axis_points[0].y);
+    //c.camera =  vcg_cam ;
 }
 
 
@@ -477,26 +469,10 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
     std::vector<cv::Mat> rvecs, tvecs;
 
-    p2_auto.push_back(origin);
-    for(int i=0; i < NP; ++i) p2_auto.push_back(axis_points[i]);
-    /*p2_auto[1] = (cv::Point2d(1719, 158));
-    p2_auto[4] = (cv::Point2d(519, 1008));*/
-    
+ 
+    for(int i=0; i < NP; ++i) p2_auto.push_back(p2i[i]);
 
-    // temporary hard-coded image pixel values
-    p2.push_back(cv::Point2d(795, 344));
-    p2.push_back(cv::Point2d(1628, 207));
-    p2.push_back(cv::Point2d(632, 381));
-    p2.push_back(cv::Point2d(1380, 30));
-    p2.push_back(cv::Point2d(435, 1028));
-    p2.push_back(cv::Point2d(816, 1028));
-
-// DEBUG
-//    for(int i=0; i < 3; ++i) p2[i].y = 1096-p2[i].y;
-//___
-
-
-    for(int i=0; i < NP+1; ++i) p3.push_back(cv::Point3f(p3vcg[i].X(),p3vcg[i].Y(),p3vcg[i].Z()));
+    for(int i=0; i < NP; ++i) p3.push_back(cv::Point3f(p3vcg[i].X(),p3vcg[i].Y(),p3vcg[i].Z()));
 
     cv::Mat rot_cv(3,3,CV_32F);
 

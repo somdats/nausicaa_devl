@@ -930,16 +930,12 @@ void TW_CALL saveImPoints(void*) {
 
         int i = 0;
 
-        fprintf(fo, "%f %f %f %f %f", cameras[currentCamera].p3[i].X(), 
-                    cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(), 
-                    cameras[currentCamera].origin.x, cameras[currentCamera].origin.y);
-
 
         while (!feof(fo)) {
             ++i;
             fprintf(fo, "%f %f %f %f %f", cameras[currentCamera].p3[i].X(),
                 cameras[currentCamera].p3[i].X(), cameras[currentCamera].p3[i].Z(),
-                cameras[currentCamera].origin.x, cameras[currentCamera].origin.y);
+                cameras[currentCamera].p2i[i].x, cameras[currentCamera].p2i[i].y);
         }
         fclose(fo);
     }
@@ -959,15 +955,12 @@ void TW_CALL loadImPoints(void*) {
 
         int i = 0;
         float x, y, z, u, v;
-        fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
-        cameras[currentCamera].p3[i++] = vcg::Point3f(x, y, z);
-        cameras[currentCamera].origin = cv::Point2f(u, v);
 
         while (!feof(fo)) {
             int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
             if (r == 5) {
-                cameras[currentCamera].p3[i++] = vcg::Point3f(x, y, z);
-                cameras[currentCamera].origin = cv::Point2f(u, v);
+                cameras[currentCamera].p3[i] = vcg::Point3f(x, y, z);
+                cameras[currentCamera].p2i[i++] = cv::Point2f(u, v);
             }
         }
         fclose(fo);

@@ -222,8 +222,7 @@ this->_debk = k*ks;
 
     bool reading;
 
-    cv::Point2f origin,             // origin of the 3d frame in image space (pixels)
-    axis_points[6];                 // point along the projection of the 3d axis in image space (pixels)
+    cv::Point2f p2i[6];             // 2D point correspondences
     std::vector<vcg::Point3f> p3;   // 3D point correspondences
 
     void init(uint port, std::string camera_intrinsics_file, int cameraID,  bool scaramuzza = true);
