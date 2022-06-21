@@ -30,7 +30,7 @@ struct Camera{
     int scaleFactor = 4;
     int camID;
     uint inStPort;
-    
+    int ax;
 
     float _debk;
 

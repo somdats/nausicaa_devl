@@ -134,7 +134,7 @@ Server servC, servS;
 int currentLidar = 0;
 int currentPlane = 0;
 int currentCamera = 0;
-extern int ax;
+int ax;
 bool showPlanes = true;
 bool showCameras = false;
 bool showfromcamera = false;

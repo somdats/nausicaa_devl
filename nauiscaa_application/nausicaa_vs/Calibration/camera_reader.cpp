@@ -38,7 +38,7 @@ using namespace std;
 int radiusCircle = 10;
 cv::Scalar colorCircle1(255,255,255);
 int thicknessCircle1 = 2;
-int ax;
+
 int NP = 6;
 
 string type2str(int type);
@@ -49,8 +49,8 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      if  ( event == EVENT_LBUTTONDOWN  ){
          if(flags & EVENT_FLAG_CTRLKEY)
              {
-                 cam->p2i[ax] = cv::Point(x,y);
-                 ax=(ax+1)%NP;
+                 cam->p2i[cam->ax] = cv::Point(x,y);
+                 cam->ax=(cam->ax+1)%NP;
              }
      }
 
@@ -402,8 +402,9 @@ void Camera::start_reading(){
         // drawing
         for(int i=0; i < NP; ++i)
             if(p2i[i]!=cv::Point2f(-1,-1)){
-                cv::Scalar col(255*(i==2),255*(i==1),255*(i==0));
+                cv::Scalar col(255,255,255);
                 cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
+                cv::putText(dst, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2, false);
             }
 
 //        cv::circle(dst, cv::Point2f(vcg_cam.CenterPx.X(),vcg_cam.CenterPx.Y()), radiusCircle*2, cv::Scalar(255,255,0), 3);
