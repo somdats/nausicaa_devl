@@ -44,14 +44,14 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("getVirtualCameraList"))
 	{
-		char none;
+		int  none = -1;
 		std::vector<int> cId;
 		for (std::map<unsigned int, vcg::Shotf>::iterator ic = virtualCameras.begin(); ic != virtualCameras.end(); ++ic)
 			cId.push_back((*ic).first);
 		if(!cId.empty())
 			serverComm.send((char*) & *cId.begin(), cId.size()*sizeof(int));
 		else
-			serverComm.send(&none, 1);
+			serverComm.send((char*) & none, 4);
 
 	}
 	if (fname == std::string("renderFromCamera"))
@@ -225,7 +225,7 @@ void call_API_function(std::string message) {
 		virtualCameras[id].Extrinsics.SetRot(M);
 	}
 	else
-	if (fname == std::string("setCameraFrustrum"))
+	if (fname == std::string("setCameraFrustum"))
 	{
 		int id = deserialize_int(message);
 		float sx = deserialize_float(message);

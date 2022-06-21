@@ -248,8 +248,7 @@ vecPair logger:: readConfigFile(std::string configFile) {
 	{
 		std::string line;
 		while (std::getline(cFile, line)) {
-			line.erase(std::remove_if(line.begin(), line.end(), isspace),
-				line.end());
+//			line.erase(std::remove_if(line.begin(), line.end(), isspace),line.end());
 			if (line[0] == '#' || line.empty())
 				continue;
 			auto delimiterPos = line.find("=");

@@ -289,8 +289,8 @@ void Camera::start_reading(){
 
     latest_frame_mutex.lock();
     reading = true;
-    namedWindow("receiver",1);
-    setMouseCallback("receiver", CallBackFunc, this);
+    namedWindow(std::to_string(this->camID).c_str(),1);
+    setMouseCallback(std::to_string(this->camID).c_str(), CallBackFunc, this);
 
 #if SAVE_IMG
     if (logger::isExistDirectory(DUMP_FOLDER_PATH))
@@ -419,7 +419,7 @@ void Camera::start_reading(){
 
         //
         if(dst.rows>0)
-            imshow("receiver", dst);
+            imshow(std::to_string(this->camID).c_str(), dst);
 
         if (waitKey(1) == 'b') {
              break;

@@ -1,5 +1,5 @@
 #pragma once
-//#define SCENE_REPLAY
+#define SCENE_REPLAY
 
 
 #ifdef SCENE_REPLAY
