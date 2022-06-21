@@ -1268,7 +1268,7 @@ int main(int argc, char* argv[])
     fmtContext = outStream.getFormatContext();
     int wd = 1280, he = 720;
     vCodec.setCodecParameter(wd, he, fps, bitrate, fmtContext->oformat->flags);
-    vCodec.InitializeCodecStream(*outStream.getStream(), h264profile);
+    vCodec.InitializeCodecStream(*outStream.getStream());
 
     cdcCntx = vCodec.getCodecContext();
 

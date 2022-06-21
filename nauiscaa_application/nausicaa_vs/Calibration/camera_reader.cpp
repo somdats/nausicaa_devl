@@ -357,7 +357,13 @@ void Camera::start_reading(){
         //dst = frame.clone();
         //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
         //std::cout << " Iam done with undistortion:" << std::endl;
-        cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+        if (!frame.empty())
+            cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+        else
+        {
+            std::cout << "Warning: camera frame empty\n" << std::endl;
+        }
+
 
 #if SAVE_IMG
 
