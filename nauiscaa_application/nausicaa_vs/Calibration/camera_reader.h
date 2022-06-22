@@ -177,7 +177,7 @@ this->_debk = k*ks;
     }
 
     void computeOpenGLFrustrumScaramuzza(const cv::Mat& camMatrix, int wx, int wy, float nr, float& r, float& l, float& t, float& b) {
-        float f = -(camMatrix.at<float>(0, 0));
+        float f = (camMatrix.at<float>(0, 0));
         float k = 1.0; // fx/fy
         float ks = nr / f;
 

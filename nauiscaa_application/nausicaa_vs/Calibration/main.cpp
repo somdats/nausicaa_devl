@@ -499,17 +499,9 @@ void drawScene() {
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture);
 
-
-            // TEMPORARY PATCH (TO DEBUG)
-            if (cameras[currentCamera].oglTextureData == 0) 
-                cameras[currentCamera].oglTextureData = (unsigned char*)malloc(1948 * 1096 * 3);
-
             cameras[currentCamera].latest_frame_mutex.lock();
-            memcpy(cameras[currentCamera].oglTextureData, cameras[currentCamera].dst.ptr(), 1948 * 1096 * 3);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[currentCamera].dst.ptr());
             cameras[currentCamera].latest_frame_mutex.unlock();
-             
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_RGB, GL_UNSIGNED_BYTE, cameras[currentCamera].oglTextureData);
-
 
             GLERR();
 
@@ -546,19 +538,20 @@ void drawScene() {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
             glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
         }
 
         GLERR();
-
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
 
-
-        glUseProgram(0);
         glPopMatrix();
-
+        glUseProgram(0);
     }
+
+
+
     /* END DRAW SCENE */
 }
 
@@ -695,7 +688,7 @@ void Display() {
  
 
             // these shadow maps will have to be created for each camera
-            for (int il = 0; il < 2; ++il) {
+            for (int il = 0; il < N_LIDARS; ++il) {
                 
                 toCamera = oglP * cameras[currentCamera].opengl_extrinsics() * transfLidar[il];  // opengl matrices
                 //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il]; (opencv matrices)
@@ -745,11 +738,12 @@ void Display() {
 
 
         if (showfromcamera) {
-            // branch show from one of the real cameras. It is just camera 0 for now but this will change to 0-6
+            // branch show from one of the currentCamera
             GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.5, 10);
             glViewport(width/2, height/2, width/2, height/2);
             drawScene();
             GlShot<vcg::Shotf>::UnsetView(); 
+            glViewport(0,0, width, height);
         }
         if (streamON && virtualCamerasExist)
         {

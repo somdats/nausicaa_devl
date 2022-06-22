@@ -12,5 +12,7 @@ extern bool streamON;
 extern bool lidarOn[2];
 extern bool camerasOn[6];
 
+void sampleGeometry(float xi, float yi, float& x, float& y, float& z);
+
 extern Server serverComm;
 extern Server serverStream;

@@ -76,15 +76,6 @@ void call_API_function(std::string message) {
 		// sampleGeometry(xi,yi,longitude,latitude)
 	}
 	else
-	if (fname == std::string("sampleGeometry"))
-	{
-		float xi = deserialize_float(message);
-		float yi = deserialize_float(message);
-		float longitude = deserialize_float(message);
-		float latitude = deserialize_float(message);
-		// sampleGeometry(xi,yi,longitude,latitude)
-	}
-	else
 	if (fname == std::string("enableLidar"))
 	{
 		int id = deserialize_int(message);
