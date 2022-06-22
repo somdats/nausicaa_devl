@@ -180,7 +180,7 @@ void VirtualCamera::setViewDirection(VirtualCameraID cId, float dirX, float dirY
 }
 void VirtualCamera::setCameraFrustrum(VirtualCameraID cId, float sx, float dx, float bt, float tp, float focalLength,
 	int viewPortX, int viewPortY) {
-	clientComm.send_message(message()[std::string("setCameraFrustrum")][cId][sx][dx][bt][tp][focalLength][viewPortX][viewPortY].msg);
+	clientComm.send_message(message()[std::string("setCameraFrustum")][cId][sx][dx][bt][tp][focalLength][viewPortX][viewPortY].msg);
 	std::cout << "Set CameraFrustrum" << std::endl;
 
 }
