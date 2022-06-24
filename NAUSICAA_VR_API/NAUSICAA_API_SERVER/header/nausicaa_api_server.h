@@ -149,7 +149,7 @@
 			 \param longitude
 			 \param latitude
 		*/
-		void  sampleGeometry(float xi, float yi, float& longitude, float& latitude);
+		void  sampleGeometry(float xi, float yi, float* longitude, float* latitude, float * height);
 
 		//! include lidarID in the reconstruction process
 		/*!

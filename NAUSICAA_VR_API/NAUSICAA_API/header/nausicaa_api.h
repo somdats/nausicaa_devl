@@ -97,6 +97,30 @@ extern "C" {
 		//! stop streaming
 		void NAUSICAA_VR_API stopStreaming();
 
+		//! update position WGS84 plus elevation
+		/*!
+		  \param LatDecimalDegrees
+		  \param LongDecimalDegrees
+		  \param ElevationMeters
+		*/
+		void NAUSICAA_VR_API updatePositionWGS84(float LatDecimalDegrees,float LongDecimalDegrees, float ElevationMeters);
+
+		//! update pitch and roll
+		/*!
+		  \param pitchDegrees: pitch is the rotation angle around the axis crossing the sides of the boat, from left to right. Positive angle means to bow is higher
+		  \param rollDegrees: roll is the  rotation angle around the axis crossing the   boat from the bow to the stern. Positive angle means the boat leans on its left   
+		*/
+		void NAUSICAA_VR_API updatePitchRoll(float pitchDegrees, float rollDegrees);
+
+		//! update compass
+		/*!
+		  \param angleDegrees: value between 0 and 360 (north) running clockwise (90-est, 180-south..). How the boat is oriented
+		*/
+		void NAUSICAA_VR_API updateBowDirection(float angleDegrees);
+
+
+		int NAUSICAA_VR_API connectToVRServer(const char* ip_addr);
+
 		/** @name Rendering
 		* Il sistema offre la possibilità di visualizzare il dato ricostruito  definendo
 		* una videocamera virtuale, con parametri intrinseci (FOV, zoom) ed estrinseci (posizione e orientamento)
@@ -108,17 +132,10 @@ extern "C" {
 		///@{
 		//! Add a virtual camera
 		/*!
-			 \param camera specification
 			 \return camera unique identifier
 		*/
 		VirtualCameraID NAUSICAA_VR_API addVirtualCamera();
 
-
-		//! get a camera from the list with a unique camera-id
-		/*!
-			 \param virtual camera unique identifier
-		*/
-		void NAUSICAA_VR_API getVirtualCamera(VirtualCameraID id);
 
 		//! get list of virtual cameras
 		/*!
@@ -132,12 +149,6 @@ extern "C" {
 		*/
 
 		void NAUSICAA_VR_API renderFromCamera(VirtualCameraID id);
-
-		//! set a virtual camera as the one to use for rendering and add it to the set of virutal cameras
-		/*!
-			 \param virtual camera
-		*/
-		VirtualCameraID NAUSICAA_VR_API renderCamera();
 
 		//! Selezione la qualità del rendering
 		/*!  Lowest qualiy corresponds to an output-sensitive rendering

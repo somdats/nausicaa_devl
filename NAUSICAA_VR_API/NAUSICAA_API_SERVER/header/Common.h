@@ -12,6 +12,13 @@ extern bool streamON;
 extern bool lidarOn[2];
 extern bool camerasOn[6];
 
+extern std::mutex m;
+extern std::condition_variable condv;
+extern bool picked;
+extern bool pick_point;
+extern int pick_x, pick_y;
+extern float picked_point[3];
+
 void sampleGeometry(float xi, float yi, float& x, float& y, float& z);
 
 extern Server serverComm;

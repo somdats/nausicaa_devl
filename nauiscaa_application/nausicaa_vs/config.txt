@@ -1,2 +1,2 @@
 NUMCAM=2
-Dump_path= D:/
+Dump_path=C:\Users\Fabio Ganovelli\Documents\data\nausicaa\Data14062022_3

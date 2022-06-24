@@ -50,6 +50,19 @@ void VRSubsystem::stopStreaming() {
 	clientComm.send_message(message()[std::string("stopStreaming")].msg);
 }
 
+void VRSubsystem::updatePositionWGS84(float LatDecimalDegrees, float LongDecimalDegrees, float ElevationMeters) {
+	clientComm.send_message(message()[std::string("updatePositionWGS84")][LatDecimalDegrees][LongDecimalDegrees][ElevationMeters].msg);
+}
+
+void  VRSubsystem::updatePitchRoll(float pitchDegrees, float rollDegrees) {
+	clientComm.send_message(message()[std::string("updatePitchRoll")][pitchDegrees][rollDegrees].msg);
+}
+
+void  VRSubsystem::updateBowDirection(float angleDegrees) {
+	clientComm.send_message(message()[std::string("updateBowDirection")][angleDegrees].msg);
+}
+
+
 VirtualCameraID VRSubsystem::addVirtualCamera() {
 	clientComm.send_message(message()[std::string("addVirtualCamera")].msg);
 	return clientComm.receive_int();
@@ -83,9 +96,14 @@ void VRSubsystem::selectQuality(float val) {
 	std::cout << "Quality selection:" << val << std::endl;
 }
 
-void VRSubsystem::sampleGeometry(float xi, float yi, float& longitude, float& latitude)
+void VRSubsystem::sampleGeometry(float xi, float yi, float* longitude, float* latitude, float* height)
 {
-	std::cout << "sample-Geometry" << std::endl;
+	int byteCount;
+	clientComm.send_message(message()[std::string("sampleGeometry")].msg);
+	int* res = (int*)clientComm.receive_image(&byteCount);
+	*longitude = *(float*) & res[0];
+	*latitude = *(float*)&res[4];
+	*height = *(float*)&res[8];
 }
 
 void VRSubsystem::enableLidar(lidarID id) {

@@ -1,6 +1,10 @@
 
 
 #include <map>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 
 #include "..\header\deserialize.h"
 #include "..\header\server.h"
@@ -13,6 +17,12 @@ unsigned int activeCamera;
 bool streamON;
 bool lidarOn[2];
 bool camerasOn[6];
+
+std::mutex m;
+std::condition_variable condv;
+bool picked = false;
+
+
 
 Server serverComm, serverStream;
 
@@ -31,7 +41,7 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("addVirtualCamera"))
 	{
-		std::cout << "addVritualCamera" << std::endl;
+		std::cout << "addVirtualCamera" << std::endl;
 		unsigned int newId = virtualCameras.size();
 		virtualCameras[newId] = vcg::Shotf();
 		serverComm.send(std::to_string(newId));
@@ -73,7 +83,18 @@ void call_API_function(std::string message) {
 		float yi = deserialize_float(message);
 		float longitude = deserialize_float(message);
 		float latitude = deserialize_float(message);
-		// sampleGeometry(xi,yi,longitude,latitude)
+		
+		pick_x = round(xi);
+		pick_y = round(yi);
+
+		pick_point = true;
+		std::unique_lock lk(m);
+		condv.wait(lk, [] {return picked;});
+
+		serverComm.send((char*)  & picked_point[0], 3 * sizeof(float));
+
+		lk.unlock();
+		condv.notify_one();
 	}
 	else
 	if (fname == std::string("enableLidar"))
