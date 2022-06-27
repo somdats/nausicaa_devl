@@ -140,6 +140,9 @@ bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
 bool enable_proj = false;
+float alphaFrame, betaFrame, gammaFrame;
+float xFrame, yFrame, zFrame;
+
 
 // picking
 bool pick_point = false;
@@ -151,8 +154,8 @@ PlaneC planes[2][3];
 LineC  axis[2][3];
 vcg::Matrix44f transfLidar[2];
 
-// this matrix transforms from the reference system described by "axis" to 
-// the boat reference system
+
+
 vcg::Matrix44f boatFrame;
 
 
@@ -297,9 +300,6 @@ CMesh mesh;
 vcg::GlTrimesh<CMesh> glWrap;
 /// the active manipulator
 vcg::Trackball track[2];
-vcg::Trackball trackBoatFrame;
-vcg::Trackball* currTrackball;
-bool placingBoatTrackball = false;
 
 /// window size
 int width, height;
@@ -408,12 +408,13 @@ void drawPlane(PlaneC pl, vcg::Point2f min, vcg::Point2f max) {
 }
 
 void draw_frame(vcg::Matrix44f m) {
+    vcg::Point3f o = m.GetColumn3(3);
     glBegin(GL_LINES);
     for (int i = 0; i < 3; ++i) {
         glColor3f((i == 0), (i == 1), (i == 2));
-        glVertex3f(0, 0, 0);
+        glVertex3f(o[0], o[1], o[2]);
         vcg::Point3f a = m.GetRow3(i);
-        glVertex3f(a[0], a[1], a[2]);
+        glVertex3f(o[0]+a[0], o[1] + a[1], o[2] + a[2]);
     }
     glEnd();
 }
@@ -477,6 +478,12 @@ void initializeGLStuff() {
  
 }
 
+void updateBoatFrame() {
+        boatFrame = vcg::Matrix44f().SetRotateDeg(alphaFrame, vcg::Point3f(1, 0, 0))*
+                    vcg::Matrix44f().SetRotateDeg(betaFrame, vcg::Point3f(0, 1, 0))*
+                    vcg::Matrix44f().SetRotateDeg(gammaFrame, vcg::Point3f(0, 0, 1));
+        boatFrame.SetColumn(3, vcg::Point3f(xFrame,yFrame,zFrame));
+}
 void drawScene() {
     /* BEGIN DRAW SCENE */
     vcg::Matrix44f toCamera;
@@ -577,8 +584,7 @@ void Display() {
         initializeGLStuff();
         pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h));
     }
-    if(!placingBoatTrackball) 
-        currTrackball = &track[currentCamera];
+    updateBoatFrame();
 
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -622,33 +628,24 @@ void Display() {
         gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
 
      
+     //   glPushMatrix();
+     //   vcg::Matrix44f rot; track[currentLidar].track.rot.ToMatrix(rot);
+      //  glMultMatrix(&rot[0][0]);
+    //    draw_frame(vcg::Matrix44f().Identity());
+    //    glPopMatrix();
 
         track[currentLidar].center = vcg::Point3f(0, 0, 0);
         track[currentLidar].radius = 1;
         track[currentLidar].GetView();
         track[currentLidar].Apply();
 
-        trackBoatFrame.center = vcg::Point3f(0, 0, 0);
-        trackBoatFrame.radius = 1;
-        trackBoatFrame.GetView();
-
-       
-   
 
         glPushMatrix();
         float d = 1.0f / mesh.bbox.Diag();
         vcg::glScale(d);
         glTranslate(-glWrap.m->bbox.Center());
 
-        glPushMatrix();
-        trackBoatFrame.GetView();
-        Matrix44f t = Matrix44f().SetTranslate(trackBoatFrame.track.tra[0], trackBoatFrame.track.tra[1], trackBoatFrame.track.tra[2]);
-        vcg::Matrix44f rot; trackBoatFrame.track.rot.ToMatrix(rot);
-        glMultMatrix(&t[0][0]);       
-        glMultMatrix(&rot[0][0]);
-        draw_frame(vcg::Matrix44f().Identity());
-        glPopMatrix();  
-
+        draw_frame(boatFrame);
 
         glUseProgram(0);
         glDisable(GL_LIGHTING);
@@ -994,13 +991,11 @@ void TW_CALL saveImPoints(void*) {
 }
 
 
-void TW_CALL handleFrame(void*) {
-    placingBoatTrackball = !placingBoatTrackball;
-    currTrackball = (placingBoatTrackball)?&trackBoatFrame:&track[currentLidar];
-}
-
 void TW_CALL setFrame(void*) {
-    
+    for (int i = 0; i < N_LIDARS; ++i)
+        transfLidar[i] = vcg::Inverse(boatFrame) * transfLidar[i];
+    alphaFrame = betaFrame = gammaFrame = xFrame = yFrame = zFrame = 0.0;
+    boatFrame.SetIdentity();
 }
 
 void TW_CALL loadImPoints(void*) {
@@ -1048,11 +1043,11 @@ void   keyReleaseEvent(unsigned char k, int x, int y)
 {
     int modifiers = glutGetModifiers();
     if (modifiers & GLUT_ACTIVE_CTRL)
-        currTrackball->ButtonUp(Trackball::Button::KEY_CTRL);
+        track[currentLidar].ButtonUp(Trackball::Button::KEY_CTRL);
     if (modifiers & GLUT_ACTIVE_SHIFT)
-        currTrackball->ButtonUp(Trackball::Button::KEY_SHIFT);
+        track[currentLidar].ButtonUp(Trackball::Button::KEY_SHIFT);
     if (modifiers & GLUT_ACTIVE_ALT)
-        currTrackball->ButtonUp(Trackball::Button::KEY_ALT);
+        track[currentLidar].ButtonUp(Trackball::Button::KEY_ALT);
 }
 
 void   keyPressEvent(unsigned char k, int x, int  y)
@@ -1069,11 +1064,11 @@ void   keyPressEvent(unsigned char k, int x, int  y)
 
     int modifiers = glutGetModifiers();
     if (modifiers & GLUT_ACTIVE_CTRL)
-        currTrackball->ButtonDown(Trackball::Button::KEY_CTRL);
+        track[currentLidar].ButtonDown(Trackball::Button::KEY_CTRL);
     if (modifiers & GLUT_ACTIVE_SHIFT)
-        currTrackball->ButtonDown(Trackball::Button::KEY_SHIFT);
+        track[currentLidar].ButtonDown(Trackball::Button::KEY_SHIFT);
     if (modifiers & GLUT_ACTIVE_ALT)
-        currTrackball->ButtonDown(Trackball::Button::KEY_ALT);
+        track[currentLidar].ButtonDown(Trackball::Button::KEY_ALT);
 
     TwEventKeyboardGLUT(k, x, y);
 }
@@ -1091,9 +1086,9 @@ void mousePressEvent(int bt, int state, int x, int y) {
     else
     {
         if (state == GLUT_DOWN)
-            currTrackball->MouseDown(x, height - y, GLUT2VCG(bt, state));
+            track[currentLidar].MouseDown(x, height - y, GLUT2VCG(bt, state));
         else
-            currTrackball->MouseUp(x, height - y, GLUT2VCG(bt, state));
+            track[currentLidar].MouseUp(x, height - y, GLUT2VCG(bt, state));
 
     }
 
@@ -1107,7 +1102,7 @@ void mouseMoveEvent(int x, int y)
     }
     else
         if (!TwEventMouseMotionGLUT(x, y))
-            currTrackball->MouseMove(x, height - y);
+            track[currentLidar].MouseMove(x, height - y);
 }
 
 
@@ -1431,8 +1426,15 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "saveIP", ::saveImPoints, 0, " label='saveImPoints' group=`Align Cameras` help=` ` ");
     TwAddButton(bar, "loadIP", ::loadImPoints, 0, " label='loadImPoints' group=`Align Cameras` help=` ` ");
 
+
+
     TwAddButton(bar, "setFrame", ::setFrame, 0, " label='setFrame' group=`Frame` help=` ` ");
-    TwAddButton(bar, "handleFrame", ::handleFrame, 0, " label='handleFrame' group=`Frame` help=` ` ");
+    TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Frame' help=` select` ");
+    TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Frame' help=` select` ");
+    TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Frame' help=` select` ");
+    TwAddVarRW(bar, "x", TW_TYPE_FLOAT, &xFrame, "value = 0  step = 0.01 label='x' group='Frame' help=` select` ");
+    TwAddVarRW(bar, "y", TW_TYPE_FLOAT, &yFrame, " value = 0 step = 0.01  label='y' group='Frame' help=` select` ");
+    TwAddVarRW(bar, "z", TW_TYPE_FLOAT, &zFrame, "value = 0  step = 0.01  label='z' group='Frame' help=` select` ");
 
     TwAddVarRW(bar, "showcameras", TW_TYPE_BOOL8, &showCameras, " label='showcameras' group=Rendering help=` select` ");
     TwAddVarRW(bar, "showfromcamera", TW_TYPE_BOOL8, &showfromcamera, " label='showfromcamera' group=`Rendering` help=` draw all` ");
