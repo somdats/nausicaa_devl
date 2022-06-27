@@ -101,9 +101,9 @@ void VRSubsystem::sampleGeometry(float xi, float yi, float* longitude, float* la
 	int byteCount;
 	clientComm.send_message(message()[std::string("sampleGeometry")].msg);
 	int* res = (int*)clientComm.receive_image(&byteCount);
-	*longitude = *(float*) & res[0];
-	*latitude = *(float*)&res[4];
-	*height = *(float*)&res[8];
+	*longitude = *(float*)&res[0];
+	*latitude  = *(float*)&res[4];
+	*height    = *(float*)&res[8];
 }
 
 void VRSubsystem::enableLidar(lidarID id) {

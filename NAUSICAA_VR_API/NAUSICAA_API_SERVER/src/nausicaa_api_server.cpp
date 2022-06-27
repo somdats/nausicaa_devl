@@ -39,6 +39,24 @@ void call_API_function(std::string message) {
 		streamON = false;
 	}
 	else
+	if (fname == std::string("updatePositionWGS84"))
+	{
+		float LatDecimalDegrees = deserialize_float(message);
+		float LongDecimalDegrees = deserialize_float(message);
+		float ElevationMeters = deserialize_float(message);
+	}
+	else
+	if (fname == std::string("updatePitchRoll"))
+	{
+		float pitchDegrees = deserialize_float(message);
+		float rollDegrees = deserialize_float(message);
+	}
+	else
+	if (fname == std::string("updateBowDirection"))
+	{
+		float angleDegrees = deserialize_float(message);
+	}
+	else
 	if (fname == std::string("addVirtualCamera"))
 	{
 		std::cout << "addVirtualCamera" << std::endl;
