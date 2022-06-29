@@ -75,11 +75,11 @@ void Lidar::start_reading(){
 #if SAVE_PC
     if (logger::isExistDirectory(DUMP_FOLDER_PATH))
     {
-        std::string pcDir = DUMP_FOLDER_PATH + "PointClouds";
+        std::string pcDir = DUMP_FOLDER_PATH + "/PointClouds/";
         if (!logger::isExistDirectory(pcDir))
             fs::create_directory(pcDir);
 
-        std:: string lidarDir = pcDir + "/" + std::to_string(lidarPort);
+        std:: string lidarDir = pcDir + std::to_string(lidarPort);
         if (!logger::isExistDirectory(lidarDir))
             fs::create_directory(lidarDir);
 

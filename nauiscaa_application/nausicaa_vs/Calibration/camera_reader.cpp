@@ -282,7 +282,7 @@ void Camera::start_reading(){
     cap.open(Camerafull0args, CAP_GSTREAMER);
 #endif
 
-    latest_frame_mutex.lock();
+    //latest_frame_mutex.lock();
     reading = true;
     namedWindow(std::to_string(this->camID).c_str(),1);
     setMouseCallback(std::to_string(this->camID).c_str(), CallBackFunc, this);
@@ -290,12 +290,12 @@ void Camera::start_reading(){
 #if SAVE_IMG
     if (logger::isExistDirectory(DUMP_FOLDER_PATH))
     {
-        std::string imgDir = DUMP_FOLDER_PATH + "Images";
+        std::string imgDir = DUMP_FOLDER_PATH + "/Images/";
        
         if (!logger::isExistDirectory(imgDir))
             fs::create_directory(imgDir);
 
-        std::string camDir = imgDir + "/" + std::to_string(inStPort);
+        std::string camDir = imgDir + std::to_string(inStPort);
         if (!logger::isExistDirectory(camDir))
             fs::create_directory(camDir);
       
@@ -328,7 +328,7 @@ void Camera::start_reading(){
 #endif // SAVE_IMG
 
     while (reading) {
-        latest_frame_mutex.unlock();
+       // latest_frame_mutex.unlock();
         Mat frame;
 
 
@@ -351,7 +351,9 @@ void Camera::start_reading(){
             }
         }
     #else 
+        latest_frame_mutex.lock();
         cap.read(frame); 
+        latest_frame_mutex.unlock();
     
         //Mat temp(frame.size(), frame.type());
         //dst = frame.clone();
@@ -371,7 +373,9 @@ void Camera::start_reading(){
         bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
         if (stat)
         {
+            latest_frame_mutex.lock();
             logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
+            latest_frame_mutex.unlock();
             if (inStPort == 5000)
                 fprintf(fi1, "%s\n", tCam.c_str());
             if (inStPort == 5001)
@@ -419,10 +423,10 @@ void Camera::start_reading(){
         if (waitKey(1) == 'b') {
              break;
         }
-        latest_frame_mutex.lock();
+        //latest_frame_mutex.lock();
     }
 
-    latest_frame_mutex.unlock();
+    //latest_frame_mutex.unlock();
     cv::destroyAllWindows();
 }
 void Camera::stop_reading(){

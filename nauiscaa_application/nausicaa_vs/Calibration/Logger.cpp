@@ -33,13 +33,13 @@ bool logger:: saveImages(std::string dirPath, std::string timeStamp, const cv::M
 	{
 		if (!camID.empty())
 		{
-			imageDir = dirPath + "Images/" + camID;
+			imageDir = dirPath + "/Images/" + camID;
 			if (!logger::isExistDirectory(imageDir))
 				fs::create_directories(imageDir);
 		}
 		else
 		{
-			imageDir = dirPath + "Images";
+			imageDir = dirPath + "/Images";
 
 			if (!logger::isExistDirectory(imageDir))
 				fs::create_directory(imageDir);
@@ -73,7 +73,7 @@ bool logger::savePointCloud(int currLidar, std::string timeStamp, std::string di
 	// check if directory exist!!!
 	if (logger::isExistDirectory(dirPath))
 	{
-		pcDir = dirPath + "PointClouds" + "/" + std::to_string(currLidar);
+		pcDir = dirPath + "/" + "PointClouds" + "/" + std::to_string(currLidar);
 		if (!logger::isExistDirectory(pcDir))
 			fs::create_directories(pcDir);
 	}
@@ -135,7 +135,7 @@ bool logger::savePointCloudBinary(int currLidar, std::string timeStamp, std::str
 	// check if directory exist!!!
 	if (logger::isExistDirectory(dirPath))
 	{
-		pcDir = dirPath + "PointClouds" + "/" + std::to_string(currLidar);
+		pcDir = dirPath + "/PointClouds/" + std::to_string(currLidar);
 		if (!logger::isExistDirectory(pcDir))
 			fs::create_directories(pcDir);
 	}
