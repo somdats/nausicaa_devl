@@ -314,10 +314,10 @@ void Camera::start_reading(){
                 fi3 = fopen(timeStampFileName.c_str(), "wb");
             if (inStPort == 5003 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
                 fi4 = fopen(timeStampFileName.c_str(), "wb");
-            if (inStPort == 5004 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+           /* if (inStPort == 5004 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
                 fi5 = fopen(timeStampFileName.c_str(), "wb");
             if (inStPort == 5005 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-                fi6 = fopen(timeStampFileName.c_str(), "wb");
+                fi6 = fopen(timeStampFileName.c_str(), "wb");*/
         }
     }
     else
@@ -388,10 +388,10 @@ void Camera::start_reading(){
                     fprintf(fi3, "%s\n", tCam.c_str());
                 if (inStPort == 5003)
                     fprintf(fi4, "%s\n", tCam.c_str());
-                if (inStPort == 5004)
+               /* if (inStPort == 5004)
                     fprintf(fi5, "%s\n", tCam.c_str());
                 if (inStPort == 5005)
-                    fprintf(fi6, "%s\n", tCam.c_str());
+                    fprintf(fi6, "%s\n", tCam.c_str());*/
             }
             
         }
@@ -440,8 +440,8 @@ void Camera::stop_reading(){
    {
        fclose(fi3);
        fclose(fi4);
-       fclose(fi5);
-       fclose(fi6);
+       /*fclose(fi5);
+       fclose(fi6);*/
    }
 #endif
    latest_frame_mutex.unlock();

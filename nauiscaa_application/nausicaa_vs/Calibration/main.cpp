@@ -195,7 +195,7 @@ class CMesh : public vcg::tri::TriMesh< std::vector<CVertex>, std::vector<CFace>
 
 #define NL 16
 #define N_LIDARS 2
-static std::string camIniFile = "../calib_results_25032022.txt";
+static std::string camIniFile; // "../calib_results_30062022.txt";
 struct LidarRender {
 
     Lidar  lidar;
@@ -1327,6 +1327,7 @@ int main(int argc, char* argv[])
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
     DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
+    camIniFile = configData[2].second; 
 
     /*PacketDecoder::HDLFrame lidarFrame2;
   
