@@ -8,6 +8,8 @@
 
 #include <opencv2/imgproc.hpp>
 #include<opencv2/imgcodecs.hpp>
+#include <Eigen/Dense>
+
 
 #include"velodyne_reader.h"
 #include"defines.h"
@@ -25,6 +27,12 @@ extern  std::string IMG_EXT;
 extern  std::string PC_EXT;
 extern int CameraCount;
 typedef  std::vector< std::pair<std::string, std::string>>vecPair;
+typedef struct {
+	Eigen::Matrix3f meiCameraMatrix;
+	std::array<float, 5> distortionParameter;
+	float xiFactor;
+}MeiCalibration;
+extern std::string meiConverterFile;
 
 
 
@@ -40,6 +48,8 @@ namespace logger
 	bool getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::string& time, bool pc = true);
 	void LoadPointCloudBinary(std::string fileName, PacketDecoder::HDLFrame& latestFrame);
 	vecPair readConfigFile(std::string configFile);
+	bool readMeiCalibration(std::string calibrationFile, MeiCalibration& meiCalib);
+	bool writeMeiCalibration(std::string calibrationFile, MeiCalibration meiCalib);
 }
 
 

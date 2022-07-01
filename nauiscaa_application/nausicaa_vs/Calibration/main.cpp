@@ -1323,11 +1323,14 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
+  
     std::string inFile = "config.txt";
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
     DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
     camIniFile = configData[2].second; 
+    meiConverterFile = configData[3].second;
+
 
     /*PacketDecoder::HDLFrame lidarFrame2;
   

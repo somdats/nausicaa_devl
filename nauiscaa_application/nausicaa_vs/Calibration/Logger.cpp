@@ -11,7 +11,8 @@ std::string DUMP_FOLDER_PATH;
 std::string IMG_EXT = "jpeg";
 std::string PC_EXT = "txt";
 std::string PC_BIN = "bin";
-
+std::string meiConverterFile = "";
+#define CMV_MAX_BUF 1024
 
 
 bool logger::isExistDirectory(std::string DirPath) {
@@ -265,4 +266,82 @@ vecPair logger:: readConfigFile(std::string configFile) {
 
 	return configData;
 
+}
+
+bool logger:: readMeiCalibration(std::string calibrationFile, MeiCalibration& meiCalib) {
+
+	FILE* f;
+	char buf[CMV_MAX_BUF];
+	int i;
+	//Open file
+	if (!(f = fopen(calibrationFile.c_str(), "r")))
+	{
+		printf("File %s cannot be opened\n", calibrationFile);
+		return false;
+	}
+	//Read xi- constant
+	 //Read center coordinates
+	//fscanf(f, "\n");
+	fgets(buf, CMV_MAX_BUF, f);
+	std::cout << "reading:" << buf << std::endl;
+	fscanf(f, "\n");
+	char szParam1[50], szParam2[50], szParam3[50];
+	fscanf(f, "%s", szParam1);
+	meiCalib.xiFactor = atof(szParam1);
+
+	//Read xi- camera parameter
+	fscanf(f, "\n");
+	fgets(buf, CMV_MAX_BUF, f);
+	std::cout << "reading:" << buf << std::endl;
+	fscanf(f, "\n");
+
+	float val = -1;
+	for (i = 0; i < 9; i++)
+	{
+		
+		fscanf(f, " %s", szParam2);
+		int r = i%3;
+		int c = i/3;
+		meiCalib.meiCameraMatrix(c, r) = atof(szParam2);
+	}
+
+	//Read distortion parameters
+	fscanf(f, "\n");
+	fgets(buf, CMV_MAX_BUF, f);
+	std::cout <<"reading:" << buf << std::endl;
+	fscanf(f, "\n");
+	for (i = 0; i < 5; i++)
+	{
+		fscanf(f, " %s", szParam3);
+		meiCalib.distortionParameter[i] = atof(szParam3);
+	}
+
+	fclose(f);
+	return true;
+}
+
+bool logger::writeMeiCalibration(std::string calibrationFile, MeiCalibration meiCalib) {
+	FILE* f;
+	char buf[CMV_MAX_BUF];
+	int i;
+	f = fopen(calibrationFile.c_str(), "w");
+
+	fprintf(f, "#xi-Factor\n");
+	fprintf(f, "%f\n", meiCalib.xiFactor);
+	fprintf(f, "#mei-calibration params\n");
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			fprintf(f, "%f ", meiCalib.meiCameraMatrix(i, j));
+		}
+	}
+	fprintf(f, "\n");
+	fprintf(f, "#mei-distortion params\n");
+	for (int i = 0; i < 5; i++) {
+		fprintf(f, "%f ", meiCalib.distortionParameter[i]);
+	}
+
+	fclose(f);
+	return true;
+	
 }

@@ -122,14 +122,17 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
         cv::fisheye::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), new_camera_matrix, imageSize, CV_32F, map1, map2);*/
 
         Eigen::Vector2d img_size(o.width, o.height);
-        Eigen::Matrix3f K_out;
+        /*Eigen::Matrix3f K_out;
         std::array<float, 5> D_out;
-        float xi_out;
+        float xi_out;*/
         Eigen::Vector2d principal_point{ o.yc, o.xc };
         std::vector<double>  invpoly;
         invpoly.assign(o.invpol, o.invpol + o.length_invpol);
         // 
-        calib_converter::convertOcam2Mei(invpoly, principal_point, img_size, o.c, o.d, o.e, K_out, D_out, xi_out);
+        //calib_converter::convertOcam2Mei(invpoly, principal_point, img_size, o.c, o.d, o.e, K_out, D_out, xi_out);
+        //std::string meiFileName = "D:/naus/nausicaa_devl/nauiscaa_application/calib_results_30062022_mei.txt";;
+        MeiCalibration mei;
+        logger::readMeiCalibration(meiConverterFile, mei);
        // cv::Mat dst,newMat;
         //K_out = K_out * Eigen::Vector3f(0.5f, 0.5f, 1.0f).asDiagonal();
         //cv::Mat d = cv::Mat(1, 4, CV_32F);
@@ -141,7 +144,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
         {
             for (int j = 0; j < 3; ++j)
             {
-                cameraMatrix.at<float>(i, j) = K_out(i, j);
+                cameraMatrix.at<float>(i, j) = mei.meiCameraMatrix(i, j);
             }
 
 
@@ -149,7 +152,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 
         for (int i = 0; i < 4; ++i)
         {
-            distCoeffs.at<float>(i) = D_out[i];
+            distCoeffs.at<float>(i) = mei.distortionParameter[i];
         }
        // std::cout << cameraMatrix << std::endl;
         std::cout << "distortion coefficients:" << distCoeffs << std::endl;
@@ -159,7 +162,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
 
         std::cout << "Camera Intrinsics for rectification:" << new_camera_matrix << std::endl;
        cv::Mat R = cv::Mat::eye(3, 3, CV_32F);
-        omnidir::initUndistortRectifyMap(cameraMatrix, distCoeffs, xi_out, R, new_camera_matrix, imageSize,
+        omnidir::initUndistortRectifyMap(cameraMatrix, distCoeffs, mei.xiFactor, R, new_camera_matrix, imageSize,
             CV_32F, map1, map2, cv::omnidir::RECTIFY_PERSPECTIVE);
         //std::cout << "map1:" << map1 << std::endl;
         cameraMatrix = new_camera_matrix;
