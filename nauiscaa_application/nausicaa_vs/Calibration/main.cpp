@@ -63,6 +63,14 @@
 
 #include"Logger.h"
 
+#ifdef MJPEG_WRITE
+
+#include"..\headers\mjpeg_streamer.hpp"
+using MJPEGStreamer = nadjieb::MJPEGStreamer;
+MJPEGStreamer streamer;
+
+#endif
+
 #ifdef SCENE_REPLAY
 
 unsigned long long start_time;
@@ -1167,7 +1175,12 @@ void start_Streaming_thread() {
     serverStream.start_server(portStream);
     std::string  msg;
     //serv.wait_for_start(msg);
-    while (true) {
+#ifdef MJPEG_WRITE
+    streamer.start(8084);
+    std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90 };
+#endif // MJPEG_WRITE
+
+    while (true/* && streamer.isRunning()*/) {
         /* if (streamON)
          {*/
         buff_mutex.lock();
@@ -1184,6 +1197,12 @@ void start_Streaming_thread() {
         size_t szbuf = buf.size();
         //serverStream.send(reinterpret_cast<char*>(buf.data()));
         serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+#ifdef MJPEG_WRITE
+
+        streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#endif // MJPEG_WRITE
+
 #if  VIDEO_STREAM
         outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
 #endif //  VIDEO_STREAM
@@ -1196,6 +1215,9 @@ void start_Streaming_thread() {
         cv::waitKey(10);
         /* }*/
     }
+#ifdef MJPEG_WRITE
+    streamer.stop();
+#endif // MJPEG_WRITE
 
 }
 

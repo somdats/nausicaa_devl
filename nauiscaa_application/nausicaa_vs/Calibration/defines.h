@@ -1,5 +1,6 @@
 #pragma once
 #define SCENE_REPLAY
+#define MJPEG_WRITE
 
 
 #ifdef SCENE_REPLAY
