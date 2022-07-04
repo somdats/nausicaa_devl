@@ -1323,7 +1323,6 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
-  
     std::string inFile = "config.txt";
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
