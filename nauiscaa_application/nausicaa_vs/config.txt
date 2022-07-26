@@ -1,2 +1,4 @@
 NUMCAM=2
-Dump_path=C:\Users\Fabio Ganovelli\Documents\data\nausicaa\Data14062022_3
+Dump_path=D:\Data14062022_3
+cam_ini_file=..\calib_results_25032022.txt
+cam_converter =..\calib_results_25032022_mei.txt
