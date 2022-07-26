@@ -68,15 +68,12 @@ VirtualCameraID VRSubsystem::addVirtualCamera() {
 	return clientComm.receive_int();
 }
 
-void VRSubsystem::getVirtualCamera(VirtualCameraID id) {
-	std::cout << "removed " << id << std::endl;
-}
 
 int *  VRSubsystem::getVirtualCameraList(int * n_cameras) {
 	int byteCount;
 	clientComm.send_message(message()[std::string("getVirtualCameraList")].msg);
 	int * res  =  (int*) clientComm.receive_image(&byteCount);
-	*n_cameras = byteCount / 4;
+	*n_cameras = (*res==-1)? 0 : byteCount / 4;
 	return res;
 }
 
@@ -86,11 +83,6 @@ void VRSubsystem::renderFromCamera(VirtualCameraID id) {
 	std::cout << "render camera with:" << id << std::endl;
 }
 
-VirtualCameraID VRSubsystem::renderCamera() {
-	VirtualCameraID id(0);
-	std::cout << "removed" << std::endl;
-	return id;
-}
 
 void VRSubsystem::selectQuality(float val) {
 	std::cout << "Quality selection:" << val << std::endl;
