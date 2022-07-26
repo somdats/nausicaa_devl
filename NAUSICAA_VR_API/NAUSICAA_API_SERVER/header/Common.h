@@ -2,7 +2,11 @@
 
 #include<algorithm>
 #include<array>
-
+#include <map>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <vcg/math/shot.h>
 #include "server.h"
 
 

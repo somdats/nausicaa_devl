@@ -7,6 +7,7 @@ std::string serialize(float v);
 std::string serialize(int v);
 std::string serialize(std::string v);
 
+
 struct message {
 
 	message &operator [](float v) { msg += serialize(v) + "@"; return *this; }
