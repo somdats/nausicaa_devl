@@ -42,23 +42,24 @@ void State::save_state() {
 		fclose(fs);
 	}
 
-};
+}
+
 void State::load_state() {
 	FILE* fs = fopen(filename.c_str(), "r");
 	if (fs) {
 		while (!feof(fs)) {
 			char line[1000];
-			line[fscanf(fs, "%s", line)] ='\0';
+			line[fscanf(fs, "%s", line)] = '\0';
 			std::string message = std::string(line);
 			std::string field = func_name(message);
 			int n_virtual_cameras = 0;
-			float sx, dx, tp, bt, n,x,y,z;
+			float sx, dx, tp, bt, n, x, y, z;
 			vcg::Point2i vp;
 
 			vcg::Matrix44f m;
 			if (field == std::string("N_virtual_cameras")) {
 				n_virtual_cameras = deserialize_int(message);
-				for (int i = 0; i < n_virtual_cameras;++i) {
+				for (int i = 0; i < n_virtual_cameras; ++i) {
 					line[fscanf(fs, "%s", line)] = '\0';
 					message = std::string(line);
 					field = func_name(message);// intrinsics
@@ -73,7 +74,7 @@ void State::load_state() {
 					field = func_name(message);// viewport
 					vp[0] = deserialize_int(message);
 					vp[1] = deserialize_int(message);
-			 
+
 
 					line[fscanf(fs, "%s", line)] = '\0';
 					message = std::string(line);
@@ -89,12 +90,13 @@ void State::load_state() {
 						for (int jj = 0; jj < 4; ++jj)
 							m[ii][jj] = deserialize_float(message);
 
-					virtualCameras[i].Intrinsics.SetFrustum(sx, dx, bt, tp, n,vp);
+					virtualCameras[i].Intrinsics.SetFrustum(sx, dx, bt, tp, n, vp);
 					virtualCameras[i].SetViewPoint(vcg::Point3f(x, y, z));
 					virtualCameras[i].Extrinsics.SetRot(m);
 				}
 
-				}
 			}
+		}
 		fclose(fs);
-};
+	}
+}
