@@ -102,9 +102,19 @@ void VRSubsystem::enableLidar(lidarID id) {
 	std::cout << "enable Lidar" << id << std::endl;
 }
 
+void VRSubsystem::enableAllLidars() {
+	VRSubsystem::enableLidar(0);
+	VRSubsystem::enableLidar(1);
+}
+
 void VRSubsystem::disableLidar(lidarID id) {
 	clientComm.send_message(message()[std::string("disableLidar")][id].msg);
 	std::cout << "disableLidar " << id << std::endl;
+}
+
+void VRSubsystem::disableAllLidars() {
+	disableLidar(0);
+	disableLidar(1);
 }
 
 void VRSubsystem::enableCamera(cameraID id) {
@@ -113,10 +123,19 @@ void VRSubsystem::enableCamera(cameraID id) {
 	std::cout << "enable Camera " << id << std::endl;
 }
 
+void VRSubsystem::enableAllCameras() {
+	for (int i = 0; i < 6; ++i)
+		VRSubsystem::enableCamera(i);
+}
+
 void VRSubsystem::disableCamera(cameraID id) {
 	clientComm.send_message(message()[std::string("disableCamera")][id].msg);
 
 	std::cout << "disable Camera " << id << std::endl;
+}
+void VRSubsystem::disableAllCameras() {
+	for (int i = 0; i < 6; ++i)
+		VRSubsystem::disableCamera(i);
 }
 
 gliphID VRSubsystem::place3DGliph(gliphTypeID, float x, float y, float d) {

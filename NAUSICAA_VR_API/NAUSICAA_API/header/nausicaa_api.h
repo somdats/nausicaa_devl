@@ -176,7 +176,7 @@ extern "C" {
 			 \param longitude
 			 \param latitude
 		*/
-		void NAUSICAA_VR_API sampleGeometry(float xi, float yi, float* longitude, float* latitude, float* height);
+		void NAUSICAA_VR_API sampleGeometry(int xi, int yi, float* longitude, float* latitude, float* height);
 
 		//! include lidarID in the reconstruction process
 		/*!
@@ -184,11 +184,24 @@ extern "C" {
 		*/
 		void NAUSICAA_VR_API enableLidar(lidarID id);
 
+
+		//! enable all lidars in the reconstruction process
+		/*!
+			 \param unique identifier of the lidar to be included
+		*/
+		void NAUSICAA_VR_API enableAllLidars();
+
 		//! exclude lidarID from the rendering process
 		/*!
 			 \param unique identifier of the lidar to be excluded
 		*/
 		void NAUSICAA_VR_API disableLidar(lidarID id);
+
+		//! exclude lidarID from the rendering process
+		/*!
+			 \param unique identifier of the lidar to be excluded
+		*/
+		void NAUSICAA_VR_API disableAllLidars();
 
 		//! include cameraID
 		/*!
@@ -196,11 +209,22 @@ extern "C" {
 		*/
 		void NAUSICAA_VR_API enableCamera(cameraID id);
 
+		//! enable all cameras
+		/*!
+		*/
+		void NAUSICAA_VR_API enableAllCameras();
+
 		//! exclude cameraID
 		/*!
 			 \param unique identifier of the camera to be excluded from the rendering
 		*/
 		void NAUSICAA_VR_API disableCamera(cameraID id);
+
+		//! exclude all cameras 
+		/*!
+			  
+		*/
+		void NAUSICAA_VR_API disableAllCameras();
 		///@}
 
 		/** @name Gliphs

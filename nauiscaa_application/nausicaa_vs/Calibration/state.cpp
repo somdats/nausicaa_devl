@@ -43,15 +43,12 @@ void State::save_state() {
 	}
 
 };
-
- 
 void State::load_state() {
 	FILE* fs = fopen(filename().c_str(), "r");
 	if (fs) {
 		while (!feof(fs)) {
-			char line[1000];line[0] = '\0';
-			
-			fgets(line, 1000, fs); 
+			char line[1000];
+			line[fscanf(fs, "%s", line)] ='\0';
 			std::string message = std::string(line);
 			std::string field = func_name(message);
 			int n_virtual_cameras = 0;
@@ -100,5 +97,4 @@ void State::load_state() {
 			}
 		}
 		fclose(fs);
-	}
 };
