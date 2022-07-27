@@ -16,8 +16,11 @@ struct Server {
 	int c;
 	char* message;
 	int port;
+	bool stop_signal;
 
 	int start_server(int );
+
+	void stop_server();
 
 	int accepting_connections();
 
@@ -27,5 +30,5 @@ struct Server {
 
 	int send(char* data, int length);
 
-	int stop_server();
+	int close();
 };

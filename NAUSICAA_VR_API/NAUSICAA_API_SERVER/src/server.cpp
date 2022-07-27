@@ -52,11 +52,14 @@ int Server::start_server(int _port) {
 
 	c = sizeof(struct sockaddr_in);
 
-	//	if ((new_socket = accept(s, (struct sockaddr *)&client, &c)) != INVALID_SOCKET)
-	//		puts("Connection accepted");
+	stop_signal = false;
+
 	return 0;
 }
 
+void Server::stop_server() {
+	stop_signal = true;
+}
 
 int Server::accepting_connections() {
 if ((new_socket = accept(s, (struct sockaddr*)&client, &c)) != INVALID_SOCKET)
@@ -98,7 +101,7 @@ int Server::send(char *data, int length) {
 	return 0;
 }
 
-int Server::stop_server() {
+int Server::close() {
 	closesocket(s);
 	WSACleanup();
 	return 0;

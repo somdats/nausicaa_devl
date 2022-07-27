@@ -94,7 +94,6 @@ char* Client::receive_image(int* byteCount) {
 	}
 	server_reply[recv_size] = '\0';
 	*byteCount = recv_size;
-	printf("size of image byte: %d\n", *byteCount);
 	return server_reply;
 }
 

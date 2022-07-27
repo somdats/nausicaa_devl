@@ -97,22 +97,19 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("sampleGeometry"))
 	{
-		float xi =  deserialize_float(message);
-		float yi = deserialize_float(message);
-		float longitude = deserialize_float(message);
-		float latitude = deserialize_float(message);
+		pick_x =	deserialize_float(message);
+		pick_y =	deserialize_float(message);
+
 		
-		pick_x = round(xi);
-		pick_y = round(yi);
-
-		pick_point = true;
 		std::unique_lock lk(m);
+		
+		pick_point = true;
 		condv.wait(lk, [] {return picked;});
-
+		picked = false;
 		serverComm.send((char*)  & picked_point[0], 3 * sizeof(float));
 
 		lk.unlock();
-		condv.notify_one();
+
 	}
 	else
 	if (fname == std::string("enableLidar"))

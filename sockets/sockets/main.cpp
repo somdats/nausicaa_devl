@@ -1,14 +1,32 @@
 
-
+#include <opencv2/opencv.hpp>
 #include "..\..\NAUSICAA_VR_API\NAUSICAA_API\header\client.h"
 #include "..\..\NAUSICAA_VR_API\NAUSICAA_API\header\serialize.h"
 #include "..\..\NAUSICAA_VR_API\NAUSICAA_API\header\nausicaa_api.h"
 
+using namespace cv;
+
 int value;
+float X, Y, Z;
+cv::Mat im;
+
+void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
+	if (event == EVENT_LBUTTONDOWN) {
+		VRSubsystem::sampleGeometry(x, im.rows-y, &X, &Y, &Z);
+		printf("%d %d \n", x, im.rows - y);
+		printf("%f %f %f \n", X, Y, Z);
+	}
+}
+
+
 void main() {
+	cv::namedWindow("monitor", 1);
+	cv::setMouseCallback("monitor", CallBackFunc,0);
+	
 
+	
 
-	int err = VRSubsystem::connectToVRServer("146.48.84.241");
+	int err = VRSubsystem::connectToVRServer("127.0.0.1");
 	if ( err !=0)
 	{
 		std::cout << "connection failed with err \n" <<err << std::endl;
@@ -26,7 +44,7 @@ void main() {
 	int newCamera = VRSubsystem::addVirtualCamera();
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
-	VirtualCamera::setPosition(newCamera,2.0, -1.0, 2.0);
+	VirtualCamera::setPosition(newCamera,0.0, 0.0, 5.0);
 	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
 	VRSubsystem::renderFromCamera(newCamera);
 
@@ -45,6 +63,11 @@ void main() {
 			FILE* fo = fopen("frame.jpg", "wb");
 			fwrite(frame, size, 1, fo);
 			fclose(fo);
+			im = cv::imread("frame.jpg");
+			cv::imshow("monitor", im);
+			if (cv::waitKey(1) == 'b') {
+				break;
+			}
 		}
 		}
 }

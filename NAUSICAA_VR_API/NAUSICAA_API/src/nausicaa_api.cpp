@@ -68,7 +68,6 @@ VirtualCameraID VRSubsystem::addVirtualCamera() {
 	return clientComm.receive_int();
 }
 
-
 int *  VRSubsystem::getVirtualCameraList(int * n_cameras) {
 	int byteCount;
 	clientComm.send_message(message()[std::string("getVirtualCameraList")].msg);
@@ -88,14 +87,14 @@ void VRSubsystem::selectQuality(float val) {
 	std::cout << "Quality selection:" << val << std::endl;
 }
 
-void VRSubsystem::sampleGeometry(float xi, float yi, float* longitude, float* latitude, float* height)
+void VRSubsystem::sampleGeometry(int xi, int yi, float* longitude, float* latitude, float* height)
 {
 	int byteCount;
-	clientComm.send_message(message()[std::string("sampleGeometry")].msg);
-	int* res = (int*)clientComm.receive_image(&byteCount);
+	clientComm.send_message(message()[std::string("sampleGeometry")][xi][yi].msg);
+	float* res = (float*)clientComm.receive_image(&byteCount);
 	*longitude = *(float*)&res[0];
-	*latitude  = *(float*)&res[4];
-	*height    = *(float*)&res[8];
+	*latitude  = *(float*)&res[1];
+	*height    = *(float*)&res[2];
 }
 
 void VRSubsystem::enableLidar(lidarID id) {

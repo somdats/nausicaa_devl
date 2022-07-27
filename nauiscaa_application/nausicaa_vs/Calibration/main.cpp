@@ -58,10 +58,11 @@
 
 ///server header
 #include "..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\server.h"
-#include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\nausicaa_api_server.h"
-#include"..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\Common.h"
+#include "..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\nausicaa_api_server.h"
+#include "..\..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\header\Common.h"
 
-#include"Logger.h"
+#include "Logger.h"
+#include "state.h"
 
 #ifdef MJPEG_WRITE
 
@@ -813,11 +814,13 @@ void Display() {
                 picked_point[0] = x3d;
                 picked_point[1] = y3d;
                 picked_point[2] = z3d;
-
-                std::lock_guard lk(m);
-                condv.notify_one();
-
-                pick_point = false;
+                {
+                    std::lock_guard lk(m);
+                    picked  = true;
+                    ::pick_point = false;
+                    condv.notify_one();
+                }
+                
             }
 
             GlShot<vcg::Shotf>::UnsetView(); ;
@@ -1148,11 +1151,11 @@ void start_camera(int iC) {
 }
 
 void acceptCommunicationThread() {
-    while (true)
+    while (!serverComm.stop_signal)
         serverComm.accepting_connections();
 }
 void acceptStreamThread() {
-    while (true)
+    while (!serverStream.stop_signal)
         // serv.accepting_connections_stream();
         serverStream.accepting_connections();
 }
@@ -1160,14 +1163,14 @@ void start_Communication_thread() {
     int portComm = 81;
     serverComm.start_server(portComm);
     std::string msg;
-    while (true) {
+    while (!serverComm.stop_signal) {
         if (!serverComm.incoming_message(msg))
         {
             std::cout << msg << std::endl;
             call_API_function(msg);
         }
     }
-
+    serverComm.close();
 }
 
 void start_Streaming_thread() {
@@ -1180,7 +1183,7 @@ void start_Streaming_thread() {
     std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90 };
 #endif // MJPEG_WRITE
 
-    while (true/* && streamer.isRunning()*/) {
+    while (!serverStream.stop_signal/* && streamer.isRunning()*/) {
         /* if (streamON)
          {*/
         buff_mutex.lock();
@@ -1215,10 +1218,17 @@ void start_Streaming_thread() {
         cv::waitKey(10);
         /* }*/
     }
+    serverStream.close();
 #ifdef MJPEG_WRITE
     streamer.stop();
 #endif // MJPEG_WRITE
 
+}
+void start_server() {
+    tComm = std::thread(&start_Communication_thread);
+    tStream = std::thread(&start_Streaming_thread);
+    tacc = std::thread(&acceptCommunicationThread);
+    taccSt = std::thread(&acceptStreamThread);
 }
 
 void TW_CALL initLidars(void*) {
@@ -1231,6 +1241,7 @@ void TW_CALL initLidars(void*) {
     tLidars[0] = std::thread(&start_lidar,0);
     tLidars[1] = std::thread(&start_lidar,1);
     cv::waitKey(1000);
+    start_server();
 }
 
 void TW_CALL initCameras(void*) {
@@ -1253,12 +1264,11 @@ void TW_CALL initCameras(void*) {
 //    if (stat)
 //        saveImages(DUMP_FOLDER_PATH, tCam, cameras[0].dst);
 //#endif
-    tComm = std::thread(&start_Communication_thread);
-    tStream = std::thread(&start_Streaming_thread);
-    tacc = std::thread(&acceptCommunicationThread);
-    taccSt = std::thread(&acceptStreamThread);
+
 
 }
+
+
 
 #ifdef SCENE_REPLAY
 void TW_CALL time_startstop(void*) {
@@ -1296,6 +1306,7 @@ void TW_CALL startVideoStreaming(void*) {
 
 
 void Terminate() {
+    return;
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
 
@@ -1305,13 +1316,17 @@ void Terminate() {
     for(int i = 0; i < 2;++i)
        if (tLidars[i].joinable())tLidars[i].join();
    
-    for (int i = 0; i < CameraCount;++i)
-            if (tCameras[i].joinable()) tCameras[i].join();
+  //  for (int i = 0; i < CameraCount;++i)
+  //          if (tCameras[i].joinable()) 
+  //              tCameras[i].join();
+    serverComm.stop_server();
+    serverStream.stop_server();
 
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
     free(pixelData);
+    State::save_state();
 }
 
 void TW_CALL stop(void*) {
@@ -1351,7 +1366,9 @@ int main(int argc, char* argv[])
     DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
     camIniFile = configData[2].second; 
     meiConverterFile = configData[3].second;
-
+    State::set_filename("state.txt");
+    State::load_state();
+    
 
     /*PacketDecoder::HDLFrame lidarFrame2;
   
@@ -1407,6 +1424,7 @@ int main(int argc, char* argv[])
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
     atexit(Terminate);  // Called after glutMainLoop ends
+    glutCloseFunc(Terminate);
 
         // Set GLUT event callbacks
     // - Directly redirect GLUT mouse button events to AntTweakBar
@@ -1499,4 +1517,5 @@ int main(int argc, char* argv[])
 
 
     glutMainLoop();
+   
 }

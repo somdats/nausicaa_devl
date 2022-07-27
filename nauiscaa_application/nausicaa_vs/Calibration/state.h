@@ -3,9 +3,9 @@
 
 #include <string>
 struct State {
-	std::string filename;
+	static std::string & filename() { static std::string fn; return fn; };
 
-	void set_filename(std::string);
-	void save_state();
-	void load_state();
+	static void set_filename(std::string);
+	static void save_state();
+	static void load_state();
 };
