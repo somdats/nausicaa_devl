@@ -21,10 +21,6 @@ bool camerasOn[6];
 std::mutex m;
 std::condition_variable condv;
 bool picked = false;
-bool pick_point;
-int pick_x, pick_y;
-float picked_point[3];
-
 
 
 Server serverComm, serverStream;
