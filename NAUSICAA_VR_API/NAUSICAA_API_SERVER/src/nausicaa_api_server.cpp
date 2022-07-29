@@ -23,6 +23,11 @@ std::condition_variable condv;
 bool picked = false;
 
 
+extern float  LatDecimalDegrees, LonDecimalDegrees, ElevationMeters;
+extern float  pitchDegrees, rollDegrees;
+extern float  bowDirectionDegrees;
+
+
 Server serverComm, serverStream;
 
 
@@ -40,20 +45,22 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("updatePositionWGS84"))
 	{
-		float LatDecimalDegrees = deserialize_float(message);
-		float LongDecimalDegrees = deserialize_float(message);
-		float ElevationMeters = deserialize_float(message);
+		LatDecimalDegrees = deserialize_float(message);
+		LonDecimalDegrees = deserialize_float(message);
+		ElevationMeters = deserialize_float(message);
 	}
 	else
 	if (fname == std::string("updatePitchRoll"))
 	{
-		float pitchDegrees = deserialize_float(message);
-		float rollDegrees = deserialize_float(message);
+
+		pitchDegrees = deserialize_float(message);
+		rollDegrees = deserialize_float(message);
+
 	}
 	else
 	if (fname == std::string("updateBowDirection"))
 	{
-		float angleDegrees = deserialize_float(message);
+		bowDirectionDegrees = deserialize_float(message);
 	}
 	else
 	if (fname == std::string("addVirtualCamera"))
@@ -105,7 +112,7 @@ void call_API_function(std::string message) {
 		pick_point = true;
 		condv.wait(lk, [] {return picked;});
 		picked = false;
-		serverComm.send((char*)  & picked_point[0], 3 * sizeof(float));
+		serverComm.send((char*)  & picked_point[0], 6 * sizeof(float));
 
 		lk.unlock();
 

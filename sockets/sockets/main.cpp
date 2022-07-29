@@ -7,14 +7,14 @@
 using namespace cv;
 
 int value;
-float X, Y, Z;
+float X, Y, Z, Xg, Yg, Zg;
 cv::Mat im;
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 	if (event == EVENT_LBUTTONDOWN) {
-		VRSubsystem::sampleGeometry(x, im.rows-y, &X, &Y, &Z);
+		VRSubsystem::sampleGeometry(x, im.rows-y, &X, &Y, &Z, &Xg, &Yg, &Zg);
 		printf("%d %d \n", x, im.rows - y);
-		printf("%f %f %f \n", X, Y, Z);
+		printf("local: %f %f %f \n Geo: %f %f %f  ", X, Y, Z, Xg, Yg, Zg);
 	}
 }
 

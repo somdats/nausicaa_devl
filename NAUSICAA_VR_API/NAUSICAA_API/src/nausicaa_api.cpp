@@ -87,14 +87,17 @@ void VRSubsystem::selectQuality(float val) {
 	std::cout << "Quality selection:" << val << std::endl;
 }
 
-void VRSubsystem::sampleGeometry(int xi, int yi, float* longitude, float* latitude, float* height)
+void VRSubsystem::sampleGeometry(int xi, int yi, float* xLoc, float* yLoc, float* zLoc ,float* longitude, float* latitude, float* height)
 {
 	int byteCount;
 	clientComm.send_message(message()[std::string("sampleGeometry")][xi][yi].msg);
 	float* res = (float*)clientComm.receive_image(&byteCount);
-	*longitude = *(float*)&res[0];
-	*latitude  = *(float*)&res[1];
-	*height    = *(float*)&res[2];
+	*xLoc = *(float*)&res[0];
+	*yLoc = *(float*)&res[1];
+	*zLoc = *(float*)&res[2];
+	*longitude = *(float*)&res[3];
+	*latitude  = *(float*)&res[4];
+	*height    = *(float*)&res[5];
 }
 
 void VRSubsystem::enableLidar(lidarID id) {

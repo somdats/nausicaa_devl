@@ -176,7 +176,7 @@ extern "C" {
 			 \param longitude
 			 \param latitude
 		*/
-		void NAUSICAA_VR_API sampleGeometry(int xi, int yi, float* longitude, float* latitude, float* height);
+		void NAUSICAA_VR_API sampleGeometry(int xi, int yi, float *xLoc,float *yLoc, float *zLoc,float* longitude, float* latitude, float* height);
 
 		//! include lidarID in the reconstruction process
 		/*!

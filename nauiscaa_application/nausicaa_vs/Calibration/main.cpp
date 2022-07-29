@@ -149,23 +149,45 @@ bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
 bool enable_proj = false;
+
+// values to define the boatFrame
 float alphaFrame, betaFrame, gammaFrame;
 float xFrame, yFrame, zFrame;
 
+// values to define the boatFrameWS (set by the client)
+
+float  LatDecimalDegrees    = 0.f;
+float  LonDecimalDegrees   = 0.f;
+float  ElevationMeters      = 0.f;
+float  pitchDegrees         = 0.f;
+float  rollDegrees          = 0.f;
+float  bowDirectionDegrees  = 0.f;
 
 // picking
 bool pick_point = false;
 int pick_x, pick_y;
-float picked_point[3];
+float picked_point[6];
 
 std::vector<vcg::Point3f> selected;
 PlaneC planes[2][3];
 LineC  axis[2][3];
-vcg::Matrix44f transfLidar[2];
+
+// this matrix brings the point clouds to a common (local) reference system
+vcg::Matrix44f transfLidar[2]; 
+
+// this matrix brings the point clouds from a  common reference system to (local) one on the same point by rotated by pitch and roll
+// in order to compensate for the floating
+vcg::Matrix44f toSteadyFrame;
+
+// this matrix brings the point clouds from the (local) steadyFrame to one with origin in wgs84 latlong and with z oriented with the compass
+vcg::Matrix44f toGeoFrame;
 
 
+// local reference frame for the data
+vcg::Matrix44f boatFrame;   
 
-vcg::Matrix44f boatFrame;
+// boatFrame in world space
+vcg::Matrix44f boatFrameWS;
 
 
 std::mutex mesh_mutex;
@@ -493,6 +515,25 @@ void updateBoatFrame() {
                     vcg::Matrix44f().SetRotateDeg(gammaFrame, vcg::Point3f(0, 0, 1));
         boatFrame.SetColumn(3, vcg::Point3f(xFrame,yFrame,zFrame));
 }
+void updateToSteadyFrame() {
+    vcg::Matrix44f rollMat;
+    toSteadyFrame.SetRotateDeg(pitchDegrees, vcg::Point3f(1.0, 0.0, 0.0));
+    rollMat.SetRotateDeg(rollDegrees, vcg::Point3f(0.0, 0.0, 1.0));
+
+    toSteadyFrame = toSteadyFrame * rollMat;
+    toSteadyFrame = vcg::Inverse(toSteadyFrame);
+}
+void updateToGeoFrame() {
+    toGeoFrame.SetIdentity();
+    vcg::Matrix44f bowRot;
+    bowRot.SetRotateDeg(bowDirectionDegrees, vcg::Point3f(0.0, 1.0, 0.0));
+    toSteadyFrame.SetRotateDeg(pitchDegrees, vcg::Point3f(1.0, 0.0, 0.0));
+    bowRot.SetRotateDeg(rollDegrees, vcg::Point3f(0.0, 0.0, 1.0));
+    toGeoFrame = bowRot * toGeoFrame;
+    toGeoFrame.SetColumn(3, vcg::Point3f(LatDecimalDegrees, LonDecimalDegrees, ElevationMeters));
+    toGeoFrame = vcg::Inverse(toGeoFrame);
+}
+
 void drawScene() {
     /* BEGIN DRAW SCENE */
     vcg::Matrix44f toCamera;
@@ -504,6 +545,7 @@ void drawScene() {
         glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
 
         glMultMatrix(transfLidar[il]);
+        glMultMatrix(toSteadyFrame);
         toCamera.SetIdentity();
 
         GLERR();
@@ -543,7 +585,7 @@ void drawScene() {
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
             // toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il];
-            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * transfLidar[il];
+            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame*transfLidar[il];
             glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
             glActiveTexture(GL_TEXTURE6);
@@ -594,6 +636,7 @@ void Display() {
         pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h));
     }
     updateBoatFrame();
+    updateToSteadyFrame();
 
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -731,7 +774,7 @@ void Display() {
             // these shadow maps will have to be created for each camera
             for (int il = 0; il < N_LIDARS; ++il) {
                 
-                toCamera = oglP * cameras[currentCamera].opengl_extrinsics() * transfLidar[il];  // opengl matrices
+                toCamera = oglP * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame*transfLidar[il];  // opengl matrices
                 //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il]; (opencv matrices)
 
                 glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
@@ -814,13 +857,17 @@ void Display() {
                 picked_point[0] = x3d;
                 picked_point[1] = y3d;
                 picked_point[2] = z3d;
+                vcg::Point4f xyzGeo = toGeoFrame* vcg::Point4f(x3d, y3d, z3d, 1.0);
+                picked_point[0] = xyzGeo[0];
+                picked_point[1] = xyzGeo[1];
+                picked_point[2] = xyzGeo[2];
+
                 {
                     std::lock_guard lk(m);
                     picked  = true;
                     ::pick_point = false;
                     condv.notify_one();
                 }
-                
             }
 
             GlShot<vcg::Shotf>::UnsetView(); ;
@@ -1210,10 +1257,7 @@ void start_Streaming_thread() {
         outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
 #endif //  VIDEO_STREAM
 
-     
-
-      
-
+  
         buff_mutex.unlock();
         cv::waitKey(10);
         /* }*/
