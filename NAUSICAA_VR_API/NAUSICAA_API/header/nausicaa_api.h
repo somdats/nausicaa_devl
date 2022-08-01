@@ -315,13 +315,25 @@ extern "C" {
 		/// set the frustrum of a virtual camera
 		void NAUSICAA_VR_API setCameraFrustrum(VirtualCameraID cId, float sx, float  dx, float bt, float tp, float focalLength, int ViewPortX, int viewPortY);
 
-		/// get the id of a virtual camera
-		//VirtualCameraID virtualID()const;
-
-
 		/// get the camera frustum
-		void NAUSICAA_VR_API getFrustum(VirtualCameraID cId, int& sx, int& dx, int& bt, int& tp, float& nr);
+		void NAUSICAA_VR_API getFrustum(VirtualCameraID cId, float* sx, float* dx, float* bt, float* tp, float* nr);
 
+		//! get the camera positoin and view frame
+		/*!
+			\param unique identifier of the camera
+			\param unique x position of the eye
+			\param unique y position of the eye
+			\param unique z position of the eye
+
+			\param  x component of the view direction
+			\param  y component of the view direction
+			\param  z component of the view direction
+
+			\param  x component of the up direction
+			\param  y component of the up direction
+			\param  z component of the up direction
+		*/
+		void NAUSICAA_VR_API getPositionAndDirection(VirtualCameraID cId, float *eyeX, float *eyeY, float *eyeZ, float *dirX, float *dirY, float *dirZ, float *upX, float *upY, float *upZ);
 	}
 
 

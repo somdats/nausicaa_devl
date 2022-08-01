@@ -106,8 +106,7 @@ void VRSubsystem::enableLidar(lidarID id) {
 }
 
 void VRSubsystem::enableAllLidars() {
-	VRSubsystem::enableLidar(0);
-	VRSubsystem::enableLidar(1);
+	clientComm.send_message(message()[std::string("enableAllLidars")].msg);
 }
 
 void VRSubsystem::disableLidar(lidarID id) {
@@ -116,8 +115,7 @@ void VRSubsystem::disableLidar(lidarID id) {
 }
 
 void VRSubsystem::disableAllLidars() {
-	disableLidar(0);
-	disableLidar(1);
+	clientComm.send_message(message()[std::string("disableAllLidars")].msg);
 }
 
 void VRSubsystem::enableCamera(cameraID id) {
@@ -127,8 +125,8 @@ void VRSubsystem::enableCamera(cameraID id) {
 }
 
 void VRSubsystem::enableAllCameras() {
-	for (int i = 0; i < 6; ++i)
-		VRSubsystem::enableCamera(i);
+	clientComm.send_message(message()[std::string("enableAllCameras")].msg);
+
 }
 
 void VRSubsystem::disableCamera(cameraID id) {
@@ -137,8 +135,7 @@ void VRSubsystem::disableCamera(cameraID id) {
 	std::cout << "disable Camera " << id << std::endl;
 }
 void VRSubsystem::disableAllCameras() {
-	for (int i = 0; i < 6; ++i)
-		VRSubsystem::disableCamera(i);
+	clientComm.send_message(message()[std::string("disableAllCameras")].msg);
 }
 
 gliphID VRSubsystem::place3DGliph(gliphTypeID, float x, float y, float d) {
@@ -207,7 +204,6 @@ void VirtualCamera::setPosition(VirtualCameraID cId, float eyeX, float eyeY, flo
 
 void VirtualCamera::setViewDirection(VirtualCameraID cId, float dirX, float dirY, float dirZ) {
 	clientComm.send_message(message()[std::string("setViewDirection")][cId][dirX][dirY][dirZ].msg);
-	// what is viewDirection?
 }
 void VirtualCamera::setCameraFrustrum(VirtualCameraID cId, float sx, float dx, float bt, float tp, float focalLength,
 	int viewPortX, int viewPortY) {
@@ -217,11 +213,35 @@ void VirtualCamera::setCameraFrustrum(VirtualCameraID cId, float sx, float dx, f
 }
 
 
-void VirtualCamera::getFrustum(VirtualCameraID cId, int& sx, int& dx, int& bt, int& tp, float& nr) {
-	clientComm.send_message(message()[std::string("getFrustum")][cId][sx][dx][bt][tp][nr].msg);
+void VirtualCamera::getFrustum(VirtualCameraID cId, float* sx, float* dx, float* bt, float* tp, float* nr) {
+	clientComm.send_message(message()[std::string("getFrustum")][cId].msg);
+	int byteCount;
+	float* res = (float*)clientComm.receive_image(&byteCount);
+	*sx = *(float*)&res[0];
+	*dx = *(float*)&res[1];
+	*bt = *(float*)&res[2];
+	*tp = *(float*)&res[3];
+	*nr = *(float*)&res[4];
+ 
 	std::cout << "get CameraFrustrum" << std::endl;
 }
 
+void VirtualCamera::getPositionAndDirection(VirtualCameraID cId, float* eyeX, float* eyeY, float* eyeZ, float* dirX, float* dirY, float* dirZ, float* upX, float* upY, float* upZ) {
+	clientComm.send_message(message()[std::string("getPositionAndDirection")][cId].msg);
+	int byteCount;
+	float* res = (float*)clientComm.receive_image(&byteCount);
+	*eyeX = *(float*)&res[0];
+	*eyeY = *(float*)&res[1];
+	*eyeZ = *(float*)&res[2];
+	*dirX = *(float*)&res[3];
+	*dirY = *(float*)&res[4];
+	*dirZ = *(float*)&res[5];
+	* upX = *(float*)&res[6];
+	* upY = *(float*)&res[7];
+	* upZ = *(float*)&res[8];
+
+	std::cout << "get CameraFrustrum" << std::endl;
+}
 
 void VirtualCamera::setPerspective(VirtualCameraID cId, float AngleDeg, float AspectRatio, float Focal, int viewportX, int viewportY) {
 	clientComm.send_message(message()[std::string("setPerspective")][cId][AngleDeg][AspectRatio][Focal][viewportX][viewportY].msg);

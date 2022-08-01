@@ -21,7 +21,7 @@ extern std::condition_variable condv;
 extern bool picked;
 extern bool pick_point;
 extern int pick_x, pick_y;
-extern float picked_point[3];
+extern float picked_point[6];
 
 void sampleGeometry(float xi, float yi, float& x, float& y, float& z);
 

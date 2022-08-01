@@ -46,6 +46,16 @@ void main() {
 		640, 480);
 	VirtualCamera::setPosition(newCamera,0.0, 0.0, 5.0);
 	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
+
+	float  sx, dx, bt, tp, nr;
+	VirtualCamera::getFrustum(newCamera, &sx, &dx, &bt, &tp, &nr);
+	printf("cam %d, frustum:  %f %f %f %f %f \n", newCamera,sx, dx, bt, tp, nr);
+
+	float eX, eY, eZ, dX, dY, dZ, uX, uY, uZ;
+	VirtualCamera::getPositionAndDirection(newCamera, &eX, &eY,&eZ, &dX, &dY, &dZ, &uX,&uY,&uZ);
+	printf("cam %d, posdir: %f %f %f %f %f %f %f %f %f \n", newCamera, eX, eY, eZ, dX, dY, dZ, uX, uY, uZ);
+
+
 	VRSubsystem::renderFromCamera(newCamera);
 
 	VRSubsystem::startStreaming();

@@ -637,6 +637,7 @@ void Display() {
     }
     updateBoatFrame();
     updateToSteadyFrame();
+    updateToGeoFrame();
 
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -858,9 +859,9 @@ void Display() {
                 picked_point[1] = y3d;
                 picked_point[2] = z3d;
                 vcg::Point4f xyzGeo = toGeoFrame* vcg::Point4f(x3d, y3d, z3d, 1.0);
-                picked_point[0] = xyzGeo[0];
-                picked_point[1] = xyzGeo[1];
-                picked_point[2] = xyzGeo[2];
+                picked_point[3] = xyzGeo[0];
+                picked_point[4] = xyzGeo[1];
+                picked_point[5] = xyzGeo[2];
 
                 {
                     std::lock_guard lk(m);

@@ -48,7 +48,7 @@ void State::load_state() {
 	if (fs) {
 		while (!feof(fs)) {
 			char line[1000];
-			line[fscanf(fs, "%s", line)] = '\0';
+			fgets(line, 1000, fs);
 			std::string message = std::string(line);
 			std::string field = func_name(message);
 			int n_virtual_cameras = 0;

@@ -26,6 +26,7 @@ bool picked = false;
 extern float  LatDecimalDegrees, LonDecimalDegrees, ElevationMeters;
 extern float  pitchDegrees, rollDegrees;
 extern float  bowDirectionDegrees;
+extern int NUMCAM;
 
 
 Server serverComm, serverStream;
@@ -124,6 +125,16 @@ void call_API_function(std::string message) {
 		lidarOn[id] = true;
 	}
 	else
+	if (fname == std::string("enableAllLidars"))
+	{
+		lidarOn[0] = lidarOn[1] = true;
+	}
+	else
+	if (fname == std::string("disableAllLidars"))
+	{
+		lidarOn[0] = lidarOn[1] = false;
+	}
+	else
 	if (fname == std::string("disableLidar"))
 	{
 		int id = deserialize_int(message);
@@ -140,6 +151,18 @@ void call_API_function(std::string message) {
 	{
 		int id = deserialize_int(message);
 		camerasOn[id] = false;
+	}
+	else
+	if (fname == std::string("enableAllCameras"))
+	{
+		for(int i= 0; i < NUMCAM; ++i) 
+			camerasOn[i] = true;
+	}
+	else
+	if (fname == std::string("disableAllCameras"))
+	{
+		for (int i = 0; i < NUMCAM; ++i)
+			camerasOn[i] = false;
 	}
 	else
 	if (fname == std::string("setPerspective"))
@@ -270,15 +293,32 @@ void call_API_function(std::string message) {
 		int vy = deserialize_int(message);
 
 		virtualCameras[id].Intrinsics.SetFrustum(sx, dx, bt, tp, focal, vcg::Point2i(vx, vy));
+		
 		std::cout << " camera frustrum set" << std::endl;
 	}
 	else
 	if (fname == std::string("getFrustum"))
 	{
 		int id = deserialize_int(message);
-		float sx, dx, bt, tp, focal;
-		virtualCameras[id].Intrinsics.GetFrustum(sx, dx, bt, tp, focal);
+		float frustum[5];
+		virtualCameras[id].Intrinsics.GetFrustum(frustum[0], frustum[1], frustum[2], frustum[3], frustum[4]);
+		serverComm.send((char*)&frustum[0], 5 * sizeof(float));
 	}
+	else
+		if (fname == std::string("getPositionAndDirection"))
+		{
+			int id = deserialize_int(message);
+			float posdir[9];
+			*(vcg::Point3f*)&posdir[0] = virtualCameras[id].GetViewPoint();
+			vcg::Matrix44f rot = virtualCameras[id].Extrinsics.Rot();
+			*(vcg::Point3f*)&posdir[3] = virtualCameras[id].Extrinsics.Rot().GetColumn3(2);
+			posdir[3] *= -1.0;
+			posdir[4] *= -1.0;
+			posdir[5] *= -1.0;
+
+			*(vcg::Point3f*)&posdir[6] = virtualCameras[id].Extrinsics.Rot().GetColumn3(1);
+			serverComm.send((char*)&posdir[0], 9 * sizeof(float));
+		}
 }
 
 
