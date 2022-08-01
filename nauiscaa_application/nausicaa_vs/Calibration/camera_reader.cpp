@@ -270,7 +270,7 @@ void Camera::start_reading(){
 #else
     std::string Camerafull0args;
     //VideoCapture cap;
-    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay ! decodebin ! videoconvert !  appsink";
+    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay ! decodebin ! videoconvert !  appsink drop=1";
   /*  if ("5000" == std::to_string(inStPort))
     {*/
         std::string port = " udpsrc port = " + std::to_string(inStPort);
