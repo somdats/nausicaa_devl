@@ -18,6 +18,7 @@
 
 struct Camera{
     Camera(){}
+    Camera(const Camera & _) {}
     cv::VideoCapture cap;
     cv::Mat map1, map2;
     cv::Mat dst;

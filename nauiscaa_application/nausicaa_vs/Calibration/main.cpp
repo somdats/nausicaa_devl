@@ -138,7 +138,7 @@ struct LineC : public vcg::Line3f {
 
 // instantiate server
 Server servC, servS;
-::Camera  cameras[6];
+std::vector<::Camera>  cameras;
 
 int currentLidar = 0;
 int currentPlane = 0;
@@ -194,7 +194,8 @@ std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int texture;
 Shader point_shader, shadow_shader,texture_shader;
-FBO shadowFBO, cameraFBO;
+std::vector<FBO> shadowFBO;
+FBO cameraFBO;
 TwBar* bar; // Pointer to the tweak bar
 
 //selection
@@ -503,7 +504,9 @@ void initializeGLStuff() {
     glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 
  
-    shadowFBO.Create(1948, 1096);
+    shadowFBO.resize(NUMCAM);
+    for(int i = 0; i < NUMCAM; ++i)
+        shadowFBO[i].Create(1948, 1096);
 
     cameraFBO.Create(1280, 720);
  
@@ -588,8 +591,8 @@ void drawScene() {
             toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame*transfLidar[il];
             glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_2D, shadowFBO.id_tex);
+            glActiveTexture(GL_TEXTURE6); // here we need to pass all the cameras
+            glBindTexture(GL_TEXTURE_2D, shadowFBO[0].id_tex);
         }
 
        // glColor3f(il == 0, il == 0, il == 1);
@@ -680,15 +683,9 @@ void Display() {
         glLoadIdentity();
         gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
 
-     
-     //   glPushMatrix();
-     //   vcg::Matrix44f rot; track[currentLidar].track.rot.ToMatrix(rot);
-      //  glMultMatrix(&rot[0][0]);
-    //    draw_frame(vcg::Matrix44f().Identity());
-    //    glPopMatrix();
 
         track[currentLidar].center = vcg::Point3f(0, 0, 0);
-        track[currentLidar].radius = 1;
+        track[currentLidar].radius = 1.0;
         track[currentLidar].GetView();
         track[currentLidar].Apply();
 
@@ -713,8 +710,6 @@ void Display() {
 
 
             if (!escapemode) {
-
-
                 selected.clear();
                 glPointSize(3.0);
                 glColor3f(1, 0, 0);
@@ -758,49 +753,48 @@ void Display() {
         for (int il = 0; il < N_LIDARS; ++il)
             updatePC(il);
 
-        
-
-
         if (enable_proj) {
-            // create shadow maps
-            glViewport(0, 0, shadowFBO.w, shadowFBO.h); // shadowFBO will be one for each camera
-            glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO.id_fbo);
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
+            for (int iCam = 0; iCam < NUMCAM;++iCam) {
+                // create shadow maps
+                glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
+                glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
+                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                glEnable(GL_DEPTH_TEST);
 
-            glUseProgram(shadow_shader.pr);
-            vcg::Matrix44f oglP = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10.0);
- 
+                glUseProgram(shadow_shader.pr);
+                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 10.0);
 
-            // these shadow maps will have to be created for each camera
-            for (int il = 0; il < N_LIDARS; ++il) {
-                
-                toCamera = oglP * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame*transfLidar[il];  // opengl matrices
-                //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il]; (opencv matrices)
 
-                glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
+                // these shadow maps will have to be created for each camera
+                for (int il = 0; il < N_LIDARS; ++il) {
 
-                GLERR();
-                glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+                    toCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * transfLidar[il];  // opengl matrices
 
-                glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
+                    glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCamera[iCam][0]);
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    GLERR();
+                    glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
+                    glEnableVertexAttribArray(0);
+                    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
-                glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-            glUseProgram(0);
+                    glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
+                    glEnableVertexAttribArray(1);
+                    glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            //          cv::Mat ima(1096,1948,CV_8UC3);
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
+                    glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                }
+                glUseProgram(0);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+             //          cv::Mat ima(1096,1948,CV_8UC3);
             //          glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_UNSIGNED_BYTE,ima.ptr());
-            //          cv::imwrite("depth_ogl.png",ima);
+            //          cv::imwrite("depth_ogl.png",ima);           
+            }
+
 
         }
 
@@ -966,7 +960,8 @@ void TW_CALL rotateAxis(void*) {
 }
 
 void TW_CALL alignCamera(void*) {
-    cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
+     for(int i= 0; i < NUMCAM;++i)
+         cameras[i].calibrated = cameras[i].SolvePnP(cameras[i].p3);
 }
 
 void TW_CALL computeTranformation(void*) {
@@ -1057,17 +1052,17 @@ void TW_CALL setFrame(void*) {
     boatFrame.SetIdentity();
 }
 
-void TW_CALL loadImPoints(void*) {
-    std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
+void   loadImPoints(int iCam) {
+    std::string correspondences_file = std::to_string(cameras[iCam].camID) + "_correspondences.txt";
 #ifdef SCENE_REPLAY
-    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
+    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iCam].camID) + "\\" + correspondences_file;
 #endif
 
     FILE* fo = fopen(correspondences_file.c_str(), "r");
     if (fo) {
         char trash[1000];
         fgets(trash, 1000, fo);
-        cameras[currentCamera].p3.resize(0);
+        cameras[iCam].p3.resize(0);
 
         int i = 0;
         float x, y, z, u, v;
@@ -1075,12 +1070,17 @@ void TW_CALL loadImPoints(void*) {
         while (!feof(fo)) {
             int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
             if (r == 5) {
-                cameras[currentCamera].p3.push_back(vcg::Point3f(x, y, z));
-                cameras[currentCamera].p2i.push_back(cv::Point2f(u, v));
+                cameras[iCam].p3.push_back(vcg::Point3f(x, y, z));
+                cameras[iCam].p2i.push_back(cv::Point2f(u, v));
             }
         }
         fclose(fo);
     }
+}
+
+void TW_CALL loadImPoints(void*) {
+    for (int i = 0; i < NUMCAM;++i)
+        loadImPoints(i);
 }
 
 void TW_CALL loadAxis(void*) {
@@ -1293,6 +1293,7 @@ void TW_CALL initCameras(void*) {
 //#if SAVE_IMG
 //     timeCamera1 = std::chrono::system_clock::now();
 //#endif
+    cameras.resize(NUMCAM);
     for (int i = 0; i < NUMCAM; ++i)
     {
         cameras[i].init(5000 + i, camIniFile, 5000 + i, true);
@@ -1336,11 +1337,11 @@ void TW_CALL runTest(void*) {
     ::loadAxis(0);
     ::computeTranformation(0);
     ::initCameras(0);
-    for (int ic = 0; ic < NUMCAM;++ic) {
-        currentCamera = ic;
-        ::loadImPoints(0);
-        ::alignCamera(0);
-    }
+    
+    ::loadImPoints((void*)0);
+    ::alignCamera((void*)0);
+     
+    currentCamera = 0;
     ::enable_proj = true;
 }
 // to be used 
