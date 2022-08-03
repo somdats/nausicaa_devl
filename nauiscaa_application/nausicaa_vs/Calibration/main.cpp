@@ -193,7 +193,7 @@ vcg::Matrix44f boatFrameWS;
 std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int texture;
-Shader point_shader, shadow_shader,texture_shader;
+Shader point_shader, shadow_shader,texture_shader,flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
 TwBar* bar; // Pointer to the tweak bar
@@ -493,6 +493,16 @@ void initializeGLStuff() {
     GLERR();
     texture_shader.bind("uTexture");
 
+    if (flat_shader.SetFromFile("./Calibration/Shaders/flat.vs",
+        0, "./Calibration/Shaders/flat.fs") < 0)
+    {
+        printf("flat SHADER ERR");
+    }
+    flat_shader.Validate();
+    GLERR();
+    flat_shader.bind("mm");
+    flat_shader.bind("pm");
+
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -588,13 +598,23 @@ void drawScene() {
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
             // toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il];
-            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame*transfLidar[il];
+            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
             glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
             glActiveTexture(GL_TEXTURE6); // here we need to pass all the cameras
             glBindTexture(GL_TEXTURE_2D, shadowFBO[0].id_tex);
         }
+        else 
+            if (drawmode == SMOOTH)
+            {
+            glUseProgram(flat_shader.pr);
+            glGetFloatv(GL_PROJECTION_MATRIX, pm);
+            glUniformMatrix4fv(flat_shader["pm"], 1, GL_FALSE, pm);
 
+            glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+            glUniformMatrix4fv(flat_shader["mm"], 1, GL_FALSE, mm);
+
+        }
        // glColor3f(il == 0, il == 0, il == 1);
         glColor3f(il == 0 || 1, il == 0, 0);
 
