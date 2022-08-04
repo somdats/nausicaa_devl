@@ -171,6 +171,12 @@ float picked_point[6];
 std::vector<vcg::Point3f> selected;
 PlaneC planes[2][3];
 LineC  axis[2][3];
+std::vector<vcg::Matrix44f> frames[2];
+std::vector<vcg::Point3f>  points;
+bool usePoint[100];
+
+float xCoord, yCoord, zCoord;
+int idFrame;
 
 // this matrix brings the point clouds to a common (local) reference system
 vcg::Matrix44f transfLidar[2]; 
@@ -196,7 +202,9 @@ unsigned int texture;
 Shader point_shader, shadow_shader,texture_shader,flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
-TwBar* bar; // Pointer to the tweak bar
+TwBar* bar, // Pointer to the tweak bar
+* frameBar, 
+* pointsBar;
 
 //selection
 vcg::Point2f corners_sel_2D[2];
@@ -494,14 +502,17 @@ void initializeGLStuff() {
     texture_shader.bind("uTexture");
 
     if (flat_shader.SetFromFile("./Calibration/Shaders/flat.vs",
-        0, "./Calibration/Shaders/flat.fs") < 0)
+        "./Calibration/Shaders/flat.gs", "./Calibration/Shaders/flat.fs") < 0)
     {
         printf("flat SHADER ERR");
     }
     flat_shader.Validate();
     GLERR();
+    
     flat_shader.bind("mm");
     flat_shader.bind("pm");
+   
+    GLERR();
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -512,14 +523,14 @@ void initializeGLStuff() {
 
     glColor3f(1, 1, 1);
     glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-
+    GLERR();
  
     shadowFBO.resize(NUMCAM);
     for(int i = 0; i < NUMCAM; ++i)
         shadowFBO[i].Create(1948, 1096);
 
     cameraFBO.Create(1280, 720);
- 
+    GLERR();
 }
 
 void updateBoatFrame() {
@@ -557,9 +568,7 @@ void drawScene() {
         glPushMatrix();
         glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
 
-        glMultMatrix(transfLidar[il]);
-        glMultMatrix(toSteadyFrame);
-        toCamera.SetIdentity();
+
 
         GLERR();
         // draw axis
@@ -573,6 +582,9 @@ void drawScene() {
             }
         GLERR();
 
+        glMultMatrix(transfLidar[il]);
+        glMultMatrix(toSteadyFrame);
+        toCamera.SetIdentity();
 
         if (enable_proj) {
             drawmode = SMOOTH;
@@ -736,6 +748,7 @@ void Display() {
                 glBegin(GL_POINTS);
                 for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
                     p = mesh.vert[i].cP();
+                    p = transfLidar[currentLidar] * p;
                     gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
                     if (boxsel.IsIn(vcg::Point3f(x, y, 0))) {
                         selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
@@ -821,7 +834,7 @@ void Display() {
         glViewport(0, 0, width, height);
         glClearColor(0.0, 0.0, 0.0, 1.0);      
        
-         drawScene();
+        drawScene();
 
         if (!showfromcamera && showCameras) {
             // draw cameras
@@ -834,7 +847,20 @@ void Display() {
             glPopMatrix();
         }
 
+        for (int ip = 0; ip < points.size(); ++ip)
+            if(::usePoint[ip])
+                {
+                    glColor3f(0, 0, 1);
+                    glPushMatrix();
+                    vcg::Point3f p = points[ip];
+                    glTranslatef(p[0], p[1], p[2]);
+                    gluSphere(gluNewQuadric(), 0.02, 10, 10);
+                    glPopMatrix();
+                }
 
+        for (int fi = 0; fi < frames[0].size(); ++fi)
+            if (::idFrame == fi)
+                draw_frame(frames[0][fi]);
 
         if (showfromcamera) {
             // branch show from one of the currentCamera
@@ -978,6 +1004,49 @@ void TW_CALL rotateAxis(void*) {
     axis[currentLidar][2].SetDirection(R * axis[currentLidar][2].Direction());
 
 }
+void TW_CALL addPoint(void*) {
+    vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord);
+    std::string pn = std::to_string(newPoint.X()) + "," + std::to_string(newPoint.Y()) + "," + std::to_string(newPoint.Z());
+    std::string n = pn;
+    
+    TwAddVarRW(pointsBar, n.c_str(), TW_TYPE_BOOL8, &usePoint[points.size()],"");
+    points.push_back(newPoint);
+
+}
+std::vector<TwEnumVal> frame_item_dd;
+vcg::Matrix44f  axis2frame() {   
+    vcg::Matrix44f F;
+    F.SetIdentity();
+    F.SetColumn(0, axis[currentLidar][0].Direction());
+    F.SetColumn(1, axis[currentLidar][1].Direction());
+    F.SetColumn(2, axis[currentLidar][2].Direction());
+
+    const vcg::Point3f& _o = axis[currentLidar][0].Origin();
+
+    F.SetColumn(3, _o);
+    F[3][3] = 1.0;
+    return F;
+}
+
+void addFrameToGUI() {
+    std::string n = std::string("frame ") + std::to_string(frames[currentLidar].size());
+
+    frame_item_dd.clear();
+    for (int i = 0; i < frames[currentLidar].size();++i) {
+        std::string num = std::to_string(i);
+        frame_item_dd.push_back({ i,num.c_str() });
+    }
+   
+    TwType frames_dd = TwDefineEnum("frames", &*frame_item_dd.begin(), frame_item_dd.size());
+
+    TwRemoveVar(frameBar, "Frame");
+    TwAddVarRW(frameBar, "Frame", frames_dd, &idFrame, " keyIncr='<' keyDecr='>' label = 'in frame' help='reference frame.' ");
+}
+
+void TW_CALL addFrame(void*) {
+    frames[currentLidar].push_back(axis2frame());
+    addFrameToGUI();
+}
 
 void TW_CALL alignCamera(void*) {
      for(int i= 0; i < NUMCAM;++i)
@@ -1027,7 +1096,61 @@ void TW_CALL computeFrame(void*) {
     const vcg::Point3f& n2 = axis[currentLidar][2].Direction();
     if ((n0 ^ n1) * n2 < 0)
         axis[currentLidar][2].Flip();
+}
 
+
+void TW_CALL saveFrames(void*) {
+    std::string  file = std::string("frames.bin");
+#ifdef SCENE_REPLAY
+     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+#endif
+    FILE* fo = fopen( file.c_str(), "wb");
+    for (int il = 0; il < 2; il++)
+        for (int fi = 0; fi < frames[il].size(); fi++) {
+            printf("write frame \n");
+            fwrite(&(frames[il][0][0][0]),  sizeof(vcg::Matrix44f),1, fo);
+        }
+    fclose(fo);
+}
+void TW_CALL loadFrames(void*) {
+    std::string  file = std::string("frames.bin");
+#ifdef SCENE_REPLAY
+    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+#endif
+    FILE* fo = fopen(file.c_str(), "rb");
+    fseek(fo, 0, SEEK_END);
+    int l = ftell(fo);
+    fseek(fo, 0, SEEK_SET);
+    for (int i = 0; i < l / sizeof(vcg::Matrix44f); ++i)
+    {
+        size_t nr = 0;
+        frames[0].push_back(vcg::Matrix44f());
+        nr = fread(& (frames[0].back()[0][0]),  sizeof(vcg::Matrix44f),1, fo);
+        addFrameToGUI();
+    }
+    fclose(fo);
+}
+
+void TW_CALL savePoints(void*) {
+    std::string  file = std::string("points.bin");
+#ifdef SCENE_REPLAY
+    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+#endif
+    FILE* fo = fopen(file.c_str(), "wb");
+    fwrite(&(points[0][0]), sizeof(vcg::Point3f), points.size(), fo);
+    fclose(fo);
+}
+void TW_CALL loadPoints(void*) {
+    std::string  file = std::string("points.bin");
+#ifdef SCENE_REPLAY
+    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+#endif
+    FILE* fo = fopen(file.c_str(), "rb");
+    fseek(fo, 0, SEEK_END);
+    int l = ftell(fo);
+    fseek(fo, 0, SEEK_SET);
+    fwrite(&(points[0][0]), sizeof(vcg::Point3f), l/sizeof(vcg::Point3f), fo);
+    fclose(fo);
 }
 
 
@@ -1424,6 +1547,7 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 }
 
 
+
 int main(int argc, char* argv[])
 {
     std::string inFile = "config.txt";
@@ -1523,6 +1647,7 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "showplanes", TW_TYPE_BOOL8, &showPlanes, " label='Show Planes' group=`Register Lidars` help=` select` ");
     TwAddButton(bar, "compute frame", ::computeFrame, 0, " label='Compute Frame' group=`Register Lidars` help=`compute frame` ");
     TwAddButton(bar, "rotate", ::rotateAxis, 0, " label='rotate frame' group=`Register Lidars` help=`rotate frame` ");
+    TwAddButton(bar, "add", ::addFrame, 0, " label='add  frame' group=`Register Lidars` help=`add current frame` ");
     TwAddVarRW(bar, "Current Lidar", TW_TYPE_UINT32, &currentLidar, " label='currrent LIdar' min=0 max=1 group=`Register Lidars` help=` current lidar` ");
     TwAddVarRW(bar, "Current Plane", TW_TYPE_UINT32, &currentPlane, " label='currrent Plane' min=0 max=2 group=`Register Lidars` help=` current plane` ");
     TwAddVarRW(bar, "Current Axis", TW_TYPE_UINT32, &ax, " label='currrent Axis on the image' min=0 max=2 group=`Register Lidars` help=` current axis` ");
@@ -1561,6 +1686,9 @@ int main(int argc, char* argv[])
     // add 'g_CurrentShape' to 'bar': this is a variable of type ShapeType. Its key shortcuts are [<] and [>].
     TwAddVarRW(bar, "Draw Mode", drawMode, &drawmode, " keyIncr='<' keyDecr='>' group=`Rendering` help='Change draw mode.' ");
 
+
+
+
 #ifdef SCENE_REPLAY
     end_time = std::numeric_limits<unsigned long long >::max();
     start_time = 0;
@@ -1573,6 +1701,19 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
     TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
 #endif
+    
+    frameBar = TwNewBar("Frames");
+    TwAddVarRW(frameBar, "xCoord", TW_TYPE_FLOAT, &xCoord, " value = 0.0 label='x'   help=` x coord` ");
+    TwAddVarRW(frameBar, "yCoord", TW_TYPE_FLOAT, &yCoord, " value = 0.0 label='y'   help=` y coord` ");
+    TwAddVarRW(frameBar, "zCoord", TW_TYPE_FLOAT, &zCoord, " value = 0.0 label='z'   help=` z coord` ");
+    TwAddButton(frameBar, "addPoint", ::addPoint, 0, " label='add this point' help=`add this point to the list of known points` ");
+    TwAddButton(frameBar, "saveFrames", ::saveFrames, 0, " label='saveFrames'  help=`save frames` ");
+    TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
+
+    pointsBar = TwNewBar("Points");
+    TwAddButton(frameBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
+    TwAddButton(frameBar, "loadPoints", ::loadPoints, 0, " label='loadPoints'  help=`load points` ");
+
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
 
