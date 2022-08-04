@@ -1128,6 +1128,7 @@ void TW_CALL loadFrames(void*) {
 #ifdef SCENE_REPLAY
     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
 #endif
+    frames[0].clear();
     FILE* fo = fopen(file.c_str(), "rb");
     fseek(fo, 0, SEEK_END);
     int l = ftell(fo);
@@ -1219,16 +1220,16 @@ void   loadImPoints(int iCam) {
     if (fo) {
         char trash[1000];
         fgets(trash, 1000, fo);
-        cameras[iCam].p3.resize(0);
-
+ 
         int i = 0;
         float x, y, z, u, v;
 
         while (!feof(fo)) {
             int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
             if (r == 5) {
-                cameras[iCam].p3.push_back(vcg::Point3f(x, y, z));
-                cameras[iCam].p2i.push_back(cv::Point2f(u, v));
+                cameras[iCam].p3[i]  = vcg::Point3f(x, y, z);
+                cameras[iCam].p2i[i] = cv::Point2f(u, v);
+                ++i;
             }
         }
         fclose(fo);
@@ -1236,8 +1237,7 @@ void   loadImPoints(int iCam) {
 }
 
 void TW_CALL loadImPoints(void*) {
-    for (int i = 0; i < NUMCAM;++i)
-        loadImPoints(i);
+    loadImPoints(currentCamera);
 }
 
 void TW_CALL loadAxis(void*) {
@@ -1724,6 +1724,11 @@ int main(int argc, char* argv[])
     TwAddButton(frameBar, "addPoint", ::addPoint, 0, " label='add this point' help=`add this point to the list of known points` ");
     TwAddButton(frameBar, "saveFrames", ::saveFrames, 0, " label='saveFrames'  help=`save frames` ");
     TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
+
+    vcg::Matrix44f I;I.SetIdentity();
+    frames[currentLidar].push_back(I);
+    addFrameToGUI();
+
 
     pointsBar = TwNewBar("Points");
     TwAddButton(pointsBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
