@@ -143,7 +143,7 @@ std::vector<::Camera>  cameras;
 int currentLidar = 0;
 int currentPlane = 0;
 int currentCamera = 0;
-int ax;
+int ax = 0;
 bool showPlanes = true;
 bool showCameras = false;
 bool showfromcamera = false;
@@ -1004,14 +1004,17 @@ void TW_CALL rotateAxis(void*) {
     axis[currentLidar][2].SetDirection(R * axis[currentLidar][2].Direction());
 
 }
-void TW_CALL addPoint(void*) {
-    vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord);
-    std::string pn = std::to_string(newPoint.X()) + "," + std::to_string(newPoint.Y()) + "," + std::to_string(newPoint.Z());
-    std::string n = pn;
-    
-    TwAddVarRW(pointsBar, n.c_str(), TW_TYPE_BOOL8, &usePoint[points.size()],"");
-    points.push_back(newPoint);
 
+void addPointToGUI(vcg::Point3f p,int i) {
+    std::string pn = std::to_string(p.X()) + "," + std::to_string(p.Y()) + "," + std::to_string(p.Z());
+    std::string n = pn;
+
+    TwAddVarRW(pointsBar, n.c_str(), TW_TYPE_BOOL8, &usePoint[i], "");
+}
+void TW_CALL addPoint(void*) {
+    vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord); 
+    points.push_back(newPoint);
+    addPointToGUI(newPoint, points.size());
 }
 std::vector<TwEnumVal> frame_item_dd;
 vcg::Matrix44f  axis2frame() {   
@@ -1051,6 +1054,14 @@ void TW_CALL addFrame(void*) {
 void TW_CALL alignCamera(void*) {
      for(int i= 0; i < NUMCAM;++i)
          cameras[i].calibrated = cameras[i].SolvePnP(cameras[i].p3);
+}
+
+void TW_CALL assignPointsToCamera(void*) {
+    cameras[currentCamera].p3.clear();
+    for (int ip = 0; ip < points.size();++ip)
+        if (usePoint[ip])
+            cameras[currentCamera].p3.push_back(points[ip]);
+    cameras[currentCamera].p2i.resize(cameras[currentCamera].p3.size());
 }
 
 void TW_CALL computeTranformation(void*) {
@@ -1149,8 +1160,11 @@ void TW_CALL loadPoints(void*) {
     fseek(fo, 0, SEEK_END);
     int l = ftell(fo);
     fseek(fo, 0, SEEK_SET);
-    fwrite(&(points[0][0]), sizeof(vcg::Point3f), l/sizeof(vcg::Point3f), fo);
+    points.resize(l / sizeof(vcg::Point3f));
+    fread(&(points[0][0]), sizeof(vcg::Point3f), points.size(), fo);
     fclose(fo);
+    for (int i = 0; i < points.size(); ++i)
+        addPointToGUI(points[i],i);
 }
 
 
@@ -1656,6 +1670,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "load", ::loadAxis, 0, " label='loadAxis' group=`Register Lidars` help=`rotate frame` ");
 
     TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
+    TwAddButton(bar, "assign points", ::assignPointsToCamera, 0, " label='assign 3D points' group=`Align Cameras` help=`copy points` ");
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
     TwAddButton(bar, "saveIP", ::saveImPoints, 0, " label='saveImPoints' group=`Align Cameras` help=` ` ");
     TwAddButton(bar, "loadIP", ::loadImPoints, 0, " label='loadImPoints' group=`Align Cameras` help=` ` ");
@@ -1711,8 +1726,8 @@ int main(int argc, char* argv[])
     TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
 
     pointsBar = TwNewBar("Points");
-    TwAddButton(frameBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
-    TwAddButton(frameBar, "loadPoints", ::loadPoints, 0, " label='loadPoints'  help=`load points` ");
+    TwAddButton(pointsBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
+    TwAddButton(pointsBar, "loadPoints", ::loadPoints, 0, " label='loadPoints'  help=`load points` ");
 
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
