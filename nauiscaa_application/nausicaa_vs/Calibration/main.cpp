@@ -453,7 +453,7 @@ void draw_frame(vcg::Matrix44f m) {
     for (int i = 0; i < 3; ++i) {
         glColor3f((i == 0), (i == 1), (i == 2));
         glVertex3f(o[0], o[1], o[2]);
-        vcg::Point3f a = m.GetRow3(i);
+        vcg::Point3f a = m.GetColumn3(i);
         glVertex3f(o[0]+a[0], o[1] + a[1], o[2] + a[2]);
     }
     glEnd();
@@ -842,7 +842,7 @@ void Display() {
             glPushMatrix();
             vcg::Point3f p = cameras[currentCamera].calibrated.GetViewPoint();
             glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.02, 10, 10);
+            gluSphere(gluNewQuadric(), 0.2, 10, 10);
             draw_frame(cameras[currentCamera].calibrated.Extrinsics.Rot());
             glPopMatrix();
         }
@@ -1013,8 +1013,8 @@ void addPointToGUI(vcg::Point3f p,int i) {
 }
 void TW_CALL addPoint(void*) {
     vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord); 
-    points.push_back(newPoint);
     addPointToGUI(newPoint, points.size());
+    points.push_back(newPoint);
 }
 std::vector<TwEnumVal> frame_item_dd;
 vcg::Matrix44f  axis2frame() {   
@@ -1031,17 +1031,12 @@ vcg::Matrix44f  axis2frame() {
     return F;
 }
 
+ 
+TwEnumVal listframes[20] = { {0,"0"},{1,"1"},{2,"2"},{3,"3"},{4,"4"},{5,"5"},{6,"6"},{7,"7"},{8,"8"},{9,"9"},
+                             {10,"10"},{11,"11"},{12,"12"},{13,"13"},{14,"14"},{15,"15"},{16,"16"},{17,"17"},{18,"18"},{19,"19"}};
+
 void addFrameToGUI() {
-    std::string n = std::string("frame ") + std::to_string(frames[currentLidar].size());
-
-    frame_item_dd.clear();
-    for (int i = 0; i < frames[currentLidar].size();++i) {
-        std::string num = std::to_string(i);
-        frame_item_dd.push_back({ i,num.c_str() });
-    }
-   
-    TwType frames_dd = TwDefineEnum("frames", &*frame_item_dd.begin(), frame_item_dd.size());
-
+    TwType frames_dd = TwDefineEnum("frames", listframes, frames[currentLidar].size());
     TwRemoveVar(frameBar, "Frame");
     TwAddVarRW(frameBar, "Frame", frames_dd, &idFrame, " keyIncr='<' keyDecr='>' label = 'in frame' help='reference frame.' ");
 }
@@ -1100,7 +1095,7 @@ void TW_CALL computeFrame(void*) {
         axis[currentLidar][il].Normalize();
     }
 
-    if (axis[currentLidar][1].Direction()[2] < 0)
+    if (axis[currentLidar][1].Direction()[1] < 0.0)
         axis[currentLidar][1].Flip();
     const vcg::Point3f& n0 = axis[currentLidar][0].Direction();
     const vcg::Point3f& n1 = axis[currentLidar][1].Direction();
@@ -1119,7 +1114,7 @@ void TW_CALL saveFrames(void*) {
     for (int il = 0; il < 2; il++)
         for (int fi = 0; fi < frames[il].size(); fi++) {
             printf("write frame \n");
-            fwrite(&(frames[il][0][0][0]),  sizeof(vcg::Matrix44f),1, fo);
+            fwrite(&(frames[il][fi][0][0]),  sizeof(vcg::Matrix44f),1, fo);
         }
     fclose(fo);
 }
@@ -1677,13 +1672,15 @@ int main(int argc, char* argv[])
 
 
 
-    TwAddButton(bar, "setFrame", ::setFrame, 0, " label='setFrame' group=`Frame` help=` ` ");
-    TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Frame' help=` select` ");
-    TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Frame' help=` select` ");
-    TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Frame' help=` select` ");
-    TwAddVarRW(bar, "x", TW_TYPE_FLOAT, &xFrame, "value = 0  step = 0.01 label='x' group='Frame' help=` select` ");
-    TwAddVarRW(bar, "y", TW_TYPE_FLOAT, &yFrame, " value = 0 step = 0.01  label='y' group='Frame' help=` select` ");
-    TwAddVarRW(bar, "z", TW_TYPE_FLOAT, &zFrame, "value = 0  step = 0.01  label='z' group='Frame' help=` select` ");
+    TwAddButton(bar, "setFrame", ::setFrame, 0, " label='setFrame' group=`Change Reference Frame` help=` ` ");
+    TwAddSeparator(bar, NULL,"group=`Change Reference Frame` ");
+    TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Change Reference Frame' help=` select` ");
+    TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Change Reference Frame' help=` select` ");
+    TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Change Reference Frame' help=` select` ");
+    TwAddSeparator(bar, NULL, "group=`Change Reference Frame` ");
+    TwAddVarRW(bar, "x", TW_TYPE_FLOAT, &xFrame, "value = 0  step = 0.01 label='x' group='Change Reference Frame' help=` select` ");
+    TwAddVarRW(bar, "y", TW_TYPE_FLOAT, &yFrame, " value = 0 step = 0.01  label='y' group='Change Reference Frame' help=` select` ");
+    TwAddVarRW(bar, "z", TW_TYPE_FLOAT, &zFrame, "value = 0  step = 0.01  label='z' group='Change Reference Frame' help=` select` ");
 
     TwAddVarRW(bar, "showcameras", TW_TYPE_BOOL8, &showCameras, " label='showcameras' group=Rendering help=` select` ");
     TwAddVarRW(bar, "showfromcamera", TW_TYPE_BOOL8, &showfromcamera, " label='showfromcamera' group=`Rendering` help=` draw all` ");
