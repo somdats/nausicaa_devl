@@ -198,7 +198,7 @@ vcg::Matrix44f boatFrameWS;
 
 std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
-unsigned int texture;
+unsigned int *textures;
 Shader point_shader, shadow_shader,texture_shader,flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
@@ -476,8 +476,11 @@ void initializeGLStuff() {
     point_shader.bind("toCam");
     point_shader.bind("camTex");
     point_shader.bind("camDepth");
-    glUniform1i(point_shader["camTex"], 5);
-    glUniform1i(point_shader["camDepth"], 6);
+    point_shader.bind("aligned");
+    GLint  texs[6] = { 5,6,7,8,9,10};
+    GLint  dpts[6] = { 11,12,13,14,15,16};
+    glUniform1iv(point_shader["camTex"],6, texs);
+    glUniform1iv(point_shader["camDepth"],6, dpts);
     glUseProgram(0);
     GLERR();
 
@@ -514,17 +517,20 @@ void initializeGLStuff() {
    
     GLERR();
 
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    textures = new unsigned int(NUMCAM);
+    glGenTextures(NUMCAM, textures);
+    for (int i = 0; i < NUMCAM; ++i) {
+        glActiveTexture(GL_TEXTURE5 + i);
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glColor3f(1, 1, 1);
-    glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-    GLERR();
- 
+        glColor3f(1, 1, 1);
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+        GLERR();
+    }
     shadowFBO.resize(NUMCAM);
     for(int i = 0; i < NUMCAM; ++i)
         shadowFBO[i].Create(1948, 1096);
@@ -560,7 +566,7 @@ void updateToGeoFrame() {
 
 void drawScene() {
     /* BEGIN DRAW SCENE */
-    vcg::Matrix44f toCamera;
+    vcg::Matrix44f toCamera[6];
     GLfloat mm[16], pm[16];
 
     for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
@@ -584,7 +590,7 @@ void drawScene() {
 
         glMultMatrix(transfLidar[il]);
         glMultMatrix(toSteadyFrame);
-        toCamera.SetIdentity();
+        for(int ic=0; ic < NUMCAM; ++ic) toCamera[ic].SetIdentity();
 
         if (enable_proj) {
             drawmode = SMOOTH;
@@ -593,15 +599,26 @@ void drawScene() {
 
             GLERR();
             //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics;
+            GLint aligned[6];
+            for (int ic = 0; ic < NUMCAM; ++ic) 
+            if(cameras[ic].aligned) {
+                glActiveTexture(GL_TEXTURE5+ic);
+                glBindTexture(GL_TEXTURE_2D, textures[ic]);
+            
+                cameras[ic].latest_frame_mutex.lock();
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[ic].dst.ptr());
+                cameras[ic].latest_frame_mutex.unlock();
 
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, texture);
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
+                //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
+                GLERR();
+                aligned[ic] = 1;
+            }
+            else 
+                aligned[ic] = 0;
 
-            cameras[currentCamera].latest_frame_mutex.lock();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[currentCamera].dst.ptr());
-            cameras[currentCamera].latest_frame_mutex.unlock();
-
-            GLERR();
+            glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
+            glUniform1iv(point_shader["aligned"], NUMCAM, aligned);
 
             glGetFloatv(GL_PROJECTION_MATRIX, pm);
             glUniformMatrix4fv(point_shader["pm"], 1, GL_FALSE, pm);
@@ -609,12 +626,13 @@ void drawScene() {
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
-            // toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics*transfLidar[il];
-            toCamera = cameras[currentCamera].opencv2opengl_camera(cameras[currentCamera].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[currentCamera].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
-            glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);
 
-            glActiveTexture(GL_TEXTURE6); // here we need to pass all the cameras
-            glBindTexture(GL_TEXTURE_2D, shadowFBO[0].id_tex);
+
+            // THIS ONLY NEED TO BE DONE ONCE
+            for (int i = 0; i < NUMCAM; ++i) {
+                glActiveTexture(GL_TEXTURE5 + NUMCAM + i); // here we need to pass all the cameras
+                glBindTexture(GL_TEXTURE_2D, shadowFBO[i].id_tex);
+            }
         }
         else 
             if (drawmode == SMOOTH)
@@ -1046,9 +1064,12 @@ void TW_CALL addFrame(void*) {
     addFrameToGUI();
 }
 
+void   alignCamera(int ic) {
+        cameras[ic].calibrated = cameras[ic].SolvePnP(cameras[ic].p3);
+}
+
 void TW_CALL alignCamera(void*) {
-     for(int i= 0; i < NUMCAM;++i)
-         cameras[i].calibrated = cameras[i].SolvePnP(cameras[i].p3);
+         cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
 }
 
 void TW_CALL assignPointsToCamera(void*) {
@@ -1490,8 +1511,10 @@ void TW_CALL runTest(void*) {
     ::computeTranformation(0);
     ::initCameras(0);
     
-    ::loadImPoints((void*)0);
-    ::alignCamera((void*)0);
+    for (int i = 0; i < NUMCAM;++i) {
+        ::loadImPoints(i);
+        ::alignCamera(i);
+    }
      
     currentCamera = 0;
     ::enable_proj = true;
@@ -1739,7 +1762,5 @@ int main(int argc, char* argv[])
 
     glewInit();
 
-
     glutMainLoop();
-   
 }

@@ -6,18 +6,20 @@ out vec4 vertexColor; // specify a color output to the fragment shader
 //out vec4 textureCoord;// texture coordinate for camera 0
 
 out VS_OUT {
-    vec4 textureCoord;
+    vec4 textureCoord[6];
     float d;
 } vs_out;
 
 uniform mat4 mm;
 uniform mat4 pm;
-uniform mat4 toCam;
+uniform mat4 toCam[6];
+uniform int numcam;
 
 void main()
 {
     vec4 pos = pm * mm * vec4(aPos, 1.0);
     gl_Position   = pos;
-    vs_out.textureCoord  =  toCam * vec4(aPos, 1.0);
+    for(int i= 0;i < 6; ++i)
+        vs_out.textureCoord[i]  =  toCam[i] * vec4(aPos, 1.0);
     vs_out.d = d;
 }
