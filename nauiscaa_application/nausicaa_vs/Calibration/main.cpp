@@ -787,7 +787,9 @@ void Display() {
             updatePC(il);
 
         if (enable_proj) {
-            for (int iCam = 0; iCam < NUMCAM;++iCam) {
+            for (int iCam = 0; iCam < NUMCAM;++iCam) 
+                if(!cameras[iCam].aligned)
+            {
                 // create shadow maps
                 glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
                 glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
@@ -796,9 +798,7 @@ void Display() {
 
                 glUseProgram(shadow_shader.pr);
                 vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 10.0);
-
-
-                // these shadow maps will have to be created for each camera
+               
                 for (int il = 0; il < N_LIDARS; ++il) {
 
                     toCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * transfLidar[il];  // opengl matrices
@@ -1674,9 +1674,9 @@ int main(int argc, char* argv[])
 
     TwAddButton(bar, "setFrame", ::setFrame, 0, " label='setFrame' group=`Change Reference Frame` help=` ` ");
     TwAddSeparator(bar, NULL,"group=`Change Reference Frame` ");
-    TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Change Reference Frame' help=` select` ");
-    TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Change Reference Frame' help=` select` ");
-    TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Change Reference Frame' help=` select` ");
+    TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Change Reference Frame' help=` alpha angle` ");
+    TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Change Reference Frame' help=` beta angle` ");
+    TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Change Reference Frame' help=` gamma angle` ");
     TwAddSeparator(bar, NULL, "group=`Change Reference Frame` ");
     TwAddVarRW(bar, "x", TW_TYPE_FLOAT, &xFrame, "value = 0  step = 0.01 label='x' group='Change Reference Frame' help=` select` ");
     TwAddVarRW(bar, "y", TW_TYPE_FLOAT, &yFrame, " value = 0 step = 0.01  label='y' group='Change Reference Frame' help=` select` ");

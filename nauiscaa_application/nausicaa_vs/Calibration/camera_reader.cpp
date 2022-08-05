@@ -608,6 +608,7 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     //    printf("%f %f %f ->",p3vcg[i][0],p3vcg[i][1],p3vcg[i][2]);
     //    printf("%f %f --- %f %f\n",pr[0],pr[1],p2[i].x,p2[i].y);
     //}
+    this->aligned = true;
     return shot;
 
 }

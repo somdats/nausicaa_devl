@@ -17,7 +17,7 @@
  
 
 struct Camera{
-    Camera(){}
+    Camera():aligned(false) {}
     Camera(const Camera & _) {}
     cv::VideoCapture cap;
     cv::Mat map1, map2;
@@ -33,7 +33,7 @@ struct Camera{
     int camID;
     uint inStPort;
     int ax;
- 
+    bool aligned;
 
 
     float _debk;
