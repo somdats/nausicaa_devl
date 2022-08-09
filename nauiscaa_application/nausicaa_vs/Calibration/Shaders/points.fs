@@ -10,40 +10,51 @@ uniform   sampler2D camTex[6];
 uniform   sampler2D camDepth[6];
 uniform   int      aligned[6];
 
-void main()
-{
-    // opencv matrices
-//    vec4 tCoord  = textureCoordFS / textureCoordFS.z; //(for opencv)
-//    tCoord /= vec4(1948.0,1096.0,1.0,1.0);
 
-    // opengl matrices
-    FragColor = vec4(1.0,0.0,0.0,1.0);
+float weight[6];
+
+void main()
+{   
+    float total_weigth= 0.0;
     for(int ic = 0; ic < 4; ++ic)
         if(aligned[ic] == 1)
         { 
-            vec4 tCoord  = textureCoordFS[ic] / textureCoordFS[ic].q; //(for opengl)
+            vec4 tCoord  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
+         
             tCoord = (tCoord+1.0)*0.5;
             tCoord.y = 1.0 - tCoord.y; // REVERSE Y FOR OPENCVV
 
-//        if( textureCoordFS[ic].z < 0.0 ||   tCoord.x < 0.0 ||  tCoord.x > 1.0 || tCoord.y < 0.0 ||  tCoord.y > 1.0)
-//                FragColor = vec4(1.0,0.0,0.0,1.0);
-//            else{
-
              if(!( textureCoordFS[ic].z < 0.0 ||   tCoord.x < 0.0 ||  tCoord.x > 1.0 || tCoord.y < 0.0 ||  tCoord.y > 1.0))
-             {
-                vec4 dep  = texture2D(camDepth[ic],tCoord.xy,1.0);
-    //            vec4 col;
-    //             if (tCoord.z   > dep.x+0.1)
-    //                col = vec4(abs(dep.xyz-vec3(tCoord.z)),1.0);
-    //                  else
-    //                col  = texture2D(camTex,tCoord.xy,1.0);
-    //            FragColor =  col;
-                FragColor =  texture2D(camTex[ic],tCoord.xy,1.0);
-                }
+                  {   
+                    weight[ic] = max( length(dFdx(tCoord).xy)  , length(dFdy(tCoord).xy) );
+                    total_weigth = total_weigth + weight[ic];
+                  }
+              else
+                  weight[ic] = 0.0;
+        }
 
-    }
-//FragColor = color;
+     for(int ic = 0; ic < 4; ++ic)
+         weight[ic] = weight[ic] / total_weigth;
 
-    // FragColor = vec4(tCoord.xy,0.0,1.0);
-    // FragColor = vec4(1.0,0.5,0.0,1.0);
+    // opengl matrices
+    FragColor = vec4(0.0,0.0,0.0,1.0);
+    for(int ic = 0; ic < 4; ++ic)
+        if(aligned[ic] == 1)
+            if(weight[ic]>0.0)
+                { 
+                    vec4 tCoord  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
+                    tCoord = (tCoord+1.0)*0.5;
+                    tCoord.y = 1.0 - tCoord.y; // REVERSE Y FOR OPENCVV
+
+                     if(!( textureCoordFS[ic].z < 0.0 ||   tCoord.x < 0.0 ||  tCoord.x > 1.0 || tCoord.y < 0.0 ||  tCoord.y > 1.0))
+                     {
+                        vec4 dep  = texture2D(camDepth[ic],vec2(tCoord.x,1.0-tCoord.y),1.0);
+                         vec4 col;
+                 //         if (tCoord.z   > dep.x)
+                 //            FragColor += vec4(1.0,1.0,1.0,1.0);
+               //            FragColor = vec4( 0.0,dep.x,tCoord.z,1.0);
+            //            FragColor =  col;
+                         FragColor += weight[ic]*texture2D(camTex[ic],tCoord.xy,1.0);
+                   }
+              } 
  }

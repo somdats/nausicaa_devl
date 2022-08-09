@@ -609,7 +609,7 @@ void drawScene() {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[ic].dst.ptr());
                 cameras[ic].latest_frame_mutex.unlock();
 
-                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 10) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
                 //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR();
                 aligned[ic] = 1;
@@ -626,11 +626,9 @@ void drawScene() {
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
-
-
             // THIS ONLY NEED TO BE DONE ONCE
             for (int i = 0; i < NUMCAM; ++i) {
-                glActiveTexture(GL_TEXTURE5 + NUMCAM + i); // here we need to pass all the cameras
+                glActiveTexture(GL_TEXTURE11 + i); // here we need to pass all the cameras
                 glBindTexture(GL_TEXTURE_2D, shadowFBO[i].id_tex);
             }
         }
@@ -723,7 +721,7 @@ void Display() {
 
 
     if (!mesh.vert.empty()) {
-        vcg::Matrix44f toCamera;
+        vcg::Matrix44f toCurrCamera;
         GLfloat mm[16], pm[16];
 
         glMatrixMode(GL_PROJECTION);
@@ -805,8 +803,8 @@ void Display() {
             updatePC(il);
 
         if (enable_proj) {
-            for (int iCam = 0; iCam < NUMCAM;++iCam) 
-                if(!cameras[iCam].aligned)
+            for (int iCam = 0; iCam < NUMCAM;++iCam)
+                if(cameras[iCam].aligned)
             {
                 // create shadow maps
                 glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
@@ -815,13 +813,13 @@ void Display() {
                 glEnable(GL_DEPTH_TEST);
 
                 glUseProgram(shadow_shader.pr);
-                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 10.0);
+                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 50.0);
                
                 for (int il = 0; il < N_LIDARS; ++il) {
 
-                    toCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * transfLidar[il];  // opengl matrices
+                    toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * transfLidar[il];  // opengl matrices
 
-                    glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCamera[iCam][0]);
+                    glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
 
                     GLERR();
                     glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
@@ -841,9 +839,13 @@ void Display() {
                 glUseProgram(0);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
-             //          cv::Mat ima(1096,1948,CV_8UC3);
-            //          glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_UNSIGNED_BYTE,ima.ptr());
-            //          cv::imwrite("depth_ogl.png",ima);           
+                if (iCam == 0) {
+                   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                   cv::Mat ima(1096,1948,CV_8UC3);
+                   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                   cv::flip(ima, ima, 0);
+                   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                }
             }
 
 
