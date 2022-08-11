@@ -10,6 +10,7 @@ out VS_OUT {
     float d;
 } vs_out;
 
+uniform mat4 lidarToWorld;
 uniform mat4 mm;
 uniform mat4 pm;
 uniform mat4 toCam[6];
@@ -20,6 +21,6 @@ void main()
     vec4 pos = pm * mm * vec4(aPos, 1.0);
     gl_Position   = pos;
     for(int i= 0;i < 6; ++i)
-        vs_out.textureCoord[i]  =  toCam[i] * vec4(aPos, 1.0);
+        vs_out.textureCoord[i]  =  toCam[i] * lidarToWorld * vec4(aPos, 1.0);
     vs_out.d = d;
 }

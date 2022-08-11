@@ -15,22 +15,25 @@ float weight[6];
 
 void main()
 {   
+    vec4 tCoord[6];
     float total_weigth= 0.0;
     for(int ic = 0; ic < 4; ++ic)
         if(aligned[ic] == 1)
         { 
-            vec4 tCoord  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
+            tCoord[ic]  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
          
-            tCoord = (tCoord+1.0)*0.5;
-            tCoord.y = 1.0 - tCoord.y; // REVERSE Y FOR OPENCVV
-
-             if(!( textureCoordFS[ic].z < 0.0 ||   tCoord.x < 0.0 ||  tCoord.x > 1.0 || tCoord.y < 0.0 ||  tCoord.y > 1.0))
+            tCoord[ic] = (tCoord[ic]+1.0)*0.5;
+            tCoord[ic].y = 1.0 - tCoord[ic].y; // REVERSE Y FOR OPENCVV
+             weight[ic] = 0.0;
+             if(!( textureCoordFS[ic].z < 0.0 ||   tCoord[ic].x < 0.0 ||  tCoord[ic].x > 1.0 || tCoord[ic].y < 0.0 ||  tCoord[ic].y > 1.0))
                   {   
-                    weight[ic] = max( length(dFdx(tCoord).xy)  , length(dFdy(tCoord).xy) );
-                    total_weigth = total_weigth + weight[ic];
+                    vec4 dep  = texture2D(camDepth[ic],vec2(tCoord[ic].x,1.0-tCoord[ic].y),1.0);
+                    vec4 col;
+                    if ( ( tCoord[ic].z   < dep.x + 0.01)){ 
+                       weight[ic] = max( length(dFdx(tCoord[ic]).xy)  , length(dFdy(tCoord[ic]).xy) );
+                       total_weigth = total_weigth + weight[ic];
+                    }
                   }
-              else
-                  weight[ic] = 0.0;
         }
 
      for(int ic = 0; ic < 4; ++ic)
@@ -39,22 +42,5 @@ void main()
     // opengl matrices
     FragColor = vec4(0.0,0.0,0.0,1.0);
     for(int ic = 0; ic < 4; ++ic)
-        if(aligned[ic] == 1)
-            if(weight[ic]>0.0)
-                { 
-                    vec4 tCoord  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
-                    tCoord = (tCoord+1.0)*0.5;
-                    tCoord.y = 1.0 - tCoord.y; // REVERSE Y FOR OPENCVV
-
-                     if(!( textureCoordFS[ic].z < 0.0 ||   tCoord.x < 0.0 ||  tCoord.x > 1.0 || tCoord.y < 0.0 ||  tCoord.y > 1.0))
-                     {
-                        vec4 dep  = texture2D(camDepth[ic],vec2(tCoord.x,1.0-tCoord.y),1.0);
-                         vec4 col;
-                 //         if (tCoord.z   > dep.x)
-                 //            FragColor += vec4(1.0,1.0,1.0,1.0);
-               //            FragColor = vec4( 0.0,dep.x,tCoord.z,1.0);
-            //            FragColor =  col;
-                         FragColor += weight[ic]*texture2D(camTex[ic],tCoord.xy,1.0);
-                   }
-              } 
+        FragColor += weight[ic]*texture2D(camTex[ic],tCoord[ic].xy,1.0);
  }

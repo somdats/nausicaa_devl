@@ -149,6 +149,7 @@ bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
 bool enable_proj = false;
+bool drawBackground = false;
 
 // values to define the boatFrame
 float alphaFrame, betaFrame, gammaFrame;
@@ -472,6 +473,7 @@ void initializeGLStuff() {
 
     glUseProgram(point_shader.pr);
     point_shader.bind("mm");
+    point_shader.bind("lidarToWorld");
     point_shader.bind("pm");
     point_shader.bind("toCam");
     point_shader.bind("camTex");
@@ -565,18 +567,43 @@ void updateToGeoFrame() {
 }
 
 void drawScene() {
-    /* BEGIN DRAW SCENE */
     vcg::Matrix44f toCamera[6];
-    GLfloat mm[16], pm[16];
+    GLfloat mm[16], pm[16],vm[16];
+    GLint aligned[6];
+
+    glGetFloatv(GL_MODELVIEW_MATRIX, vm);
+
+    if (enable_proj) {
+        drawmode = SMOOTH;
+        glUseProgram(point_shader.pr);
+        for (int ic = 0; ic < NUMCAM; ++ic)
+            if (cameras[ic].aligned) {
+                glActiveTexture(GL_TEXTURE5 + ic);
+                glBindTexture(GL_TEXTURE_2D, textures[ic]);
+
+                cameras[ic].latest_frame_mutex.lock();
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[ic].dst.ptr());
+                cameras[ic].latest_frame_mutex.unlock();
+
+                // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 150) * cameras[ic].opengl_extrinsics();
+                //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
+                GLERR();
+                aligned[ic] = 1;
+            }
+            else
+                aligned[ic] = 0;
+        glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
+        glUniform1iv(point_shader["aligned"], NUMCAM, aligned);  
+
+        glGetFloatv(GL_PROJECTION_MATRIX, pm);
+        glUniformMatrix4fv(point_shader["pm"], 1, GL_FALSE, pm);
+        glUseProgram(0);
+    }
 
     for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
-        float mm1[16];
         glPushMatrix();
-        glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
-
-
-
-        GLERR();
+       
         // draw axis
         for (int il = 0; il < 3; ++il)
             if (axis[currentLidar][il].valid) {
@@ -596,35 +623,13 @@ void drawScene() {
             drawmode = SMOOTH;
             glUseProgram(point_shader.pr);
 
-
             GLERR();
-            //toCamera = cameras[currentCamera].cameraMatrix44*cameras[currentCamera].extrinsics;
-            GLint aligned[6];
-            for (int ic = 0; ic < NUMCAM; ++ic) 
-            if(cameras[ic].aligned) {
-                glActiveTexture(GL_TEXTURE5+ic);
-                glBindTexture(GL_TEXTURE_2D, textures[ic]);
-            
-                cameras[ic].latest_frame_mutex.lock();
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[ic].dst.ptr());
-                cameras[ic].latest_frame_mutex.unlock();
-
-                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
-                //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
-                GLERR();
-                aligned[ic] = 1;
-            }
-            else 
-                aligned[ic] = 0;
-
-            glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
-            glUniform1iv(point_shader["aligned"], NUMCAM, aligned);
-
-            glGetFloatv(GL_PROJECTION_MATRIX, pm);
-            glUniformMatrix4fv(point_shader["pm"], 1, GL_FALSE, pm);
-
+ 
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
+
+            vcg::Matrix44f l2w = toSteadyFrame* transfLidar[il];
+            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &l2w[0][0]);
 
             // THIS ONLY NEED TO BE DONE ONCE
             for (int i = 0; i < NUMCAM; ++i) {
@@ -673,9 +678,15 @@ void drawScene() {
         glPopMatrix();
         glUseProgram(0);
     }
-
-
-
+    if(drawBackground)
+    if (drawmode == SMOOTH && enable_proj) {
+        glUseProgram(point_shader.pr);
+        vcg::Matrix44f ide; ide.SetIdentity(); 
+        glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &ide[0][0]);
+        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, vm);
+        gluSphere(gluNewQuadric(), 100.0, 10, 10);
+        glUseProgram(0);
+    }
     /* END DRAW SCENE */
 }
 
@@ -697,8 +708,6 @@ void Display() {
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-
 
     vcg::Box3f boxsel;
     boxsel.SetNull();
@@ -809,11 +818,12 @@ void Display() {
                 // create shadow maps
                 glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
                 glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
+                glClearColor(1.0, 1.0, 1.0, 1.0);
                 glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
                 glEnable(GL_DEPTH_TEST);
 
                 glUseProgram(shadow_shader.pr);
-                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 50.0);
+                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.5, 150.0);
                
                 for (int il = 0; il < N_LIDARS; ++il) {
 
@@ -836,6 +846,7 @@ void Display() {
                     glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
                 }
+
                 glUseProgram(0);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1711,6 +1722,8 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "showfromcamera", TW_TYPE_BOOL8, &showfromcamera, " label='showfromcamera' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "mapcolor", TW_TYPE_BOOL8, &enable_proj, " label='map color' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
+    TwAddVarRW(bar, "drawbackground", TW_TYPE_BOOL8, &drawBackground, " label='draw background' group=`Rendering` help=` draw all` ");
+    
 
     TwAddButton(bar, "test", ::runTest, 0, " label='RUNTEST' group='Test' help=`test` ");
     TwAddButton(bar, "Stream", ::startVideoStreaming, 0, "label='VIDEOSTREAM' group='Streaming' help=`streaming` ");
