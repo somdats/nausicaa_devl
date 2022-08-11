@@ -850,13 +850,13 @@ void Display() {
                 glUseProgram(0);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                if (iCam == 0) {
-                   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                   cv::Mat ima(1096,1948,CV_8UC3);
-                   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                   cv::flip(ima, ima, 0);
-                   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                }
+                //if (iCam == 0) {
+                //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                //   cv::Mat ima(1096,1948,CV_8UC3);
+                //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                //   cv::flip(ima, ima, 0);
+                //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                //}
             }
 
 
