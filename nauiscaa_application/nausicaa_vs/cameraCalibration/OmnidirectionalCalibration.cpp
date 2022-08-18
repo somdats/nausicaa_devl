@@ -10,6 +10,7 @@
 #include <fstream>
 #include <Eigen/Dense>
 #include"ocam_functions.h"
+#include"..\headers\calib_converter.h"
 
 using namespace cv;
 using namespace std;
@@ -31,7 +32,7 @@ struct OcamCalibData
     float iw;
     float ih;
 };
-
+bool UndistortImageMei(const ocam_model& ocm, cv::Mat& map1, cv::Mat& map2);
 bool loadOcamCalibFile(const std::string& calib_f_name, OcamCalibData& calib_data);
 bool loadOcamCalibFileCPP(const std::string& calib_f_name, OcamCalibData& calib_data);
 void undistortImageOcamCalib(const ocam_model& cd,
@@ -159,17 +160,17 @@ int main()
 {
 
     std::string image_name = "D:/CamImages/28032022_test0.jpg";
-    std::string calib_name = "D:/nausicaa_devl/nauiscaa_application/calib_results_25032022.txt";
+    std::string calib_name = "D:/TestDump/Calibration_12082022/calib_results_12082022.txt";
    // OcamCalibData ocd;
     struct ocam_model ocd;
     get_ocam_model(&ocd, calib_name.c_str());
     /*if (!loadOcamCalibFileCPP(calib_name, ocd))
         return -1;*/
 
-    cv::Mat img = cv::imread(image_name);
+   /* cv::Mat img = cv::imread(image_name);
 
     cv::Mat gray1, gray2, gray3, gray4;
-    cv::cvtColor(img, gray1, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(img, gray1, cv::COLOR_BGR2GRAY);*/
 
     // image_name = "d:/tmp/conti_calib/front_0/1_calib00006.png";
     // img = cv::imread(image_name);
@@ -185,8 +186,26 @@ int main()
 
      //cv::imshow("image", gray1);
 
+    ////////////////////////mei undistortion
+    cv::Mat map1, map2, undistorted;
+    UndistortImageMei(ocd, map1, map2);
+    std::vector<cv::String> images;
+    // Path of the folder containing checkerboard images
+    std::string path = "D:/TestDump/Calibration_12082022/*.jpg";
 
-    cv::Mat undistorted(gray1.rows, gray1.cols, CV_8UC1);
+    cv::glob(path, images);
+    for (auto img : images)
+    {
+        cv::Mat frame = cv::imread(img);
+        cv::remap(frame, undistorted, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+        cv::imshow("undistorted", undistorted);
+        /*std::string fileUnd = img + "_undistort.jpg";
+        cv::imwrite("D:/TestDump/Calibration_12082022/Undistorted/" + fileUnd, undistorted);*/
+        cv::waitKey(0);
+    }
+    
+
+   /* cv::Mat undistorted(gray1.rows, gray1.cols, CV_8UC1);
 
     float n_f = ocd.width / (2 * tanf(46.1 / 180.0f * 3.141592f));
     Eigen::Matrix3f new_cam_mat;
@@ -197,7 +216,7 @@ int main()
     new_cam_mat = new_cam_mat * Eigen::Vector3f(0.5f, 0.5f, 1.0f).asDiagonal();
     Eigen::Matrix3f cam_mat_inv = new_cam_mat.inverse();
     undistortImageOcamCalib(ocd, gray1.data, 1,
-        cam_mat_inv, undistorted.data, gray1.cols, gray1.rows, 1);
+        cam_mat_inv, undistorted.data, gray1.cols, gray1.rows, 1);*/
 
     //undistortImageOcam(ocd, gray2.data, 1,
     //    cam_mat_inv, undistorted1.data, gray2.cols, gray2.rows, 1);
@@ -206,11 +225,58 @@ int main()
     //    cam_mat_inv, undistorted2.data, gray3.cols, gray3.rows, 1);
     //int from = 0;
     //
-    cv::imshow("undistorted", undistorted);
-    cv::imwrite("D:/CamImages/front_178_d_ocam.jpg", undistorted);
-    cv::waitKey(0);
+   
 
 
+}
+bool UndistortImageMei(const ocam_model& ocm, cv::Mat& map1, cv::Mat& map2) {
+    cv::Size imageSize(cv::Size(ocm.width,ocm.height));
+    cv::Mat mapx_persp = cv::Mat(imageSize, CV_32FC1);
+    cv::Mat mapy_persp = cv::Mat(imageSize, CV_32FC1); //CV_32FC1
+    map1 = mapx_persp.clone();
+    map2 = mapy_persp.clone();
+    Eigen::Vector2d img_size(ocm.width, ocm.height);
+   
+    Eigen::Vector2d principal_point{ ocm.yc, ocm.xc };
+    std::vector<double>  invpoly;
+    invpoly.assign(ocm.invpol, ocm.invpol + ocm.length_invpol);
+    Eigen::Matrix3f K_out;
+    std::array<float, 5> D_out;
+    float xi_out;
+    calib_converter::convertOcam2Mei(invpoly, principal_point, img_size, ocm.c, ocm.d, ocm.e, K_out, D_out, xi_out);
+  
+    cv::Mat cameraMatrix = cv::Mat(3, 3, CV_32F);
+    cv::Mat distCoeffs = cv::Mat(1, 4, CV_32F);
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            cameraMatrix.at<float>(i, j) =K_out(i, j);
+        }
+
+
+
+    }
+
+    for (int i = 0; i < 4; ++i)
+    {
+        distCoeffs.at<float>(i) = D_out[i];
+    }
+   /* distCoeffs.at<float>(0) = -0.135759;
+    distCoeffs.at<float>(1) = 0.257251;
+    distCoeffs.at<float>(2) =-0.560308;
+    distCoeffs.at<float>(3) = 1.844500;
+    distCoeffs.at<float>(0) = 0;*/
+    cv::Mat new_camera_matrix = cv::Mat(cv::Matx33f(float(ocm.width)/4, 0, cameraMatrix.at<float>(0, 2),
+        0, float(ocm.width)/4, cameraMatrix.at<float>(1, 2),
+        0, 0, 1));
+    std::cout << "distortion coefficients:" << distCoeffs << std::endl;
+    std::cout << "Camera Intrinsics for rectification:" << new_camera_matrix << std::endl;
+
+    cv::Mat R = cv::Mat::eye(3, 3, CV_32F);
+    omnidir::initUndistortRectifyMap(cameraMatrix, distCoeffs, xi_out, R, new_camera_matrix, imageSize,
+        CV_32F, map1, map2, cv::omnidir::RECTIFY_PERSPECTIVE);
+    return true;
 }
 
 bool loadOcamCalibFile(const std::string& calib_f_name, OcamCalibData& calib_data)
