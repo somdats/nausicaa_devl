@@ -178,15 +178,15 @@ double calib_converter::convertOcam2Mei(const std::vector<double>& poly_inv,
         }
     }
 
-   /* std::cout << "Num tables total: " << indices.size();
+ /*   std::cout << "Num tables total: " << indices.size();
     std::cout << "sum trans error in meter: " << sum_error_t << ", avg_err: " << sum_error_t / indices.size();
     std::cout << "sum rad error in degree: " << sum_error_rad * 180.0 / 3.141592 << ", avg_err: " << sum_error_rad * 180.0 / 3.141592 / indices.size();
 
     std::cout << "Converted parameters: \n";
     std::cout << "K:\n" << K;
     std::cout << "xi:\n" << xi;
-    std::cout << "D:\n" << D;
-    std::cout << "rms:" << rms << ", num_total_pts: " << num_total_pts;*/
+    std::cout << "D:\n" << D;*/
+    //std::cout << "rms:" << rms << ", num_total_pts: " << num_total_pts << std::endl;
 
 
     return rms;

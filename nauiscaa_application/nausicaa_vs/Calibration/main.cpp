@@ -1566,7 +1566,7 @@ void Terminate() {
 void TW_CALL stop(void*) {
     if (lidars[0].lidar.reading) { lidars[0].lidar.stop_reading(); }
     if (lidars[1].lidar.reading) { lidars[1].lidar.stop_reading(); }
-    for(int i = 0; i < 6; ++i)  
+    for(int i = 0; i < CameraCount; ++i)  
        if (cameras[i].reading) { cameras[i].stop_reading(); }
 }
 
