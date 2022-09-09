@@ -56,6 +56,7 @@ int   Client::send_message(std::string message) {
 
 	//Send some data
 	//message = "GET / HTTP/1.1\r\n\r\n";
+	message = std::to_string(message.length()) + "@" + message;
 	if (send(s, message.c_str(), message.length(), 0) < 0)
 	{
 		puts("Send failed");

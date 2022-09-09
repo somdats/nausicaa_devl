@@ -14,9 +14,13 @@ struct Server {
 	SOCKET s, new_socket;
 	struct sockaddr_in server, client;
 	int c;
-	char* message;
+	char * message;
+	char * blob_bin;
 	int port;
 	bool stop_signal;
+
+	Server() { blob_bin = new char[10485760];}
+	~Server() { delete[]  blob_bin; }
 
 	int start_server(int );
 

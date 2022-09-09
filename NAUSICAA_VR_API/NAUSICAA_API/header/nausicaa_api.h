@@ -34,10 +34,7 @@ extern "C" {
 	typedef int* VirtualCameraIDs;
 
 	//! unique identifier of a type of gliph
-	typedef int  gliphID;
-
-	//! unique identifier of an instance of a gliph
-	typedef int  gliphTypeID;
+	typedef int  markerID;
 
 	//! image buffer
 	typedef char* image_buffer;
@@ -231,43 +228,37 @@ extern "C" {
 		 * functions to set up the system and get the stream going
 		*/
 		///@{
-		//! place 3D gliph
+		//! define a marker
 		/*!
-			 \param unique identifier of the 3D gliph
-			 \param x position on the screen in [0,x size]
-			 \param y position on the screen in [0,y size]
-			 \param d distance along the ray passing through (x,y)
+			 \param image in binary format
+			 \param size of the image in bytes
+			 \param with of the icon in meters (heigth is inferred from proportion)
+			 \param label to be shown
+			 \param length of the label 
+			 \return unique identifier of the added marker
 		*/
-		gliphID NAUSICAA_VR_API place3DGliph(gliphTypeID, float x, float y, float d);
+		markerID NAUSICAA_VR_API addMarker(int * png_image, int size_in_bytes, float width_mt, const char * label, int label_length);
 
-		//! remove a previously inserted 3D gliph
+		//! place a previously added marker in a specific position
 		/*!
-			 \param unique identifier of the 3D gliph instance
+			 \param marker ID
+			 \param longitude in WGS84 decimal degrees
+			 \param latitude in WGS84 decimal degrees
+			 \param altitude in meters
 		*/
-		void NAUSICAA_VR_API remove3DGliph(gliphID);
+		void NAUSICAA_VR_API placeMarker(markerID id, float longitude, float latitude, float altitude);
 
-		//! return the type of an instance of a gliph
+		//! enable/disable the visibility of a marker
 		/*!
-			 \param unique identifier of the 3D gliph instance
+			 \param marker ID
+			 \param 0: invisible; 1: visible (default is 1) 
 		*/
-		gliphTypeID NAUSICAA_VR_API typeOf(gliphID);
+		void NAUSICAA_VR_API showMarker(markerID id, int invisible_visible);
 
-		//! return all the gliphs of a given type
-		/*!
-			 \param gliphs type
-		*/
-		//std::vector<gliphID> getInstancesOfGliphType(gliphTypeID);
-
-		//! include the layer of gliphs in the rendering
-		/*!
-		*/
-		void NAUSICAA_VR_API enableGliphs();
-
-		//! disable the layer od gliphs in the rendering
+		//! remove all previously added markers
 		/*!
 		*/
-		void NAUSICAA_VR_API disableGliphs();
-
+		void NAUSICAA_VR_API clearMarkers();
 		///@}
 	}
 
