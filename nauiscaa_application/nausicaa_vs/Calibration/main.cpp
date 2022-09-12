@@ -200,6 +200,9 @@ vcg::Matrix44f boatFrameWS;
 std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int *textures;
+unsigned int markersTextureID;
+int markers_pos_x, markers_pos_y;
+
 Shader point_shader, shadow_shader,texture_shader,flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
@@ -519,6 +522,7 @@ void initializeGLStuff() {
    
     GLERR();
 
+    glGenTextures(1, &markersTextureID);
     textures = new unsigned int(NUMCAM);
     glGenTextures(NUMCAM, textures);
     for (int i = 0; i < NUMCAM; ++i) {
@@ -538,6 +542,15 @@ void initializeGLStuff() {
         shadowFBO[i].Create(1948, 1096);
 
     cameraFBO.Create(1280, 720);
+    GLERR();
+    glActiveTexture(GL_TEXTURE5 + NUMCAM);
+    glBindTexture(GL_TEXTURE_2D, markersTextureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2048, 2048, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
     GLERR();
 }
 
@@ -678,6 +691,38 @@ void drawScene() {
         glPopMatrix();
         glUseProgram(0);
     }
+
+    // drawing markers
+    for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im) {
+        if ((*im).second.png_data != 0) {
+            GLERR();
+            // define the next square where to copy
+            if (markers_pos_x < 1984) // before the last 64x64 square of the row
+                markers_pos_x += 64;
+            else {// make a new row
+                markers_pos_y += 64;
+                markers_pos_x = 0;
+            }
+            if (markers_pos_y == 2048) {
+                printf("more than 32x32 images");
+                exit(0);
+            }
+            (*im).second.tc[0] = markers_pos_x;
+            (*im).second.tc[1] = markers_pos_y;
+
+            //texture needs to be created
+            glBindTexture(GL_TEXTURE_2D, markersTextureID);
+ // ERRORE QUI NEL CREATE L'InputArray
+            cv::Mat cvArray = cv::Mat(cv::Size(1, (*im).second.png_data_length), CV_8UC1, (*im).second.png_data);
+            cv::Mat img = cv::imdecode(cvArray,0);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, (*im).second.tc[0], (*im).second.tc[0], 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, img.ptr());
+
+            GLERR();
+            delete[](*im).second.png_data;
+            (*im).second.png_data = 0;
+        }
+    }
+
     if(drawBackground)
     if (drawmode == SMOOTH && enable_proj) {
         glUseProgram(point_shader.pr);

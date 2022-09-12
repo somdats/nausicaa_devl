@@ -237,7 +237,7 @@ extern "C" {
 			 \param length of the label 
 			 \return unique identifier of the added marker
 		*/
-		markerID NAUSICAA_VR_API addMarker(int * png_image, int size_in_bytes, float width_mt, const char * label, int label_length);
+		markerID NAUSICAA_VR_API addMarker(char * png_image, int size_in_bytes, float width_mt, const char * label, int label_length);
 
 		//! place a previously added marker in a specific position
 		/*!

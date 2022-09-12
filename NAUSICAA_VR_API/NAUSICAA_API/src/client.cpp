@@ -52,30 +52,21 @@ int Client::connect(std::string addr, int _port) {
 
 }
 
-int   Client::send_message(std::string message) {
 
-	//Send some data
-	//message = "GET / HTTP/1.1\r\n\r\n";
-	message = std::to_string(message.length()) + "@" + message;
-	if (send(s, message.c_str(), message.length(), 0) < 0)
+int   Client::send_message(std::string msg, char * blob, int blob_size  ) {
+
+	*((int*)message) = msg.length();
+	memcpy_s(message+4, msg.length(), msg.c_str(), msg.length());
+	memcpy_s(message+4+ msg.length(), blob_size, blob, blob_size);
+
+	if (send(s, message ,4+ msg.length()+ blob_size, 0) < 0)
 	{
 		puts("Send failed");
 		return 1;
 	}
 	puts("Data Send\n");
-
-	//Receive a reply from the server
-//	if ((recv_size = recv(s, server_reply, 2000, 0)) == SOCKET_ERROR)
-//	{
-//		puts("recv failed");
-//	}
-
-//	puts("Reply received\n");
-
-	//Add a NULL terminating character to make it a proper string before printing
-//	server_reply[recv_size] = '\0';
-//	puts(server_reply);
 }
+
 int  Client::receive_int() {
 	if ((recv_size = recv(s, server_reply, 2000, 0)) == SOCKET_ERROR)
 	{

@@ -23,7 +23,11 @@ void main() {
 	cv::namedWindow("monitor", 1);
 	cv::setMouseCallback("monitor", CallBackFunc,0);
 	
-
+	FILE * iconF  = fopen("boat_icon.png","rb");
+	fseek(iconF, 0,SEEK_END);
+	int length = ftell(iconF);
+	char* data = new char[length];
+	fread(data, 1, length, iconF);
 	
 
 	int err = VRSubsystem::connectToVRServer("127.0.0.1");
@@ -32,7 +36,9 @@ void main() {
 		std::cout << "connection failed with err \n" <<err << std::endl;
 		exit(0);
 	};
-
+	{
+		VRSubsystem::addMarker(data, length, 1.0, "prova", 5);
+	}
 	{
 		int* cameras, n;
 		cameras = VRSubsystem::getVirtualCameraList(&n);

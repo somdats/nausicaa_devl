@@ -76,21 +76,19 @@ else
 
 int Server::incoming_message(std::string& message) {
 	/* a message has the form
-	*  NUMBER@MESSAGE[BLOB] where:
-	*  NUMBER  = string encoding the length of the text part of the message
+	*  NUMBERMESSAGE[BLOB] where:
+	*  NUMBER  = firs 4 bytes  encoding the length of the text part of the message as an int
 	*  MESSAGE 
 	*  BLOB    = binary data attached to the message
 	*/
-	char recvbuf[512];
-	int recvbuflen = 512;
+	char recvbuf[65536];
+	int recvbuflen = 65536;
 	int iResult = recv(new_socket, recvbuf, recvbuflen, 0);
 	if (iResult > 0) {
-		std::string header(recvbuf,10);
-		int  size_header = header.find_first_of('@')+1;
-		std::string res = header.substr(0, size_header-1);
-		int size_string_part = std::stoi(res);
-		message = std::string(recvbuf+ size_header, size_string_part);
-		memcpy_s(this->blob_bin, iResult - size_header - size_string_part, recvbuf + size_header + size_string_part, iResult - size_header - size_string_part);
+		int size_string_part = *(int*)recvbuf;
+		message = std::string(recvbuf+ 4, size_string_part);
+		blob_bin_length = iResult - 4 - size_string_part;
+		memcpy_s(blob_bin, blob_bin_length, recvbuf + 4 + size_string_part, blob_bin_length);
 		return 0;
 	}
 	else {
