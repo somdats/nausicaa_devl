@@ -13,6 +13,7 @@
 
 
 std::map<unsigned int, vcg::Shotf> virtualCameras;
+std::map<unsigned int, Marker> markers;
 unsigned int activeCamera;
 bool streamON;
 bool lidarOn[2];
@@ -165,6 +166,17 @@ void call_API_function(std::string message) {
 			camerasOn[i] = false;
 	}
 	else
+	if (fname == std::string("addMarker"))
+	{
+		int newID = markers.size();
+		markers[newID].label  = deserialize_string(message);
+		//markers[newID].pos[0] = deserialize_float(message);
+		//markers[newID].pos[1] = deserialize_float(message);
+		//markers[newID].pos[2] = deserialize_float(message);
+		markers[newID].png_data = new unsigned char[serverComm.blob_bin_length];
+		memcpy_s(markers[newID].png_data, serverComm.blob_bin_length, serverComm.blob_bin, serverComm.blob_bin_length);
+		markers[newID].png_data_length = serverComm.blob_bin_length;
+	}
 	if (fname == std::string("setPerspective"))
 	{
 		int id			= deserialize_int(message);

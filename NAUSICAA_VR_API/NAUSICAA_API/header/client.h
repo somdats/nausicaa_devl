@@ -6,12 +6,13 @@ struct Client{
 WSADATA wsa;
 SOCKET s;
 struct sockaddr_in server;
-char* message, server_reply[3000000];
+char  message [10485760], server_reply[3000000];
 int recv_size;
 int port;
 
 int connect(std::string addr,int port);
-int send_message(std::string message);
+
+int send_message(std::string message, char * blob = NULL,  int blob_size = 0);
 
 int receive_int();
 

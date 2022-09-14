@@ -138,31 +138,17 @@ void VRSubsystem::disableAllCameras() {
 	clientComm.send_message(message()[std::string("disableAllCameras")].msg);
 }
 
-gliphID VRSubsystem::place3DGliph(gliphTypeID, float x, float y, float d) {
-	gliphID id(-1);
-	std::cout << "Place 3D gliph" << std::endl;
-	return id;
-}
+markerID VRSubsystem::addMarker(char * png_image, int size_in_bytes, float width_mt, const char* label, int label_length) {
 
-void VRSubsystem::remove3DGliph(gliphID) {
-
-	std::cout << " remove 3d gliph" << std::endl;
-}
-
-gliphTypeID VRSubsystem::typeOf(gliphID) {
+	clientComm.send_message(message()[std::string("addMarker")][std::string(label)][width_mt].msg, png_image, size_in_bytes);
 	return 0;
 }
+ 
+void VRSubsystem::placeMarker(markerID id, float longitude, float latitude, float altitude) {}
+ 
+void VRSubsystem::showMarker(markerID id, int invisible_visible) {}
 
-
-void VRSubsystem::enableGliphs() {
-	std::cout << " enable gliph" << std::endl;
-}
-
-void VRSubsystem::disableGliphs() {
-	std::cout << " disable  gliph" << std::endl;
-
-}
-
+void VRSubsystem::clearMarkers(){};
 
 void VirtualCamera::setViewport(VirtualCameraID cId, int new_viewportX, int new_viewportY) {
 	clientComm.send_message(message()[std::string("setViewport")][cId][new_viewportX][new_viewportY].msg);

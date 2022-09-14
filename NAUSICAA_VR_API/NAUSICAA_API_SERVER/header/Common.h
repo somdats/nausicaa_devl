@@ -7,10 +7,12 @@
 #include <mutex>
 #include <condition_variable>
 #include <vcg/math/shot.h>
+#include "../../../nausicaa_devl/nauiscaa_application/nausicaa_vs/Calibration/marker.h"
 #include "server.h"
 
 
 extern std::map<unsigned int, vcg::Shotf> virtualCameras;
+extern std::map<unsigned int, Marker> markers;
 extern unsigned int activeCamera;
 extern bool streamON;
 extern bool lidarOn[2];

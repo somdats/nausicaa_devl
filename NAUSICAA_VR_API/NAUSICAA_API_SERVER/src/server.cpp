@@ -3,6 +3,7 @@
 #include<winsock2.h>
 #include "..\header\server.h"
 
+
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 
@@ -74,14 +75,20 @@ else
 
 
 int Server::incoming_message(std::string& message) {
-	char recvbuf[512];
-	int recvbuflen = 512;
+	/* a message has the form
+	*  NUMBERMESSAGE[BLOB] where:
+	*  NUMBER  = firs 4 bytes  encoding the length of the text part of the message as an int
+	*  MESSAGE 
+	*  BLOB    = binary data attached to the message
+	*/
+	char recvbuf[65536];
+	int recvbuflen = 65536;
 	int iResult = recv(new_socket, recvbuf, recvbuflen, 0);
 	if (iResult > 0) {
-		printf("Bytes received: %d\n", iResult);
-		recvbuf[iResult] = '\0';
-		message = std::string(recvbuf);
-		//		send(new_socket, "received", strlen("received"), 0);
+		int size_string_part = *(int*)recvbuf;
+		message = std::string(recvbuf+ 4, size_string_part);
+		blob_bin_length = iResult - 4 - size_string_part;
+		memcpy_s(blob_bin, blob_bin_length, recvbuf + 4 + size_string_part, blob_bin_length);
 		return 0;
 	}
 	else {
