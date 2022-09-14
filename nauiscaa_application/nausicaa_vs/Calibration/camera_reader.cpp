@@ -5,7 +5,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 
-#define RECTIFY_FIRST
+
 
 //#undef SCENE_REPLAY
 //#undef FAKE_IMAGE
@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+#include <chrono>
 
 #include"Logger.h"
 
@@ -275,7 +276,7 @@ void Camera::start_reading(){
 #else
     std::string Camerafull0args;
     //VideoCapture cap;
-    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay ! h264parse ! decodebin ! videoconvert !  appsink drop=1";
+    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay ! h264parse ! decodebin ! videoconvert !  appsink";
   /*  if ("5000" == std::to_string(inStPort))
     {*/
         std::string port = " udpsrc port = " + std::to_string(inStPort);
@@ -368,7 +369,9 @@ void Camera::start_reading(){
         //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
         //std::cout << " Iam done with undistortion:" << std::endl;
         if (!frame.empty())
+        {
             cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+        }
         else
         {
             std::cout << "Warning: camera frame empty\n" << std::endl;
