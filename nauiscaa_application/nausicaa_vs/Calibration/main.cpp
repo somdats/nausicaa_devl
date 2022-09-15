@@ -1684,9 +1684,9 @@ void Terminate() {
     for(int i = 0; i < 2;++i)
        if (tLidars[i].joinable())tLidars[i].join();
    
-  //  for (int i = 0; i < CameraCount;++i)
-  //          if (tCameras[i].joinable()) 
-  //              tCameras[i].join();
+    //  for (int i = 0; i < CameraCount;++i)
+    //          if (tCameras[i].joinable()) 
+    //              tCameras[i].join();
     serverComm.stop_server();
     serverStream.stop_server();
 
@@ -1737,8 +1737,6 @@ int main(int argc, char* argv[])
     meiConverterFile = configData[3].second;
     State::set_filename("state.txt");
     State::load_state();
-    
-
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);

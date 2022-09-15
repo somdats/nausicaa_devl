@@ -42,7 +42,7 @@ void State::save_state() {
 		fclose(fs);
 	}
 
-};
+}
 void State::load_state() {
 	FILE* fs = fopen(filename().c_str(), "r");
 	if (fs) {
@@ -98,4 +98,4 @@ void State::load_state() {
 		}
 		fclose(fs);
 	}
-};
+}
