@@ -27,7 +27,9 @@ void main() {
 	fseek(iconF, 0,SEEK_END);
 	int length = ftell(iconF);
 	char* data = new char[length];
+	fseek(iconF, 0, SEEK_SET);
 	fread(data, 1, length, iconF);
+	fclose(iconF);
 	
 
 	int err = VRSubsystem::connectToVRServer("127.0.0.1");
@@ -36,9 +38,17 @@ void main() {
 		std::cout << "connection failed with err \n" <<err << std::endl;
 		exit(0);
 	};
+
 	{
-		VRSubsystem::addMarker(data, length, 1.0, "prova", 5);
+		int mid;
+
+		for (int i = 0; i < 10; ++i) {
+			mid = VRSubsystem::addMarker(data, length, 1.0, "MM", 5);
+			VRSubsystem::placeMarker(mid, -5+i, 1, 0.1);
+			VRSubsystem::showMarker(mid, 1);
+		}
 	}
+
 	{
 		int* cameras, n;
 		cameras = VRSubsystem::getVirtualCameraList(&n);
@@ -50,7 +60,7 @@ void main() {
 	int newCamera = VRSubsystem::addVirtualCamera();
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
-	VirtualCamera::setPosition(newCamera,0.0, 0.0, 5.0);
+	VirtualCamera::setPosition(newCamera,-0.0, 0.0, 5.0);
 	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
 
 	float  sx, dx, bt, tp, nr;

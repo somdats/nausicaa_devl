@@ -201,7 +201,7 @@ std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
 unsigned int *textures;
 unsigned int markersTextureID;
-int markers_pos_x, markers_pos_y;
+int markers_pos_x = 0, markers_pos_y = 0;
 
 Shader point_shader, shadow_shader,texture_shader,flat_shader;
 std::vector<FBO> shadowFBO;
@@ -508,6 +508,9 @@ void initializeGLStuff() {
     texture_shader.Validate();
     GLERR();
     texture_shader.bind("uTexture");
+    texture_shader.bind("mm");
+    texture_shader.bind("pm");
+    GLERR();
 
     if (flat_shader.SetFromFile("./Calibration/Shaders/flat.vs",
         "./Calibration/Shaders/flat.gs", "./Calibration/Shaders/flat.fs") < 0)
@@ -579,12 +582,24 @@ void updateToGeoFrame() {
     toGeoFrame = vcg::Inverse(toGeoFrame);
 }
 
+//GLubyte _dat[4194304*4];
+
+void drawString(vcg::Point3f p, const char* string) {
+    glRasterPos3f(p[0], p[1], p[2]);
+    glColor3f(1, 1, 1);
+    for (const char* c = string; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
+    }
+}
+char* _data[2048 * 2048 * 4];
+
 void drawScene() {
     vcg::Matrix44f toCamera[6];
-    GLfloat mm[16], pm[16],vm[16];
+    GLfloat mm[16], pm[16];
     GLint aligned[6];
 
-    glGetFloatv(GL_MODELVIEW_MATRIX, vm);
+    glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+    glGetFloatv(GL_PROJECTION_MATRIX, pm);
 
     if (enable_proj) {
         drawmode = SMOOTH;
@@ -692,43 +707,115 @@ void drawScene() {
         glUseProgram(0);
     }
 
-    // drawing markers
-    for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im) {
-        if ((*im).second.png_data != 0) {
-            GLERR();
-            // define the next square where to copy
-            if (markers_pos_x < 1984) // before the last 64x64 square of the row
-                markers_pos_x += 64;
-            else {// make a new row
-                markers_pos_y += 64;
-                markers_pos_x = 0;
-            }
-            if (markers_pos_y == 2048) {
-                printf("more than 32x32 images");
-                exit(0);
-            }
-            (*im).second.tc[0] = markers_pos_x;
-            (*im).second.tc[1] = markers_pos_y;
+    
+        if (markers.empty()) {
+            markers_pos_x = 0;
+            markers_pos_y = 0;
+        } else
+         if (!virtualCameras.empty()) {
+            glUseProgram(texture_shader.pr);
 
-            //texture needs to be created
+            glActiveTexture(GL_TEXTURE0 + NUMCAM);
             glBindTexture(GL_TEXTURE_2D, markersTextureID);
- // ERRORE QUI NEL CREATE L'InputArray
-            cv::Mat cvArray = cv::Mat(cv::Size(1, (*im).second.png_data_length), CV_8UC1, (*im).second.png_data);
-            cv::Mat img = cv::imdecode(cvArray,0);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, (*im).second.tc[0], (*im).second.tc[0], 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, img.ptr());
+            glUniform1i(texture_shader["uTexture"], NUMCAM);
+            glUseProgram(0);
 
-            GLERR();
-            delete[](*im).second.png_data;
-            (*im).second.png_data = 0;
-        }
+            for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im)
+                if ((*im).second.visible)
+                {
+                    if ((*im).second.png_data != 0) {
+                        GLERR();
+                        (*im).second.tc[0] = markers_pos_x;
+                        (*im).second.tc[1] = markers_pos_y;
+
+                        //texture needs to be created
+                        glBindTexture(GL_TEXTURE_2D, markersTextureID);
+                        cv::Mat matImg;
+                        matImg = cv::imdecode(cv::Mat(1, (*im).second.png_data_length, CV_8UC1, (*im).second.png_data), cv::IMREAD_UNCHANGED);
+                        cv::flip(matImg, matImg, 0);
+                        glTexSubImage2D(GL_TEXTURE_2D, 0, (*im).second.tc[0], (*im).second.tc[1], 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, matImg.ptr());
+
+                        // DBG show to whole texture    
+                        //glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,GL_UNSIGNED_BYTE,_data);
+                        //cv::Mat FT(2048, 2048, CV_8UC4, _data);
+                        //cv::imwrite("texture.png", FT);
+
+                        GLERR();
+                        delete[](*im).second.png_data;
+                        (*im).second.png_data = 0;
+
+                        // define the next square where to copy
+                        if (markers_pos_x < 1984) // before the last 64x64 square of the row
+                            markers_pos_x += 64;
+                        else {// make a new row
+                            markers_pos_y += 64;
+                            markers_pos_x = 0;
+                        }
+                        if (markers_pos_y == 2048) {
+                            printf("more than 32x32 images");
+                            exit(0);
+                        }
+                    }
+
+             
+                    // Compute the frame for the billboard so that th z axis always points
+                    // towards the virtual camera and Y is as similar as possible to its up direction
+                    vcg::Point3f    pov = virtualCameras[activeCamera].GetViewPoint();
+                    vcg::Matrix44f  R   = virtualCameras[activeCamera].Extrinsics.Rot();
+                    vcg::Matrix44f  Rt  = R;
+                    Rt.SetColumn(3, vcg::Point4f(0, 0, 0, 1));
+                    Rt.transposeInPlace();
+                    vcg::Point3f z_ax = (pov - (*im).second.pos).Normalize();
+                    vcg::Point3f x_ax = Rt.GetColumn3(1) ^ z_ax;
+                    vcg::Point3f y_ax = z_ax ^ x_ax;
+                    vcg::Matrix44f billboard_frame;
+                    billboard_frame.SetIdentity();
+                    billboard_frame.SetColumn(0, x_ax);
+                    billboard_frame.SetColumn(1, y_ax);
+                    billboard_frame.SetColumn(2, z_ax);
+                    billboard_frame.SetColumn(3, (*im).second.pos);
+                    
+                    draw_frame(billboard_frame);
+
+                    glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+                    vcg::Matrix44f vm_(mm);
+                    vm_.transposeInPlace();
+                    vcg::Matrix44f mm_ = vm_ * billboard_frame;
+
+                    glUseProgram(texture_shader.pr);
+                    glUniformMatrix4fv(texture_shader["mm"],1,true, &mm_[0][0]);
+                    glUniformMatrix4fv(texture_shader["pm"], 1, false, pm);
+
+                    float h_size = (*im).second.width/2.0;
+
+                    glBegin(GL_TRIANGLES);
+                    glVertexAttrib2f(1, (*im).second.tc[0] / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertex3f(-h_size, h_size, 0.0);
+                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertex3f(h_size, h_size, 0.0);
+                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertex3f(h_size, h_size*2.f, 0.0);
+
+                    glVertexAttrib2f(1, (*im).second.tc[0] / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertex3f(-h_size, h_size , 0.0);
+                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertex3f(h_size, h_size * 2.f, 0.0);
+                    glVertexAttrib2f(1,  (*im).second.tc[0]   / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertex3f(-h_size, h_size * 2.f, 0.0);
+                    glEnd();
+                    glUseProgram(0);
+                    GLERR();
+                    drawString((*im).second.pos, (*im).second.label.c_str());
+                }
+        
+        GLERR();
     }
 
     if(drawBackground)
     if (drawmode == SMOOTH && enable_proj) {
         glUseProgram(point_shader.pr);
-        vcg::Matrix44f ide; ide.SetIdentity(); 
-        glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &ide[0][0]);
-        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, vm);
+        glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
+        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
         gluSphere(gluNewQuadric(), 100.0, 10, 10);
         glUseProgram(0);
     }
@@ -1008,6 +1095,8 @@ void Display() {
             glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
             glUseProgram(texture_shader.pr);
             glUniform1i(texture_shader["uTexture"], 0);
+            glUniformMatrix4fv(texture_shader["mm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
+            glUniformMatrix4fv(texture_shader["pm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
             glBegin(GL_QUADS);
             glVertexAttrib2f(1, 0.0, 0.0);
             glVertex3f(0.0, -1, 0.0);
