@@ -12,4 +12,6 @@ struct Marker {
 	int png_data_length;
 	bool visible;	
 	float width;
+	float z;
+	const bool operator < (const Marker& o) { return z > o.z; }
 };

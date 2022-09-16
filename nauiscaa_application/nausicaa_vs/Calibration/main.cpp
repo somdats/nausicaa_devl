@@ -553,7 +553,6 @@ void initializeGLStuff() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2048, 2048, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
     GLERR();
 }
 
@@ -756,26 +755,28 @@ void drawScene() {
                             exit(0);
                         }
                     }
+                }
 
-             
-                    // Compute the frame for the billboard so that th z axis always points
-                    // towards the virtual camera and Y is as similar as possible to its up direction
-                    vcg::Point3f    pov = virtualCameras[activeCamera].GetViewPoint();
-                    vcg::Matrix44f  R   = virtualCameras[activeCamera].Extrinsics.Rot();
-                    vcg::Matrix44f  Rt  = R;
-                    Rt.SetColumn(3, vcg::Point4f(0, 0, 0, 1));
-                    Rt.transposeInPlace();
-                    vcg::Point3f z_ax = (pov - (*im).second.pos).Normalize();
-                    vcg::Point3f x_ax = Rt.GetColumn3(1) ^ z_ax;
-                    vcg::Point3f y_ax = z_ax ^ x_ax;
-                    vcg::Matrix44f billboard_frame;
-                    billboard_frame.SetIdentity();
-                    billboard_frame.SetColumn(0, x_ax);
-                    billboard_frame.SetColumn(1, y_ax);
-                    billboard_frame.SetColumn(2, z_ax);
-                    billboard_frame.SetColumn(3, (*im).second.pos);
-                    
-                    draw_frame(billboard_frame);
+            vcg::Matrix44f billboard_frame = virtualCameras[activeCamera].Extrinsics.Rot();
+            vcg::Point3f pov = virtualCameras[activeCamera].GetViewPoint();
+            billboard_frame.transposeInPlace();
+            vcg::Point3f z_ax = billboard_frame.GetColumn3(2);
+
+            std::vector<Marker> sorted_markers;
+            for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im)
+                if ((*im).second.visible) {
+                    (*im).second.z = (pov - (*im).second.pos) * z_ax;
+                    sorted_markers.push_back(im->second);
+                }
+
+            std::sort(sorted_markers.begin(), sorted_markers.end());
+
+            for (std::vector<Marker> ::iterator im = sorted_markers.begin(); im != sorted_markers.end(); ++im)
+                if ((*im).visible){
+                    // Compute the frame for the billboard
+                    billboard_frame.SetColumn(3, (*im).pos);
+
+                    //draw_frame(billboard_frame);
 
                     glGetFloatv(GL_MODELVIEW_MATRIX, mm);
                     vcg::Matrix44f vm_(mm);
@@ -786,26 +787,30 @@ void drawScene() {
                     glUniformMatrix4fv(texture_shader["mm"],1,true, &mm_[0][0]);
                     glUniformMatrix4fv(texture_shader["pm"], 1, false, pm);
 
-                    float h_size = (*im).second.width/2.0;
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                    float h_size = (*im).width/2.0;
 
                     glBegin(GL_TRIANGLES);
-                    glVertexAttrib2f(1, (*im).second.tc[0] / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertexAttrib2f(1, (*im).tc[0] / 2048.f, (*im).tc[1] / 2048.f);
                     glVertex3f(-h_size, h_size, 0.0);
-                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, (*im).tc[1] / 2048.f);
                     glVertex3f(h_size, h_size, 0.0);
-                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, ((*im).tc[1] + 64) / 2048.f);
                     glVertex3f(h_size, h_size*2.f, 0.0);
 
-                    glVertexAttrib2f(1, (*im).second.tc[0] / 2048.f, (*im).second.tc[1] / 2048.f);
+                    glVertexAttrib2f(1, (*im).tc[0] / 2048.f, (*im).tc[1] / 2048.f);
                     glVertex3f(-h_size, h_size , 0.0);
-                    glVertexAttrib2f(1, ((*im).second.tc[0] + 64) / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, ((*im).tc[1] + 64) / 2048.f);
                     glVertex3f(h_size, h_size * 2.f, 0.0);
-                    glVertexAttrib2f(1,  (*im).second.tc[0]   / 2048.f, ((*im).second.tc[1] + 64) / 2048.f);
+                    glVertexAttrib2f(1,  (*im).tc[0]   / 2048.f, ((*im).tc[1] + 64) / 2048.f);
                     glVertex3f(-h_size, h_size * 2.f, 0.0);
                     glEnd();
                     glUseProgram(0);
                     GLERR();
-                    drawString((*im).second.pos, (*im).second.label.c_str());
+                    glDisable(GL_BLEND);
+                    drawString((*im).pos, (*im).label.c_str());
                 }
         
         GLERR();
@@ -996,7 +1001,8 @@ void Display() {
 
         glViewport(0, 0, width, height);
         glClearColor(0.0, 0.0, 0.0, 1.0);      
-       
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
         drawScene();
 
         if (!showfromcamera && showCameras) {

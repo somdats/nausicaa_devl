@@ -44,7 +44,7 @@ void main() {
 
 		for (int i = 0; i < 10; ++i) {
 			mid = VRSubsystem::addMarker(data, length, 1.0, "MM", 5);
-			VRSubsystem::placeMarker(mid, -5+i, 1, 0.1);
+			VRSubsystem::placeMarker(mid, -5+i/2.0, 1, 0.1-i*0.2);
 			VRSubsystem::showMarker(mid, 1);
 		}
 	}
