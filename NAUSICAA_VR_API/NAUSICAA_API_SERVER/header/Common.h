@@ -7,7 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vcg/math/shot.h>
-#include "../../../nausicaa_devl/nauiscaa_application/nausicaa_vs/Calibration/marker.h"
+#include "../../../nauiscaa_application/nausicaa_vs/Calibration/marker.h"
 #include "server.h"
 
 
