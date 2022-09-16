@@ -9,7 +9,6 @@
 
 //#undef SCENE_REPLAY
 //#undef FAKE_IMAGE
-#define RECTIFY_FIRST
 
 
 
