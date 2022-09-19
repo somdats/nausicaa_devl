@@ -21,21 +21,21 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 
 void main() {
 	cv::namedWindow("monitor", 1);
-	cv::setMouseCallback("monitor", CallBackFunc,0);
-	
-	FILE * iconF  = fopen("boat_icon.png","rb");
-	fseek(iconF, 0,SEEK_END);
+	cv::setMouseCallback("monitor", CallBackFunc, 0);
+
+	FILE* iconF = fopen("boat_icon.png", "rb");
+	fseek(iconF, 0, SEEK_END);
 	int length = ftell(iconF);
 	char* data = new char[length];
 	fseek(iconF, 0, SEEK_SET);
 	fread(data, 1, length, iconF);
 	fclose(iconF);
-	
+
 
 	int err = VRSubsystem::connectToVRServer("127.0.0.1");
-	if ( err !=0)
+	if (err != 0)
 	{
-		std::cout << "connection failed with err \n" <<err << std::endl;
+		std::cout << "connection failed with err \n" << err << std::endl;
 		exit(0);
 	};
 
@@ -44,7 +44,7 @@ void main() {
 
 		for (int i = 0; i < 10; ++i) {
 			mid = VRSubsystem::addMarker(data, length, 1.0, "MM", 5);
-			VRSubsystem::placeMarker(mid, -5+i/2.0, 1, 0.1-i*0.2);
+			VRSubsystem::placeMarker(mid, -5 + i*2, 1, 3.0 - i * 4.0);
 			VRSubsystem::showMarker(mid, 1);
 		}
 	}
@@ -60,7 +60,7 @@ void main() {
 	int newCamera = VRSubsystem::addVirtualCamera();
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
-	VirtualCamera::setPosition(newCamera,-0.0, 0.0, 5.0);
+	VirtualCamera::setPosition(newCamera,-0.0, 6.0, 5.0);
 	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
 
 	float  sx, dx, bt, tp, nr;
@@ -86,6 +86,7 @@ void main() {
 	while(true) {
 		frame = VRSubsystem::readFrame(&size);
 		if (frame) {
+
 			FILE* fo = fopen("frame.jpg", "wb");
 			fwrite(frame, size, 1, fo);
 			fclose(fo);

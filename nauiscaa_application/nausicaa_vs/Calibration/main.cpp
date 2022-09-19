@@ -179,6 +179,12 @@ bool usePoint[100];
 float xCoord, yCoord, zCoord;
 int idFrame;
 
+// markers
+// a marker cannot appear smaller than
+float min_size_on_screen = 100.f; 
+float max_size_on_screen = 200.f;
+
+
 // this matrix brings the point clouds to a common (local) reference system
 vcg::Matrix44f transfLidar[2]; 
 
@@ -587,10 +593,10 @@ void drawString(vcg::Point3f p, const char* string) {
     glRasterPos3f(p[0], p[1], p[2]);
     glColor3f(1, 1, 1);
     for (const char* c = string; *c != '\0'; c++) {
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);  // Updates the position
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);  // Updates the position
     }
 }
-char* _data[2048 * 2048 * 4];
+//char* _data[2048 * 2048 * 4];
 
 void drawScene() {
     vcg::Matrix44f toCamera[6];
@@ -761,6 +767,9 @@ void drawScene() {
             vcg::Point3f pov = virtualCameras[activeCamera].GetViewPoint();
             billboard_frame.transposeInPlace();
             vcg::Point3f z_ax = billboard_frame.GetColumn3(2);
+            float sx, dx, bt, tp, n;
+            virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+            float met_2_pixels =  virtualCameras[activeCamera].Intrinsics.ViewportPx[0]/ (dx - sx);
 
             std::vector<Marker> sorted_markers;
             for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im)
@@ -790,7 +799,21 @@ void drawScene() {
                     glEnable(GL_BLEND);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                    float h_size = (*im).width/2.0;
+                    float size_on_viewplane = (*im).width * n / (*im).z;
+                    float size_on_screen = size_on_viewplane  * met_2_pixels;
+                    float ratio = 1.f;
+                    if (size_on_screen < min_size_on_screen) {
+                        ratio = min_size_on_screen / size_on_screen;
+                        size_on_screen = min_size_on_screen;
+                    }else
+                        if (size_on_screen < max_size_on_screen) {
+                            ratio = max_size_on_screen / size_on_screen;
+                            size_on_screen = max_size_on_screen;
+                        }
+
+
+                    float h_size  = (*im).width* ratio /2.0;
+
 
                     glBegin(GL_TRIANGLES);
                     glVertexAttrib2f(1, (*im).tc[0] / 2048.f, (*im).tc[1] / 2048.f);
@@ -1048,7 +1071,11 @@ void Display() {
             glClearDepth(1.0);
             glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
-            GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], 0.5, 10);
+            float sx, dx, bt, tp, n;
+            virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+
+
+            GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
 
             drawScene();
             if (::pick_point) {
