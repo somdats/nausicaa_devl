@@ -1024,7 +1024,7 @@ void Display() {
 
         glViewport(0, 0, width, height);
         glClearColor(0.0, 0.0, 0.0, 1.0);      
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+       // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         drawScene();
 
@@ -1195,12 +1195,12 @@ void Reshape(int _width, int _height) {
     TwWindowSize(width, height);
 }
 
-void TW_CALL rotateAxis(void*) {
+void TW_CALL rotateAxis(void*a) {
+    int ax = *(int*)a;
     vcg::Matrix44f R;
-    R.SetRotateDeg(90, axis[currentLidar][1].Direction());
-    axis[currentLidar][0].SetDirection(R * axis[currentLidar][0].Direction());
-    axis[currentLidar][2].SetDirection(R * axis[currentLidar][2].Direction());
-
+    R.SetRotateDeg(90, axis[currentLidar][ax].Direction());
+    axis[currentLidar][(ax+1)%3].SetDirection(R * axis[currentLidar][(ax + 1) % 3].Direction());
+    axis[currentLidar][(ax+2)%3].SetDirection(R * axis[currentLidar][(ax + 2) % 3].Direction());
 }
 
 void addPointToGUI(vcg::Point3f p,int i) {
@@ -1853,10 +1853,13 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "Init Camera", initCameras, 0, " label='start cameras' group=Input help=`initialize Cameras` ");
     TwAddButton(bar, "stop", ::stop, 0, " label='stop reading' group=Input help=`stop input` ");
 
-
+    int axes[3] = { 0,1,2 };
     TwAddVarRW(bar, "showplanes", TW_TYPE_BOOL8, &showPlanes, " label='Show Planes' group=`Register Lidars` help=` select` ");
     TwAddButton(bar, "compute frame", ::computeFrame, 0, " label='Compute Frame' group=`Register Lidars` help=`compute frame` ");
-    TwAddButton(bar, "rotate", ::rotateAxis, 0, " label='rotate frame' group=`Register Lidars` help=`rotate frame` ");
+    TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
+    TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
+    TwAddButton(bar, "rotateZ", ::rotateAxis, (void*)&axes[2], " label='rotate frame Z' group=`Register Lidars` help=`rotate frame Z` ");
+
     TwAddButton(bar, "add", ::addFrame, 0, " label='add  frame' group=`Register Lidars` help=`add current frame` ");
     TwAddVarRW(bar, "Current Lidar", TW_TYPE_UINT32, &currentLidar, " label='currrent LIdar' min=0 max=1 group=`Register Lidars` help=` current lidar` ");
     TwAddVarRW(bar, "Current Plane", TW_TYPE_UINT32, &currentPlane, " label='currrent Plane' min=0 max=2 group=`Register Lidars` help=` current plane` ");
