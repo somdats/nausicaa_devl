@@ -9,7 +9,7 @@ in vec4 textureCoordFS[6];
 uniform   sampler2D camTex[6];
 uniform   sampler2D camDepth[6];
 uniform   int      aligned[6];
-
+uniform   int      used[6];
 
 float weight[6];
 
@@ -18,7 +18,7 @@ void main()
     vec4 tCoord[6];
     float total_weigth= 0.0;
     for(int ic = 0; ic < 4; ++ic)
-        if(aligned[ic] == 1)
+        if(aligned[ic] == 1 && used[ic] == 1)
         { 
             tCoord[ic]  = textureCoordFS[ic] / textureCoordFS[ic].w; //(for opengl)
          
