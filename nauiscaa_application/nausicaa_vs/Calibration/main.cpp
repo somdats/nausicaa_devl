@@ -171,7 +171,8 @@ float picked_point[6];
 
 std::vector<vcg::Point3f> selected;
 PlaneC planes[2][3];
-LineC  axis[2][3];
+LineC  axis[2][3]; 
+std::vector<vcg::Line3f> lines3d;
 std::vector<vcg::Matrix44f> frames[2];
 std::vector<vcg::Point3f>  points;
 bool usePoint[100];
@@ -468,7 +469,16 @@ void draw_frame(vcg::Matrix44f m) {
     }
     glEnd();
 }
+void drawLine(vcg::Line3f l) {
+    vcg::Point3f p0 = l.Origin() - l.Direction();
+    vcg::Point3f p1 = l.Origin() + l.Direction();
+    glBegin(GL_LINES);
 
+    glColor3f(1,1,0);
+    glVertex3f(p0[0], p0[1], p0[2]);
+    glVertex3f(p1[0], p1[1], p1[2]);
+    glEnd();
+}
 
 void initializeGLStuff() {
 
@@ -488,6 +498,7 @@ void initializeGLStuff() {
     point_shader.bind("camTex");
     point_shader.bind("camDepth");
     point_shader.bind("aligned");
+    point_shader.bind("used");
     GLint  texs[6] = { 5,6,7,8,9,10};
     GLint  dpts[6] = { 11,12,13,14,15,16};
     glUniform1iv(point_shader["camTex"],6, texs);
@@ -602,6 +613,7 @@ void drawScene() {
     vcg::Matrix44f toCamera[6];
     GLfloat mm[16], pm[16];
     GLint aligned[6];
+    GLint used[6];
 
     glGetFloatv(GL_MODELVIEW_MATRIX, mm);
     glGetFloatv(GL_PROJECTION_MATRIX, pm);
@@ -623,16 +635,20 @@ void drawScene() {
                 //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR();
                 aligned[ic] = 1;
+                used[ic] = cameras[ic].used;
             }
             else
                 aligned[ic] = 0;
         glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
         glUniform1iv(point_shader["aligned"], NUMCAM, aligned);  
+        glUniform1iv(point_shader["used"], NUMCAM, used);
 
         glGetFloatv(GL_PROJECTION_MATRIX, pm);
         glUniformMatrix4fv(point_shader["pm"], 1, GL_FALSE, pm);
         glUseProgram(0);
     }
+    for (int il = 0; il < lines3d.size(); ++il)
+        drawLine(lines3d[il]);
 
     for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
         glPushMatrix();
@@ -1024,19 +1040,21 @@ void Display() {
 
         glViewport(0, 0, width, height);
         glClearColor(0.0, 0.0, 0.0, 1.0);      
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+       // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         drawScene();
 
         if (!showfromcamera && showCameras) {
             // draw cameras
-            glColor3f(0, 1, 0);
-            glPushMatrix();
-            vcg::Point3f p = cameras[currentCamera].calibrated.GetViewPoint();
-            glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.2, 10, 10);
-            draw_frame(cameras[currentCamera].calibrated.Extrinsics.Rot());
-            glPopMatrix();
+            for (int ic = 0; ic < cameras.size(); ++ic) {
+                glColor3f(0, 1, 0);
+                glPushMatrix();
+                vcg::Point3f p = cameras[ic].calibrated.GetViewPoint();
+                glTranslatef(p[0], p[1], p[2]);
+                gluSphere(gluNewQuadric(), 0.2, 10, 10);
+                draw_frame(cameras[ic].calibrated.Extrinsics.Rot());
+                glPopMatrix();
+            }
         }
 
         for (int ip = 0; ip < points.size(); ++ip)
@@ -1195,12 +1213,12 @@ void Reshape(int _width, int _height) {
     TwWindowSize(width, height);
 }
 
-void TW_CALL rotateAxis(void*) {
+void TW_CALL rotateAxis(void*a) {
+    int ax = *(int*)a;
     vcg::Matrix44f R;
-    R.SetRotateDeg(90, axis[currentLidar][1].Direction());
-    axis[currentLidar][0].SetDirection(R * axis[currentLidar][0].Direction());
-    axis[currentLidar][2].SetDirection(R * axis[currentLidar][2].Direction());
-
+    R.SetRotateDeg(90, axis[currentLidar][ax].Direction());
+    axis[currentLidar][(ax+1)%3].SetDirection(R * axis[currentLidar][(ax + 1) % 3].Direction());
+    axis[currentLidar][(ax+2)%3].SetDirection(R * axis[currentLidar][(ax + 2) % 3].Direction());
 }
 
 void addPointToGUI(vcg::Point3f p,int i) {
@@ -1277,6 +1295,21 @@ void TW_CALL computeTranformation(void*) {
         T = vcg::Inverse(T);
         transfLidar[il] = T;
     }
+}
+
+
+
+
+void TW_CALL computeLine(void*) {
+    for (int ip = 0; ip < 2; ++ip)
+        if (!planes[currentLidar][ip].valid)
+            return;
+    vcg::Line3f l; 
+    vcg::IntersectionPlanePlane(planes[currentLidar][0], planes[currentLidar][1], l);
+    float pr0 = l.Projection(planes[currentLidar][0].o);
+    float pr1 = l.Projection(planes[currentLidar][1].o);
+    l.SetOrigin(l.Origin() + l.Direction()* (pr0 + pr1) * 0.5);
+    lines3d.push_back(l);
 }
 
 void TW_CALL computeFrame(void*) {
@@ -1414,6 +1447,9 @@ void   loadImPoints(int iCam) {
 
     FILE* fo = fopen(correspondences_file.c_str(), "r");
     if (fo) {
+        cameras[iCam].p3.clear();
+        cameras[iCam].p2i.clear();
+
         char trash[1000];
         fgets(trash, 1000, fo);
  
@@ -1423,8 +1459,8 @@ void   loadImPoints(int iCam) {
         while (!feof(fo)) {
             int r = fscanf(fo, "%f %f %f %f %f", &x, &y, &z, &u, &v);
             if (r == 5) {
-                cameras[iCam].p3[i]  = vcg::Point3f(x, y, z);
-                cameras[iCam].p2i[i] = cv::Point2f(u, v);
+                cameras[iCam].p3.push_back(vcg::Point3f(x, y, z));
+                cameras[iCam].p2i.push_back(cv::Point2f(u, v));
                 ++i;
             }
         }
@@ -1736,6 +1772,15 @@ void TW_CALL stop(void*) {
     for(int i = 0; i < CameraCount; ++i)  
        if (cameras[i].reading) { cameras[i].stop_reading(); }
 }
+void TW_CALL setMapColor(const void* v,void *) {
+    if(!cameras.empty())
+        cameras[currentCamera].used = *(bool*)v;
+}
+void TW_CALL getMapColor(  void*v, void*) {
+    if (!cameras.empty())
+        *(bool*)v  = cameras[currentCamera].used ;
+}
+
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
     std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
@@ -1853,10 +1898,14 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "Init Camera", initCameras, 0, " label='start cameras' group=Input help=`initialize Cameras` ");
     TwAddButton(bar, "stop", ::stop, 0, " label='stop reading' group=Input help=`stop input` ");
 
-
+    int axes[3] = { 0,1,2 };
     TwAddVarRW(bar, "showplanes", TW_TYPE_BOOL8, &showPlanes, " label='Show Planes' group=`Register Lidars` help=` select` ");
     TwAddButton(bar, "compute frame", ::computeFrame, 0, " label='Compute Frame' group=`Register Lidars` help=`compute frame` ");
-    TwAddButton(bar, "rotate", ::rotateAxis, 0, " label='rotate frame' group=`Register Lidars` help=`rotate frame` ");
+    TwAddButton(bar, "compute line", ::computeLine, 0, " label='Compute Line' group=`Register Lidars` help=`compute line` ");
+    TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
+    TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
+    TwAddButton(bar, "rotateZ", ::rotateAxis, (void*)&axes[2], " label='rotate frame Z' group=`Register Lidars` help=`rotate frame Z` ");
+
     TwAddButton(bar, "add", ::addFrame, 0, " label='add  frame' group=`Register Lidars` help=`add current frame` ");
     TwAddVarRW(bar, "Current Lidar", TW_TYPE_UINT32, &currentLidar, " label='currrent LIdar' min=0 max=1 group=`Register Lidars` help=` current lidar` ");
     TwAddVarRW(bar, "Current Plane", TW_TYPE_UINT32, &currentPlane, " label='currrent Plane' min=0 max=2 group=`Register Lidars` help=` current plane` ");
@@ -1866,6 +1915,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "load", ::loadAxis, 0, " label='loadAxis' group=`Register Lidars` help=`rotate frame` ");
 
     TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
+    TwAddVarCB(bar, "Map Color", TW_TYPE_BOOL8, setMapColor, getMapColor, (void*)0, " label='map color' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "assign points", ::assignPointsToCamera, 0, " label='assign 3D points' group=`Align Cameras` help=`copy points` ");
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
     TwAddButton(bar, "saveIP", ::saveImPoints, 0, " label='saveImPoints' group=`Align Cameras` help=` ` ");

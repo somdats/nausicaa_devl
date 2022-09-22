@@ -175,8 +175,8 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
         computeOpenGLFrustrumScaramuzza(cameraMatrix, 1948, 1096, f, r, l, t, b);
         vcg_cam.SetFrustum(l, r, b, t, f, vcg::Point2i(1948, 1096));
 
-        p3.resize(4, vcg::Point3f(0.0,0.0,0.0));
-        p2i.resize(4,cv::Point2i(-1,-1));
+     //   p3.resize(4, vcg::Point3f(0.0,0.0,0.0));
+     //   p2i.resize(4,cv::Point2i(-1,-1));
         ax = 0;
 
         return;
