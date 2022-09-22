@@ -43,19 +43,34 @@ int thicknessCircle1 = 2;
 
 string type2str(int type);
 
+int findPoint(Camera* cam, cv::Point2f p) {
+    for (int i = 0; i < cam->p2i.size(); ++i)
+        if (norm((p - cam->p2i[i])) < 20)
+            return i;
+    return -1;
+}
+
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
     Camera * cam =  (Camera*)userdata;
      if  ( event == EVENT_LBUTTONDOWN  ){
          if(flags & EVENT_FLAG_CTRLKEY)
              {
-                 cam->p2i[cam->ax] = cv::Point(x,y);
-                 cam->ax=(cam->ax+1)%cam->p3.size();
+                 cam->p2i.push_back(cv::Point(x,y));
+//                 cam->ax=(cam->ax+1)%cam->p3.size();
              }
      }
 
      else if  ( event == EVENT_RBUTTONDOWN )
      {
+         int ip = findPoint(cam, cv::Point(x, y));
+         if (ip != -1) {
+             std::vector< cv::Point2f>camCopy = cam->p2i;
+             cam->p2i.clear();
+             for (int i = 0; i < camCopy.size(); ++i)
+                 if(i!=ip)
+                     cam->p2i.push_back(camCopy[i]);
+            }
      }
      else if  ( event == EVENT_MBUTTONDOWN )
      {
@@ -421,7 +436,7 @@ void Camera::start_reading(){
 
         // drawing
         if (dst.rows > 0) {
-            for (int i = 0; i < this->p3.size(); ++i)
+            for (int i = 0; i < this->p2i.size(); ++i)
                 if (p2i[i] != cv::Point2f(-1, -1)) {
                     cv::Scalar col(255, 255, 255);
                     cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
@@ -611,6 +626,7 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     //    printf("%f %f --- %f %f\n",pr[0],pr[1],p2[i].x,p2[i].y);
     //}
     this->aligned = true;
+    this->used = true;
     return shot;
 
 }

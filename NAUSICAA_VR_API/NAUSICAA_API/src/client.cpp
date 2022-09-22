@@ -64,7 +64,7 @@ int   Client::send_message(std::string msg, char * blob, int blob_size  ) {
 		puts("Send failed");
 		return 1;
 	}
-	puts("Data Send\n");
+	puts("Data Sent\n");
 }
 
 int  Client::receive_int() {

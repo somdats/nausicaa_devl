@@ -600,11 +600,23 @@ void updateToGeoFrame() {
 
 //GLubyte _dat[4194304*4];
 
-void drawString(vcg::Point3f p, const char* string) {
+
+void drawString(vcg::Point3f p, const char* string, int size) {
+    void *  fonts[4] = { GLUT_BITMAP_HELVETICA_10,GLUT_BITMAP_HELVETICA_12,GLUT_BITMAP_HELVETICA_18,GLUT_BITMAP_TIMES_ROMAN_24 };
+    int sizes[4] = { 10,12,18,24 };
     glRasterPos3f(p[0], p[1], p[2]);
     glColor3f(1, 1, 1);
+    int fontsize = size / (1 + std::string(string).length());
+    void  * font = fonts[3];
+    for(int fi = 0; fi < 4; fi)
+        if (fontsize < sizes[fi])
+        {
+            font = fonts[fi];
+            break;
+        }
+
     for (const char* c = string; *c != '\0'; c++) {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);  // Updates the position
+        glutBitmapCharacter(font, *c);  // Updates the position
     }
 }
 //char* _data[2048 * 2048 * 4];
@@ -849,7 +861,7 @@ void drawScene() {
                     glUseProgram(0);
                     GLERR();
                     glDisable(GL_BLEND);
-                    drawString((*im).pos, (*im).label.c_str());
+                    drawString((*im).pos, (*im).label.c_str(), size_on_screen);
                 }
         
         GLERR();
@@ -1175,8 +1187,6 @@ void Display() {
     }
 
     glUseProgram(0);
-    
-
 
     glActiveTexture(GL_TEXTURE0);
     TwRefreshBar(bar);
@@ -1263,11 +1273,13 @@ void TW_CALL addFrame(void*) {
 }
 
 void   alignCamera(int ic) {
-        cameras[ic].calibrated = cameras[ic].SolvePnP(cameras[ic].p3);
+        if(cameras[ic].p3.size() == cameras[ic].p2i.size() && cameras[ic].p3.size()>3)
+            cameras[ic].calibrated = cameras[ic].SolvePnP(cameras[ic].p3);
 }
 
 void TW_CALL alignCamera(void*) {
-         cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
+    if (cameras[currentCamera].p3.size() == cameras[currentCamera].p2i.size() && cameras[currentCamera].p3.size() > 3)
+        cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
 }
 
 void TW_CALL assignPointsToCamera(void*) {
@@ -1296,8 +1308,6 @@ void TW_CALL computeTranformation(void*) {
         transfLidar[il] = T;
     }
 }
-
-
 
 
 void TW_CALL computeLine(void*) {
@@ -1620,38 +1630,38 @@ void start_Streaming_thread() {
     std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90 };
 #endif // MJPEG_WRITE
 
-    while (!serverStream.stop_signal/* && streamer.isRunning()*/) {
-        /* if (streamON)
-         {*/
-        buff_mutex.lock();
-        int fbSize = format_nchannels * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h;
-        cv::Mat frame = cv::Mat(cameraFBO.h, cameraFBO.w, CV_8UC3);
-        cv::Mat dstFrame;
-        frame.data = pixelData;
-        cv::flip(frame, dstFrame, 0);  
+    while (!serverStream.stop_signal/* && streamer.isRunning()*/)  
+        if (streamON)
+        {
+            buff_mutex.lock();
+            int fbSize = format_nchannels * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h;
+            cv::Mat frame = cv::Mat(cameraFBO.h, cameraFBO.w, CV_8UC3);
+            cv::Mat dstFrame;
+            frame.data = pixelData;
+            cv::flip(frame, dstFrame, 0);  
         
-        cv::imwrite("streamed.jpg", dstFrame);
+         //   cv::imwrite("streamed.jpg", dstFrame);
         
-        std::vector<uchar>buf;
-        cv::imencode(".jpg", dstFrame, buf);
-        size_t szbuf = buf.size();
-        //serverStream.send(reinterpret_cast<char*>(buf.data()));
-        serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
-#ifdef MJPEG_WRITE
+            std::vector<uchar>buf;
+            cv::imencode(".jpg", dstFrame, buf);
+            size_t szbuf = buf.size();
+            //serverStream.send(reinterpret_cast<char*>(buf.data()));
+            serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+    #ifdef MJPEG_WRITE
 
-        streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-#endif // MJPEG_WRITE
+            streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    #endif // MJPEG_WRITE
 
-#if  VIDEO_STREAM
-        outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
-#endif //  VIDEO_STREAM
+    #if  VIDEO_STREAM
+            outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
+    #endif //  VIDEO_STREAM
 
   
-        buff_mutex.unlock();
-        cv::waitKey(10);
-        /* }*/
-    }
+            buff_mutex.unlock();
+            cv::waitKey(10);
+            /* }*/
+        }
     serverStream.close();
 #ifdef MJPEG_WRITE
     streamer.stop();

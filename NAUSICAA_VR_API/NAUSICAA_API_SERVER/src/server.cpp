@@ -89,6 +89,7 @@ int Server::incoming_message(std::string& message) {
 		message = std::string(recvbuf+ 4, size_string_part);
 		blob_bin_length = iResult - 4 - size_string_part;
 		memcpy_s(blob_bin, blob_bin_length, recvbuf + 4 + size_string_part, blob_bin_length);
+		printf("received %s \n", message.c_str());
 		return 0;
 	}
 	else {
@@ -99,12 +100,26 @@ int Server::incoming_message(std::string& message) {
 }
 
 int Server::send(std::string message) {
-	::send(new_socket, message.c_str(), message.size(), 0);
+	printf("error status %d \n", WSAGetLastError());
+	int result = ::send(new_socket, message.c_str(), message.size(), 0);
+	if (result == SOCKET_ERROR) {
+		printf("\n ERROR %d \n", WSAGetLastError());
+	}
+	else {
+		printf("sent %s \n", message.c_str());
+	}
 	return 0;
 }
 
 int Server::send(char *data, int length) {
-	::send(new_socket, data, length, 0);
+	int result =  ::send(new_socket, data, length, 0);
+	if (result == SOCKET_ERROR) {
+		printf("\n ERROR %d \n", WSAGetLastError());
+	}
+	else {
+		data[length - 1] = '\0';
+		printf("sent %s \n", data);
+	}
 	return 0;
 }
 

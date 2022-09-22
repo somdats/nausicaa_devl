@@ -18,6 +18,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 	}
 }
 
+int _ = 20;
 
 void main() {
 	cv::namedWindow("monitor", 1);
@@ -39,10 +40,11 @@ void main() {
 		exit(0);
 	};
 
-	{
+	if(0) {
 		int mid;
 
 		for (int i = 0; i < 10; ++i) {
+			printf("Add MArker\n");
 			mid = VRSubsystem::addMarker(data, length, 1.0, "MM", 5);
 			VRSubsystem::placeMarker(mid, -5 + i*2, 1, 3.0 - i * 4.0);
 			VRSubsystem::showMarker(mid, 1);
@@ -52,34 +54,47 @@ void main() {
 	{
 		int* cameras, n;
 		cameras = VRSubsystem::getVirtualCameraList(&n);
+waitKey(_);
 		printf("number of cameras: %d\n", n);
 		for (int i = 0;i < n; ++i)
 			printf("camera id: %d\n", cameras[i]);
 	}
 
 	int newCamera = VRSubsystem::addVirtualCamera();
+	waitKey(_);
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
+	waitKey(_);
 	VirtualCamera::setPosition(newCamera,-0.0, 6.0, 5.0);
+	waitKey(_);
 	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
+	waitKey(_);
 
 	float  sx, dx, bt, tp, nr;
 	VirtualCamera::getFrustum(newCamera, &sx, &dx, &bt, &tp, &nr);
 	printf("cam %d, frustum:  %f %f %f %f %f \n", newCamera,sx, dx, bt, tp, nr);
+	waitKey(_);
 
 	float eX, eY, eZ, dX, dY, dZ, uX, uY, uZ;
 	VirtualCamera::getPositionAndDirection(newCamera, &eX, &eY,&eZ, &dX, &dY, &dZ, &uX,&uY,&uZ);
 	printf("cam %d, posdir: %f %f %f %f %f %f %f %f %f \n", newCamera, eX, eY, eZ, dX, dY, dZ, uX, uY, uZ);
+	waitKey(_);
 
 
 	VRSubsystem::renderFromCamera(newCamera);
+	waitKey(_);
 
 	VRSubsystem::startStreaming();
+	waitKey(_);
 
 	VRSubsystem::disableLidar(0);
+	waitKey(_);
 	VRSubsystem::enableLidar(0);
+	waitKey(_);
 	VRSubsystem::disableCamera(0);
+	waitKey(_);
 	VRSubsystem::enableCamera(0);
+	waitKey(_);
 
 	char * frame;
 	int size;
