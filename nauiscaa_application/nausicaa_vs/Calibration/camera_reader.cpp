@@ -156,8 +156,8 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
         }
        // std::cout << cameraMatrix << std::endl;
         std::cout << "distortion coefficients:" << distCoeffs << std::endl;
-        cv::Mat new_camera_matrix = cv::Mat(cv::Matx33f(-o.pol[0], 0, cameraMatrix.at<float>(0, 2),
-            0, -o.pol[0], cameraMatrix.at<float>(1, 2),
+        cv::Mat new_camera_matrix = cv::Mat(cv::Matx33f(o.width/4.0, 0, cameraMatrix.at<float>(0, 2),
+            0, o.width/4.0, cameraMatrix.at<float>(1, 2),
             0, 0, 1));
 
         std::cout << "Camera Intrinsics for rectification:" << new_camera_matrix << std::endl;
@@ -275,7 +275,7 @@ void Camera::start_reading(){
 #else
     std::string Camerafull0args;
     //VideoCapture cap;
-    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay ! h264parse ! decodebin ! videoconvert !  appsink";
+    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay request-keyframe=true wait-for-keyframe=true ! h264parse ! decodebin ! videoconvert !  appsink ";
   /*  if ("5000" == std::to_string(inStPort))
     {*/
         std::string port = " udpsrc port = " + std::to_string(inStPort);
