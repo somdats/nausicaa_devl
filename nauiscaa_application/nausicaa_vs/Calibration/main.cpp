@@ -1790,6 +1790,12 @@ void TW_CALL getMapColor(  void*v, void*) {
     if (!cameras.empty())
         *(bool*)v  = cameras[currentCamera].used ;
 }
+void TW_CALL setVirtualTime(const void* v, void*) {
+    virtual_time = partial_time = *(int*)v;
+}
+void TW_CALL getVirtualTime(void* v, void*) {
+    *(int*)v = virtual_time;
+}
 
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
@@ -1974,7 +1980,8 @@ int main(int argc, char* argv[])
 
 
     TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
-    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
+//    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
+    TwAddVarCB(bar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Streaming` help=`virtual` ");
 #endif
     
     frameBar = TwNewBar("Frames");
