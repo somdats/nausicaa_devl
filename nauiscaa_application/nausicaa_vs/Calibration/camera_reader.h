@@ -17,7 +17,7 @@
  
 
 struct Camera{
-    Camera():aligned(false),used(false) {}
+    Camera() :aligned(false), used(false) { p3.clear();p2i.clear(); }
     Camera(const Camera & _) {}
     cv::VideoCapture cap;
     cv::Mat map1, map2;

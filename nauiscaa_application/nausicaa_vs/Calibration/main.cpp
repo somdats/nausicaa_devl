@@ -29,6 +29,7 @@
   * - basic usage of the default manipulators (the "Trackball")
   */
 
+#include <crtdbg.h>
 
 #include "defines.h"
 #include <GL/glew.h>
@@ -43,6 +44,7 @@
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/complex/algorithms/update/normal.h>
 #include <vcg/complex/algorithms/create/platonic.h>
+#include "vcg_mesh.h" 
 
 /// wrapper imports
 #include <wrap/io_trimesh/import.h>
@@ -54,6 +56,7 @@
 
 #include "velodyne_reader.h"
 #include "camera_reader.h"
+#include "detect_3d_marker.h">
 #include <opencv2/imgproc.hpp>
 
 ///server header
@@ -175,7 +178,10 @@ LineC  axis[2][3];
 std::vector<vcg::Line3f> lines3d;
 std::vector<vcg::Matrix44f> frames[2];
 std::vector<vcg::Point3f>  points;
+vcg::Point3f marker3D;
+
 bool usePoint[100];
+MarkerDetector md;
 
 float xCoord, yCoord, zCoord;
 int idFrame;
@@ -234,15 +240,15 @@ struct GLERR {
 
 using namespace vcg;
 
-class CFace;
-class CVertex;
-struct MyUsedTypes : public UsedTypes<	Use<CVertex>		::AsVertexType,
-    Use<CFace>			::AsFaceType> {};
-
-/// compositing wanted proprieties
-class CVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::Normal3f, vcg::vertex::BitFlags> {};
-class CFace : public vcg::Face<  MyUsedTypes, vcg::face::VertexRef, vcg::face::Normal3f, vcg::face::BitFlags > {};
-class CMesh : public vcg::tri::TriMesh< std::vector<CVertex>, std::vector<CFace> > {};
+//class CFace;
+//class CVertex;
+//struct MyUsedTypes : public UsedTypes<	Use<CVertex>		::AsVertexType,
+//    Use<CFace>			::AsFaceType> {};
+//
+///// compositing wanted proprieties
+//class CVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::Normal3f, vcg::vertex::BitFlags> {};
+//class CFace : public vcg::Face<  MyUsedTypes, vcg::face::VertexRef, vcg::face::Normal3f, vcg::face::BitFlags > {};
+//class CMesh : public vcg::tri::TriMesh< std::vector<CVertex>, std::vector<CFace> > {};
 
 #define NL 16
 #define N_LIDARS 2
@@ -251,6 +257,7 @@ struct LidarRender {
 
     Lidar  lidar;
 
+    vcg::Box3f bbox;
     std::vector < float > samples;
     std::vector < float > distances;
     GLuint buffers[3];
@@ -294,6 +301,8 @@ struct LidarRender {
 
     void init() {
         int ns = 0;
+        if (lidar.latest_frame.azimuth.empty())
+            return;
         for (unsigned int i = 0; i < lidar.latest_frame.azimuth.size() - 1; ++i)
             if (lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i] > 0) {
                 deltaA += lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i];
@@ -423,6 +432,7 @@ void updatePC(int il) {
 
     if (first) {
         initMesh();
+        lidars[il].bbox = mesh.bbox;
         first = false;
     }
     lidars[il].lidar.latest_frame_mutex.unlock();
@@ -489,7 +499,7 @@ void initializeGLStuff() {
     }
     point_shader.Validate();
     GLERR();
-
+    assert(_CrtCheckMemory());
     glUseProgram(point_shader.pr);
     point_shader.bind("mm");
     point_shader.bind("lidarToWorld");
@@ -505,7 +515,7 @@ void initializeGLStuff() {
     glUniform1iv(point_shader["camDepth"],6, dpts);
     glUseProgram(0);
     GLERR();
-
+    assert(_CrtCheckMemory());
     if (shadow_shader.SetFromFile("./Calibration/Shaders/shadow_map.vs",
         "./Calibration/Shaders/shadow_map.gs", "./Calibration/Shaders/shadow_map.fs") < 0)
     {
@@ -514,7 +524,7 @@ void initializeGLStuff() {
     shadow_shader.Validate();
     GLERR();
     shadow_shader.bind("toCam");
-
+    assert(_CrtCheckMemory());
 
 
     if (texture_shader.SetFromFile("./Calibration/Shaders/texture.vs",
@@ -528,7 +538,7 @@ void initializeGLStuff() {
     texture_shader.bind("mm");
     texture_shader.bind("pm");
     GLERR();
-
+    assert(_CrtCheckMemory());
     if (flat_shader.SetFromFile("./Calibration/Shaders/flat.vs",
         "./Calibration/Shaders/flat.gs", "./Calibration/Shaders/flat.fs") < 0)
     {
@@ -541,10 +551,11 @@ void initializeGLStuff() {
     flat_shader.bind("pm");
    
     GLERR();
-
+    assert(_CrtCheckMemory());
     glGenTextures(1, &markersTextureID);
-    textures = new unsigned int(NUMCAM);
+    textures = new unsigned int[NUMCAM];
     glGenTextures(NUMCAM, textures);
+    assert(_CrtCheckMemory());
     for (int i = 0; i < NUMCAM; ++i) {
         glActiveTexture(GL_TEXTURE5 + i);
         glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -556,11 +567,14 @@ void initializeGLStuff() {
         glColor3f(1, 1, 1);
         glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
         GLERR();
+        assert(_CrtCheckMemory());
     }
     shadowFBO.resize(NUMCAM);
-    for(int i = 0; i < NUMCAM; ++i)
+    
+    for (int i = 0; i < NUMCAM; ++i) {
         shadowFBO[i].Create(1948, 1096);
-
+        assert(_CrtCheckMemory());
+    }
     cameraFBO.Create(1280, 720);
     GLERR();
     glActiveTexture(GL_TEXTURE5 + NUMCAM);
@@ -879,16 +893,19 @@ void drawScene() {
 }
 
 void Display() {
+    assert(_CrtCheckMemory());
     static bool init = true;
     if (init) {
         init = false;
         initializeGLStuff();
+       
         pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h));
     }
+    assert(_CrtCheckMemory());
     updateBoatFrame();
     updateToSteadyFrame();
     updateToGeoFrame();
-
+    assert(_CrtCheckMemory());
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -899,7 +916,7 @@ void Display() {
 
     vcg::Box3f boxsel;
     boxsel.SetNull();
-
+    assert(_CrtCheckMemory());
     if (selecting && corners_sel_2D[0][0] != -1) {
         vcg::Point3f p0 = win2NDC(corners_sel_2D[0]);
         vcg::Point3f p1 = win2NDC(corners_sel_2D[1]);
@@ -936,9 +953,14 @@ void Display() {
 
 
         glPushMatrix();
-        float d = 1.0f / mesh.bbox.Diag();
+
+/*         float d = 1.0f / mesh.bbox.Diag();
         vcg::glScale(d);
         glTranslate(-glWrap.m->bbox.Center());
+*/
+        float d = 1.0f / lidars[currentLidar].bbox.Diag();
+        vcg::glScale(d);
+        glTranslate(-lidars[currentLidar].bbox.Center());
 
         draw_frame(boatFrame);
 
@@ -1079,7 +1101,14 @@ void Display() {
                     gluSphere(gluNewQuadric(), 0.02, 10, 10);
                     glPopMatrix();
                 }
-
+                {
+                    glColor3f(1, 0, 0);
+                    glPushMatrix();
+                    vcg::Point3f p = marker3D;
+                    glTranslatef(p[0], p[1], p[2]);
+                    gluSphere(gluNewQuadric(), 0.02, 10, 10);
+                    glPopMatrix();
+                }
         for (int fi = 0; fi < frames[0].size(); ++fi)
             if (::idFrame == fi)
                 draw_frame(frames[0][fi]);
@@ -1242,6 +1271,12 @@ void TW_CALL addPoint(void*) {
     addPointToGUI(newPoint, points.size());
     points.push_back(newPoint);
 }
+void TW_CALL setMarker(void*) {
+    for (unsigned int i = 0; i < points.size(); ++i)
+        if (usePoint[i])
+            marker3D = points[i];
+}
+
 std::vector<TwEnumVal> frame_item_dd;
 vcg::Matrix44f  axis2frame() {   
     vcg::Matrix44f F;
@@ -1283,11 +1318,11 @@ void TW_CALL alignCamera(void*) {
 }
 
 void TW_CALL assignPointsToCamera(void*) {
-    cameras[currentCamera].p3.clear();
+//    cameras[currentCamera].p3.clear();
     for (int ip = 0; ip < points.size();++ip)
         if (usePoint[ip])
             cameras[currentCamera].p3.push_back(points[ip]);
-    cameras[currentCamera].p2i.resize(cameras[currentCamera].p3.size());
+//    cameras[currentCamera].p2i.resize(cameras[currentCamera].p3.size());
 }
 
 void TW_CALL computeTranformation(void*) {
@@ -1306,6 +1341,27 @@ void TW_CALL computeTranformation(void*) {
 
         T = vcg::Inverse(T);
         transfLidar[il] = T;
+    }
+}
+
+
+void TW_CALL detectMarker(void*) {
+    
+    lidars[0].lidar.latest_frame_mutex.lock();
+   
+    md.points.clear();
+    for (unsigned int i = 0; i < lidars[0].lidar.latest_frame.x.size();++i) {
+        vcg::Point3f p(lidars[0].lidar.latest_frame.x[i], lidars[0].lidar.latest_frame.y[i], lidars[0].lidar.latest_frame.z[i]);
+        if (vcg::Distance<float>(p, marker3D) < 1.0)
+            md.points.push_back(p);
+    }
+
+    lidars[0].lidar.latest_frame_mutex.unlock();
+   
+    vcg::Point3f res;
+    if (md.detect_corner(marker3D)) {
+      //  addPointToGUI(res, points.size());
+      //  points.push_back(res);
     }
 }
 
@@ -1421,6 +1477,13 @@ void TW_CALL saveAxis(void*) {
 }
 
 void TW_CALL saveImPoints(void*) {
+    if (cameras[currentCamera].p3.size() != cameras[currentCamera].p2i.size())
+    {
+        int ret = MessageBoxW(NULL, (LPCWSTR)L"nope", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO);
+
+        return;
+
+    }
     std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
 #ifdef SCENE_REPLAY
     correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
@@ -1668,7 +1731,7 @@ void start_Streaming_thread() {
 #endif // MJPEG_WRITE
 
 }
-void start_server() {
+void TW_CALL start_server(void*) {
     tComm = std::thread(&start_Communication_thread);
     tStream = std::thread(&start_Streaming_thread);
     tacc = std::thread(&acceptCommunicationThread);
@@ -1680,12 +1743,12 @@ void TW_CALL initLidars(void*) {
     transfLidar[0].SetIdentity();
     transfLidar[1].SetIdentity();
     lidars[0].lidar.init(2368, "./Calibration/32db.xml");
-    lidars[1].lidar.init(2369, "./Calibration/16db.xml");
+    lidars[1].lidar.init(2369, "./Calibration/32db.xml");
 
     tLidars[0] = std::thread(&start_lidar,0);
     tLidars[1] = std::thread(&start_lidar,1);
     cv::waitKey(1000);
-    start_server();
+    //start_server();
 }
 
 void TW_CALL initCameras(void*) {
@@ -1790,13 +1853,15 @@ void TW_CALL getMapColor(  void*v, void*) {
     if (!cameras.empty())
         *(bool*)v  = cameras[currentCamera].used ;
 }
+
+#ifdef SCENE_REPLAY
 void TW_CALL setVirtualTime(const void* v, void*) {
     virtual_time = partial_time = *(int*)v;
 }
 void TW_CALL getVirtualTime(void* v, void*) {
     *(int*)v = virtual_time;
 }
-
+#endif
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
     std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
@@ -1823,6 +1888,8 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 
 int main(int argc, char* argv[])
 {
+    assert(_CrtCheckMemory());
+    
     std::string inFile = "config.txt";
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
@@ -1918,6 +1985,8 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "showplanes", TW_TYPE_BOOL8, &showPlanes, " label='Show Planes' group=`Register Lidars` help=` select` ");
     TwAddButton(bar, "compute frame", ::computeFrame, 0, " label='Compute Frame' group=`Register Lidars` help=`compute frame` ");
     TwAddButton(bar, "compute line", ::computeLine, 0, " label='Compute Line' group=`Register Lidars` help=`compute line` ");
+    TwAddButton(bar, "detect corner", ::detectMarker, 0, " label='Detect Corner' group=`Register Lidars` help=`compute line` ");
+
     TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
     TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
     TwAddButton(bar, "rotateZ", ::rotateAxis, (void*)&axes[2], " label='rotate frame Z' group=`Register Lidars` help=`rotate frame Z` ");
@@ -1958,7 +2027,7 @@ int main(int argc, char* argv[])
 
     TwAddButton(bar, "test", ::runTest, 0, " label='RUNTEST' group='Test' help=`test` ");
     TwAddButton(bar, "Stream", ::startVideoStreaming, 0, "label='VIDEOSTREAM' group='Streaming' help=`streaming` ");
-
+    TwAddButton(bar, "Server", ::start_server, 0, "label='Start Server' group='Streaming' help=`streaming` ");
 
     // ShapeEV associates Shape enum values with labels that will be displayed instead of enum values
     TwEnumVal drawmodes[6] = { {SMOOTH, "Smooth"}, {PERPOINTS, "Per Points"}, {WIRE, "Wire"}, {FLATWIRE, "FlatWire"},{HIDDEN, "Hidden"},{FLAT, "Flat"} };
@@ -1988,6 +2057,7 @@ int main(int argc, char* argv[])
     TwAddVarRW(frameBar, "xCoord", TW_TYPE_FLOAT, &xCoord, " value = 0.0 label='x'   help=` x coord` ");
     TwAddVarRW(frameBar, "yCoord", TW_TYPE_FLOAT, &yCoord, " value = 0.0 label='y'   help=` y coord` ");
     TwAddVarRW(frameBar, "zCoord", TW_TYPE_FLOAT, &zCoord, " value = 0.0 label='z'   help=` z coord` ");
+    TwAddButton(frameBar, "setMarker", ::setMarker, 0, " label='set as marker' help=`set this point as the 3D marker` ");
     TwAddButton(frameBar, "addPoint", ::addPoint, 0, " label='add this point' help=`add this point to the list of known points` ");
     TwAddButton(frameBar, "saveFrames", ::saveFrames, 0, " label='saveFrames'  help=`save frames` ");
     TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
@@ -2008,6 +2078,6 @@ int main(int argc, char* argv[])
     glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxi);
 
     glewInit();
-
+    assert(_CrtCheckMemory());
     glutMainLoop();
 }

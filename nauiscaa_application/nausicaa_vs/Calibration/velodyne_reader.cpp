@@ -111,14 +111,15 @@ void Lidar::start_reading(){
 
         if (time_running) {
             while ((ii < timed_pointclouds.size()) && virtual_time > timed_pointclouds[ii].first - start_time) ++ii;
-            if (ii != i)
-            {
-                i = ii;
-                std::this_thread::sleep_for(10ms);
-                latest_frame_mutex.lock();
-                logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
-                latest_frame_mutex.unlock();
-            }
+            if(ii < timed_pointclouds.size())
+                if (ii != i)
+                {
+                    i = ii;
+                    std::this_thread::sleep_for(10ms);
+                    latest_frame_mutex.lock();
+                    logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
+                    latest_frame_mutex.unlock();
+                }
         }
 
 #else

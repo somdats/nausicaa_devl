@@ -364,14 +364,15 @@ void Camera::start_reading(){
         int ii = first_i;
         if (time_running) {
             while ((ii < timed_images.size()) && virtual_time > timed_images[ii].first - start_time) ++ii;
-            if (ii != i)
-            {
-                i = ii;
-                std::this_thread::sleep_for(10ms);
-                latest_frame_mutex.lock();
-                dst = cv::imread(timed_images[i].second.c_str());
-                latest_frame_mutex.unlock();
-            }
+            if(ii < timed_images.size())
+                if (ii != i)
+                {
+                    i = ii;
+                    std::this_thread::sleep_for(10ms);
+                    latest_frame_mutex.lock();
+                    dst = cv::imread(timed_images[i].second.c_str());
+                    latest_frame_mutex.unlock();
+                }
         }
     #else 
         latest_frame_mutex.lock();
