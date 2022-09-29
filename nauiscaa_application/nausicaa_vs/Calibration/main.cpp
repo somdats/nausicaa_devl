@@ -173,6 +173,7 @@ int pick_x, pick_y;
 float picked_point[6];
 
 std::vector<vcg::Point3f> selected;
+vcg::Point3f closest_sel;
 PlaneC planes[2][3];
 LineC  axis[2][3]; 
 std::vector<vcg::Line3f> lines3d;
@@ -970,7 +971,7 @@ void Display() {
             vcg::Point3f p;
             GLdouble mm[16], pm[16];
             GLint view[4];
-            double x, y, z;
+            double x, y, z,zmin = std::numeric_limits<float>::max();
             glGetDoublev(GL_MODELVIEW_MATRIX, mm);
             glGetDoublev(GL_PROJECTION_MATRIX, pm);
             glGetIntegerv(GL_VIEWPORT, view);
@@ -988,6 +989,10 @@ void Display() {
                     if (boxsel.IsIn(vcg::Point3f(x, y, 0))) {
                         selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
                         glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
+                        if (z < zmin) {
+                            zmin = z;
+                            closest_sel = p;
+                        }
                     }
                 }
                 glEnd();
@@ -1101,14 +1106,22 @@ void Display() {
                     gluSphere(gluNewQuadric(), 0.02, 10, 10);
                     glPopMatrix();
                 }
-                {
-                    glColor3f(1, 0, 0);
-                    glPushMatrix();
-                    vcg::Point3f p = marker3D;
-                    glTranslatef(p[0], p[1], p[2]);
-                    gluSphere(gluNewQuadric(), 0.02, 10, 10);
-                    glPopMatrix();
-                }
+        {
+            glColor3f(1, 0, 0);
+            glPushMatrix();
+            vcg::Point3f p = marker3D;
+            glTranslatef(p[0], p[1], p[2]);
+            gluSphere(gluNewQuadric(), 0.02, 10, 10);
+            glPopMatrix();
+        }
+        {
+            glColor3f(0, 1, 0);
+            glPushMatrix();
+            vcg::Point3f p = closest_sel;
+            glTranslatef(p[0], p[1], p[2]);
+            gluSphere(gluNewQuadric(), 0.02, 10, 10);
+            glPopMatrix();
+        }
         for (int fi = 0; fi < frames[0].size(); ++fi)
             if (::idFrame == fi)
                 draw_frame(frames[0][fi]);
