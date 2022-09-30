@@ -13,6 +13,6 @@ struct MarkerDetector {
 	bool fit_plane(vcg::Plane3f&);
 	void remove_fitted(vcg::Plane3f plane);
 	bool find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3f& p2);
+	bool detect_corner(vcg::Point3f& corner, vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3f& p2);
 	bool detect_corner(vcg::Point3f& corner);
-
 };

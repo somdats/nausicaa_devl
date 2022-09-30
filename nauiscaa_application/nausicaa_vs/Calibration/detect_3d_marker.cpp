@@ -112,16 +112,22 @@ bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3
 }
 
 
-bool MarkerDetector::detect_corner(vcg::Point3f& corner) {
-
-	vcg::Plane3f  p0, p1, p2;
+bool MarkerDetector::detect_corner(vcg::Point3f& corner, vcg::Plane3f & p0, vcg::Plane3f& p1, vcg::Plane3f& p2) {
 	vcg::Line3f l;
 
 	_save_points(points, "input.ply");
 	if (find_planes(p0, p1, p2)) {
 		vcg::IntersectionPlanePlane(p0, p1, l);
 		vcg::IntersectionLinePlane(l, p2, corner);
+		return true;
 	}
+	else
+		return false;
+};
 
-	return true;
+
+bool MarkerDetector::detect_corner(vcg::Point3f& corner) {
+
+	vcg::Plane3f  _p0, _p1, _p2;
+	return detect_corner(corner, _p0, _p1, _p2);
 };
