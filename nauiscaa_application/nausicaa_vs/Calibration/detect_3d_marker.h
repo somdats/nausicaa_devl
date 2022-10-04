@@ -3,6 +3,8 @@
 #include <vcg/space/plane3.h>
 #include <vector>
 
+//#define PRINTOUT_DEBUG
+
 struct MarkerDetector {
 
 	std::vector <vcg::Point3f> points;

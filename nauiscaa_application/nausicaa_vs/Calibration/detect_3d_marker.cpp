@@ -7,17 +7,21 @@
 #include <wrap/io_trimesh/export.h>
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {
+#ifdef PRINTOUT_DEBUG
 	CMesh m;
 	vcg::tri::Allocator<CMesh>::AddVertices(m, ps.size());
 	for (int i = 0; i < ps.size();++i)
 		m.vert[i].P() = ps[i];
 	vcg::tri::io::ExporterPLY<CMesh>::Save(m, filename);
+#endif
 }
 void MarkerDetector::_save_plane(vcg::Plane3f plane, const char* filename) {
+#ifdef PRINTOUT_DEBUG
 	std::vector<vcg::Point3f> pp;
 	for (int i = 0; i < points.size(); ++i) 
 		pp.push_back(plane.Projection(points[i]));
 	_save_points(pp, filename);
+#endif
 }
 
 
@@ -63,7 +67,6 @@ int MarkerDetector::evaluate_plane(vcg::Plane3f plane) {
 		std::vector<vcg::Point3f> triple;
 		vcg::Plane3f plane;
 		random_triple(i0, i1, i2, points.size() - 1);
-		printf("triple (%d) %d %d %d \n", points.size(), i0, i1, i2);
 		triple.push_back(points[i0]);
 		triple.push_back(points[i1]);
 		triple.push_back(points[i2]);
@@ -90,20 +93,20 @@ void MarkerDetector::remove_fitted(vcg::Plane3f plane) {
 }
 
 bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3f& p2) {
-	printf("----plane 0 ------- \n");
+//	printf("----plane 0 ------- \n");
 	 if(!fit_plane(p0)) return false;
 	_save_plane(p0, "plane0.ply");
 	remove_fitted(p0);
 	_save_points(points, "after_0.ply");
 
-	printf("----plane 1 ------- \n");
+//	printf("----plane 1 ------- \n");
 	if (!fit_plane(p1)) return false;
 	_save_plane(p1, "plane1.ply");
 	remove_fitted(p1);
 	_save_points(points, "after_1.ply");
 
 
-	printf("----plane 2 ------- \n");
+//	printf("----plane 2 ------- \n");
 	if (!fit_plane(p2)) return false;
 	_save_plane(p2, "plane2.ply");
 	remove_fitted(p2);

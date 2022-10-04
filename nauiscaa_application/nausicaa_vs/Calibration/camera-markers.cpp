@@ -38,7 +38,8 @@ void cameraMarkers::detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(dictName);
     cv::aruco::detectMarkers(in_gray, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
-
+    cv::aruco::drawDetectedMarkers(inputMarkers, markerCorners, markerIds);
+    imshow(cv::String("markers"), inputMarkers);
 }
 
 

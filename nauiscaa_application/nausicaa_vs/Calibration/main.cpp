@@ -173,6 +173,8 @@ bool pick_point = false;
 int pick_x, pick_y;
 float picked_point[6];
 
+
+
 std::vector<vcg::Point3f> selected;
 vcg::Point3f closest_sel;
 PlaneC planes[2][3];
@@ -242,15 +244,12 @@ struct GLERR {
 
 using namespace vcg;
 
-//class CFace;
-//class CVertex;
-//struct MyUsedTypes : public UsedTypes<	Use<CVertex>		::AsVertexType,
-//    Use<CFace>			::AsFaceType> {};
-//
-///// compositing wanted proprieties
-//class CVertex : public vcg::Vertex< MyUsedTypes, vcg::vertex::Coord3f, vcg::vertex::Normal3f, vcg::vertex::BitFlags> {};
-//class CFace : public vcg::Face<  MyUsedTypes, vcg::face::VertexRef, vcg::face::Normal3f, vcg::face::BitFlags > {};
-//class CMesh : public vcg::tri::TriMesh< std::vector<CVertex>, std::vector<CFace> > {};
+struct Tracker {
+    Tracker() :active3D(false), active2D(false) {}
+    bool active3D, active2D;
+    vcg::Point3f currect_marker3D;
+};
+Tracker tracker;
 
 #define NL 16
 #define N_LIDARS 2
@@ -642,10 +641,11 @@ void drawString(vcg::Point3f p, const char* string, int size) {
 
 void drawScene() {
     vcg::Matrix44f toCamera[6];
-    GLfloat mm[16], pm[16];
+    GLfloat mm[16], pm[16],mm1[16];
     GLint aligned[6];
     GLint used[6];
 
+    glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
     glGetFloatv(GL_MODELVIEW_MATRIX, mm);
     glGetFloatv(GL_PROJECTION_MATRIX, pm);
 
@@ -890,13 +890,13 @@ void drawScene() {
     if (drawmode == SMOOTH && enable_proj) {
         glUseProgram(point_shader.pr);
         glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
-        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
+        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
         gluSphere(gluNewQuadric(), 100.0, 10, 10);
         glUseProgram(0);
     }
     /* END DRAW SCENE */
 }
-
+void TW_CALL detectMarker(void*);
 void Display() {
     assert(_CrtCheckMemory());
     static bool init = true;
@@ -1029,6 +1029,9 @@ void Display() {
 
         for (int il = 0; il < N_LIDARS; ++il)
             updatePC(il);
+
+        if (tracker.active3D)
+            detectMarker(0);
 
         if (enable_proj) {
             for (int iCam = 0; iCam < NUMCAM;++iCam)
@@ -1386,6 +1389,7 @@ void TW_CALL detectMarker(void*) {
         planes[currentLidar][1] = PlaneC(p1);
         planes[currentLidar][2] = PlaneC(p2);
         computeFrame((void*) 0);
+        tracker.currect_marker3D = marker3D;
     }
 }
 
@@ -1403,6 +1407,7 @@ void TW_CALL computeLine(void*) {
 }
 void TW_CALL  setClosMarker(void*) {
     marker3D = closest_sel;
+    tracker.currect_marker3D = closest_sel;
 }
 
 void TW_CALL computeFrame(void*) {
@@ -1793,8 +1798,8 @@ void TW_CALL initLidars(void*) {
 
     transfLidar[0].SetIdentity();
     transfLidar[1].SetIdentity();
-    lidars[0].lidar.init(2368, "./Calibration/32db.xml");
-    lidars[1].lidar.init(2369, "./Calibration/32db.xml");
+    lidars[0].lidar.init(2368, "./Calibration/16db.xml");
+    lidars[1].lidar.init(2369, "./Calibration/16db.xml");
 
     tLidars[0] = std::thread(&start_lidar,0);
     tLidars[1] = std::thread(&start_lidar,1);
@@ -2041,6 +2046,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "closest as marker", ::setClosMarker, 0, " label='set closest as marker' group=`Register Lidars` help=`compute line` ");
     TwAddButton(bar, "detect marker", ::detectMarker, 0, " label='Detect Marker' group=`Register Lidars` help=`compute line` ");
     TwAddButton(bar, "add marker to points", ::addMarkerToPoints, 0, " label='Add Marker to P' group=`Register Lidars` help=`compute line` ");
+    TwAddVarRW(bar, "tracking 3D", TW_TYPE_BOOL8, &tracker.active3D, " label='tracking3D ' group=`Register Lidars` help=` track3D` ");
 
     TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
     TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
