@@ -1,5 +1,6 @@
 #pragma once
-//#define SCENE_REPLAY
+#define SCENE_REPLAY
+
 //#define MJPEG_WRITE
 #define RECTIFY_FIRST
 
@@ -11,6 +12,9 @@ extern unsigned int partial_time;
 extern unsigned long long end_time;
 extern unsigned int  virtual_time;
 extern bool time_running;
+
+#define AUTOMATIC_LAUNCH
+
 #endif
 
 #ifndef SAVE_IMG

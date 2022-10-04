@@ -2142,5 +2142,10 @@ int main(int argc, char* argv[])
 
     glewInit();
     assert(_CrtCheckMemory());
+
+#ifdef AUTOMATIC_LAUNCH
+    runTest(0);
+    start_server(0);
+#endif
     glutMainLoop();
 }
