@@ -23,7 +23,8 @@ namespace camMarkers {
 		cameraMarkers() {};
 		cameraMarkers(int lt, int ht) : lowerThres(lt), highThres(ht)
 		{};
-		cv::Mat createArucoMarkers(int id, int sizePixel, int borderSize = 1, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
+		static cv::Mat createArucoMarkers(int id, int sizePixel, int borderSize = 1, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
+		static std::vector<cv::Mat> createMultipleMarkers(int numMarkers, int startId, int size, int borderSize = 1, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
 
 		void detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<cv::Point2f>>& markerCorners, std::vector<int>& markerIds,
 			std::vector<std::vector<cv::Point2f>>& rejectedCandidates, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
@@ -35,19 +36,19 @@ namespace camMarkers {
 		void ConvertMatToPoint(cv::Mat img, std::vector<cv::Point>& points);
 		void ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector<Point2f>& pts);
 		void CannyThreshold(const cv::Mat& srcImage);
-		std::vector<std::pair<pt2f, pt2f>> detectContours(const cv::Mat& inImage, int lt = 1000, int ht =1200, Scalar linecolor = Scalar(0, 255, 255));
+		std::vector<std::pair<pt2f, pt2f>> detectContours(const cv::Mat& inImage, int lt = 1000, int ht = 1200, Scalar linecolor = Scalar(0, 255, 255));
 
 		vector<Point> getContours(int idx);
 		vector<vector<Point> >getContours();
-		static void drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>&cvLines);
+		static void drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>& cvLines);
 		cv::Mat getDetectedEdges();
 		// returns a vector of cv::Mat, each Mat of size(4,1) representing a 2d ray-line with ( xo,yo) as origin pt. and dir vector(vx,vy)
 		std::vector<cv::Mat> getAllFittedLines();
-		bool MarkerDetected(const cv::Mat& inImage, int markerID1 = 1, int markerID2 =2, int markerID3 = 3, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
+		bool MarkerDetected(const cv::Mat& inImage, int markerID1 = 1, int markerID2 = 2, int markerID3 = 3, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
 
 	protected:
 		cv::Mat detectedEdges;
-		cv::Mat ArucoImage;
+		//cv::Mat ArucoImage;
 		vector<vector<Point> > contours;
 		std::vector<cv::Mat>fittedLines;
 		vector<Vec4i> hierarchy;

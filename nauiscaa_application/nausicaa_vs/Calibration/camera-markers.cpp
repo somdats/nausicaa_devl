@@ -20,12 +20,31 @@ int margin = 2;
 using namespace camMarkers;
 
 
-cv::Mat cameraMarkers::createArucoMarkers(int id, int sizePixel, int borderSize,  cv::aruco::PREDEFINED_DICTIONARY_NAME dictName){
-   
+cv::Mat cameraMarkers::createArucoMarkers(int id, int sizePixel, int borderSize, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName) {
+
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(dictName);
+    cv::Mat ArucoImage;
     cv::aruco::drawMarker(dictionary, id, sizePixel, ArucoImage, borderSize);
     return ArucoImage;
- }
+}
+
+std::vector<cv::Mat> cameraMarkers::createMultipleMarkers(int numMarkers, int startId, int size, int borderSize, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName) {
+
+    std::vector<cv::Mat>multiMarkers;
+    int arucoCounter = 0;
+    int count = 0;
+    while (count < numMarkers)
+    {
+        cv::Mat ArucoImage;
+        ArucoImage = createArucoMarkers(startId, size, borderSize, dictName);
+        multiMarkers.emplace_back(ArucoImage);
+        arucoCounter++;
+        count++;
+        startId = startId + arucoCounter;
+    }
+    return multiMarkers;
+
+}
 
 void cameraMarkers::detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<cv::Point2f>>& markerCorners, std::vector<int>& markerIds,
     std::vector<std::vector<cv::Point2f>>& rejectedCandidates, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName) {
@@ -38,8 +57,8 @@ void cameraMarkers::detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(dictName);
     cv::aruco::detectMarkers(in_gray, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
-    cv::aruco::drawDetectedMarkers(inputMarkers, markerCorners, markerIds);
-    imshow(cv::String("markers"), inputMarkers);
+
+
 }
 
 
@@ -63,7 +82,7 @@ bool cameraMarkers::intersection(Point2f o1, Point2f p1, Point2f o2, Point2f p2,
 }
 
 
- void cameraMarkers::ConvertMatToPoint(cv::Mat img, std::vector<cv::Point>& points)
+void cameraMarkers::ConvertMatToPoint(cv::Mat img, std::vector<cv::Point>& points)
 {
     for (int x = 0; x < img.cols; x++)
         for (int y = 0; y < img.rows; y++)
@@ -71,16 +90,16 @@ bool cameraMarkers::intersection(Point2f o1, Point2f p1, Point2f o2, Point2f p2,
 }
 
 
- void cameraMarkers::ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector<Point2f>& pts)
+void cameraMarkers::ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector<Point2f>& pts)
 {
     size_t count = cnts.size();
     std::transform(cnts.begin(), cnts.end(),
         std::back_inserter(pts),
         [](const Point& p) { return (Point2f)p; });
-    
+
     //Mat pointsf;
     //Mat(cnts).convertTo(pointsf, CV_32F);
-  
+
     //for (int j = 0; j < pointsf.rows; j++) {
     //    Point2f pnt = Point2f(pointsf.at<float>(j, 0), pointsf.at<float>(j, 1));
     //  /*  if ((pnt.x > margin && pnt.y > margin && pnt.x < detected_edges.cols - margin && pnt.y < detected_edges.rows - margin)) {
@@ -91,7 +110,7 @@ bool cameraMarkers::intersection(Point2f o1, Point2f p1, Point2f o2, Point2f p2,
     //}
 }
 
- void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>& cvLines) {
+void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>& cvLines) {
 
     cv::Mat edge_lines = cannyEdgeImage.clone();
     for (const auto& line : cvLines) {
@@ -126,15 +145,15 @@ void cameraMarkers::CannyThreshold(const cv::Mat& srcImage)
     blur(src_gray, detectedEdges, Size(3, 3));
     //Canny(detected_edges, detected_edges, meanVal(0)-  2.0 *stdDev(0), meanVal(0) + 2.0 * stdDev(0), kernel_size);
     Canny(detectedEdges, detectedEdges, lowerThres, lowerThres * 3.0, kernel_size);
-  /*  cv::Mat dst;
-    srcImage.copyTo(dst, detectedEdges);
-    imshow(window_name, detectedEdges);*/
-   
+    /*  cv::Mat dst;
+      srcImage.copyTo(dst, detectedEdges);
+      imshow(window_name, detectedEdges);*/
+
 }
 
 // returns a set of lines represented by two extremas ( Po - t*dir, Po + t*dir) with high no. of contour pts within a range (lt,ht)
 // returns all fitted-line w detected from a binary-edge image 
-std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours( const cv::Mat& inImage, int lt, int ht, Scalar linecolor) {
+std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& inImage, int lt, int ht, Scalar linecolor) {
 
     contours.clear();
     fittedLines.clear();
@@ -155,7 +174,7 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours( const cv::Mat&
             Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
             //drawContours(src, contours, i, color, 2, 8, hierarchy, 0);
 
-           
+
 
             float vx = fitLine.at<float>(0, 0);
             float vy = fitLine.at<float>(1, 0);
@@ -166,7 +185,7 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours( const cv::Mat&
             float d = sqrt((float)vx * vx + (float)vy * vy);
             /* vx /= d;
              vy /= d;*/
-          
+
             cv::Point O = cv::Point(int(x0 - t * vx), int(y0 - t * vy));
             cv::Point P = cv::Point(int(x0 + t * vx), int(y0 + t * vy));
             cv::line(inImage, O, P, linecolor, 2, LINE_AA, 0);
@@ -174,8 +193,8 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours( const cv::Mat&
             {
                 pt2f sPt = cv::Point2f(x0 - t * vx, y0 - t * vy);
                 pt2f ePt = cv::Point2f(x0 + t * vx, y0 + t * vy);
-                lines_pts.emplace_back(std::make_pair(sPt,ePt));
-           
+                lines_pts.emplace_back(std::make_pair(sPt, ePt));
+
             }
             /* namedWindow(cv::String("line-Image"), WINDOW_AUTOSIZE);
              imshow(cv::String("line-Image"), inImage);*/
@@ -232,7 +251,7 @@ bool cameraMarkers::MarkerDetected(const cv::Mat& inImage, int markerID1, int ma
     else
         allMarkers = true;
     return allMarkers;
-   
-    
+
+
 
 }
