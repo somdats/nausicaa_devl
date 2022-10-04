@@ -1,4 +1,5 @@
-NUMCAM=2
-Dump_path=D:\Data14062022_3
-cam_ini_file=..\calib_results_25032022.txt
-cam_converter =..\calib_results_25032022_mei.txt
+NUMCAM=4
+Dump_path=D:\Nausicaa_Data\Data_23092022_2
+cam_ini_file=..\calib_results_02092022.txt
+cam_converter =..\calib_results_02092022_mei.txt
+AUTOLAUNCH=1

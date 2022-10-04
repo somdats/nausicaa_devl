@@ -13,7 +13,6 @@ extern unsigned long long end_time;
 extern unsigned int  virtual_time;
 extern bool time_running;
 
-#define AUTOMATIC_LAUNCH
 
 #endif
 

@@ -87,6 +87,7 @@ unsigned int  virtual_time;
 
 int CameraCount;
 int NUMCAM;
+int autoLaunch = 0;
 
 #if VIDEO_STREAM
 
@@ -1954,6 +1955,7 @@ int main(int argc, char* argv[])
     DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
     camIniFile = configData[2].second; 
     meiConverterFile = configData[3].second;
+    autoLaunch = stoi(configData[4].second);
     State::set_filename("state.txt");
     State::load_state();
     /*PacketDecoder::HDLFrame lidarFrame2;
@@ -2143,9 +2145,11 @@ int main(int argc, char* argv[])
     glewInit();
     assert(_CrtCheckMemory());
 
-#ifdef AUTOMATIC_LAUNCH
-    runTest(0);
-    start_server(0);
-#endif
+    if (autoLaunch)
+    {
+        runTest(0);
+        start_server(0);
+    }
+
     glutMainLoop();
 }
