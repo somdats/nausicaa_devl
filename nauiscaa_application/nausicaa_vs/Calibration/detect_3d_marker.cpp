@@ -49,7 +49,7 @@ int MarkerDetector::evaluate_plane(vcg::Plane3f plane) {
 		if (fabs(vec[i]) < 0.01)
 			++good_points;
 
-	printf("score %d \n", good_points);
+	//printf("score %d \n", good_points);
 	return good_points;
 }
 
@@ -57,7 +57,7 @@ int MarkerDetector::evaluate_plane(vcg::Plane3f plane) {
  bool MarkerDetector::fit_plane(vcg::Plane3f & bestplane) {
 	int n_tries = 0;
 	std::srand(std::time(nullptr));
-	int n_planes = 500; // to be computed
+	int n_planes = 50; // to be computed
 	int i0, i1, i2;
 	int value = 0;
 

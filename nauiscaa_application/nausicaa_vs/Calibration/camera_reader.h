@@ -237,9 +237,8 @@ this->_debk = k*ks;
     void stop_reading();
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
 
-#ifdef SCENE_REPLAY
-    std::vector<std::pair<unsigned long long, std::string>> timed_images;
-#endif
+
+std::vector<std::pair<unsigned long long, std::string>> timed_images;
 };
 
 #endif // CAMERA_READER_H

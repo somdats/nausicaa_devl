@@ -81,15 +81,16 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
 }
 
-void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza){
+void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza) {
     /////////////Scaramuzza camera parameter read///////////////////
     camID = cameraID;
     inStPort = port;
 #if SAVE_IMG
     timeCamera1 = std::chrono::system_clock::now();
 #endif
-#ifdef SCENE_REPLAY
-    
+
+if( SCENE_REPLAY){
+
     std::string toFolder = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameraID) + "\\";
     std::string timestamps = toFolder + "timestamps.txt";
     FILE* ft = fopen(timestamps.c_str(), "r");
@@ -103,11 +104,7 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
     fclose(ft);
 
     std::sort(timed_images.begin(), timed_images.end());
-
-  
-
-
-#endif
+}
   
 
     if (scaramuzza)
@@ -281,29 +278,31 @@ string type2str(int type) {
   return r;
 }
 
-void Camera::start_reading(){
-#ifdef SCENE_REPLAY
+void Camera::start_reading() {
     int i = 0;
     int first_i;
-    while (timed_images[i].first < start_time)++i;
-    first_i = i;
-#else
-    std::string Camerafull0args;
-    //VideoCapture cap;
-    std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay request-keyframe=true wait-for-keyframe=true ! h264parse ! decodebin ! videoconvert !  appsink ";
-  /*  if ("5000" == std::to_string(inStPort))
-    {*/
+    if (SCENE_REPLAY){
+        while (timed_images[i].first < start_time)++i;
+        first_i = i;
+    }
+    else
+    {
+        std::string Camerafull0args;
+        //VideoCapture cap;
+        std::string args = "! application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 ! rtph264depay request-keyframe=true wait-for-keyframe=true ! h264parse ! decodebin ! videoconvert !  appsink ";
+        /*  if ("5000" == std::to_string(inStPort))
+          {*/
         std::string port = " udpsrc port = " + std::to_string(inStPort);
         Camerafull0args = port + " " + args;
-    /*}*/
-   
-    
-    //VideoCapture cap;
+        /*}*/
 
-   /* VideoCapture cap("udpsrc port=5000 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink",
-            CAP_GSTREAMER);*/
-    cap.open(Camerafull0args, CAP_GSTREAMER);
-#endif
+
+        //VideoCapture cap;
+
+       /* VideoCapture cap("udpsrc port=5000 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink",
+                CAP_GSTREAMER);*/
+        cap.open(Camerafull0args, CAP_GSTREAMER);
+    }
 
     //latest_frame_mutex.lock();
     reading = true;
@@ -357,83 +356,84 @@ void Camera::start_reading(){
 
 
 #ifdef RECTIFY_FIRST
-    #ifdef SCENE_REPLAY
-        unsigned long long delta = timed_images[i % timed_images.size()].first - start_time;
-        unsigned long long delta1 = clock() - restart_time + partial_time;
+        if (SCENE_REPLAY) {
+            unsigned long long delta = timed_images[i % timed_images.size()].first - start_time;
+            unsigned long long delta1 = clock() - restart_time + partial_time;
 
-        int ii = first_i;
-        if (time_running) {
-            while ((ii < timed_images.size()) && virtual_time > timed_images[ii].first - start_time) ++ii;
-            if(ii < timed_images.size())
-                if (ii != i)
-                {
-                    i = ii;
-                    std::this_thread::sleep_for(10ms);
-                    latest_frame_mutex.lock();
-                    dst = cv::imread(timed_images[i].second.c_str());
-                    latest_frame_mutex.unlock();
-                }
-        }
-    #else 
-        latest_frame_mutex.lock();
-        cap.read(frame); 
-        latest_frame_mutex.unlock();
-    
-        //Mat temp(frame.size(), frame.type());
-        //dst = frame.clone();
-        //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
-        //std::cout << " Iam done with undistortion:" << std::endl;
-        if (!frame.empty())
-        {
-            cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+            int ii = first_i;
+            if (time_running) {
+                while ((ii < timed_images.size()) && virtual_time > timed_images[ii].first - start_time) ++ii;
+                if (ii < timed_images.size())
+                    if (ii != i)
+                    {
+                        i = ii;
+                        std::this_thread::sleep_for(10ms);
+                        latest_frame_mutex.lock();
+                        dst = cv::imread(timed_images[i].second.c_str());
+                        latest_frame_mutex.unlock();
+                    }
+            }
         }
         else
         {
-            std::cout << "Warning: camera frame empty\n" << std::endl;
-        }
+            latest_frame_mutex.lock();
+            cap.read(frame);
+            latest_frame_mutex.unlock();
+
+            //Mat temp(frame.size(), frame.type());
+            //dst = frame.clone();
+            //create_perspecive_undistortion_LUT(map1, map2, &o, scaleFactor);
+            //std::cout << " Iam done with undistortion:" << std::endl;
+            if (!frame.empty())
+            {
+                cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+            }
+            else
+            {
+                std::cout << "Warning: camera frame empty\n" << std::endl;
+            }
 
 
 #if SAVE_IMG
 
-        std::string tCam;
-        bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
-        if (stat)
-        {
-            latest_frame_mutex.lock();
-            logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
-            latest_frame_mutex.unlock();
-            if (inStPort == 5000)
-                fprintf(fi1, "%s\n", tCam.c_str());
-            if (inStPort == 5001)
-                fprintf(fi2, "%s\n", tCam.c_str());
-
-            // Remove the condition when all the cameras are functional
-            if (CameraCount > 2)
+            std::string tCam;
+            bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
+            if (stat)
             {
-                if (inStPort == 5002)
-                    fprintf(fi3, "%s\n", tCam.c_str());
-                if (inStPort == 5003)
-                    fprintf(fi4, "%s\n", tCam.c_str());
-               /* if (inStPort == 5004)
-                    fprintf(fi5, "%s\n", tCam.c_str());
-                if (inStPort == 5005)
-                    fprintf(fi6, "%s\n", tCam.c_str());*/
+                latest_frame_mutex.lock();
+                logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
+                latest_frame_mutex.unlock();
+                if (inStPort == 5000)
+                    fprintf(fi1, "%s\n", tCam.c_str());
+                if (inStPort == 5001)
+                    fprintf(fi2, "%s\n", tCam.c_str());
+
+                // Remove the condition when all the cameras are functional
+                if (CameraCount > 2)
+                {
+                    if (inStPort == 5002)
+                        fprintf(fi3, "%s\n", tCam.c_str());
+                    if (inStPort == 5003)
+                        fprintf(fi4, "%s\n", tCam.c_str());
+                    /* if (inStPort == 5004)
+                         fprintf(fi5, "%s\n", tCam.c_str());
+                     if (inStPort == 5005)
+                         fprintf(fi6, "%s\n", tCam.c_str());*/
+                }
+
             }
-            
-        }
 #endif // SAVE_IMG 
 
-        //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
-    #endif
+            //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
+        }
 
 #else
-    #ifdef SCENE_REPLAY
+    if(SCENE_REPLAY)
             dst = cv::imread("image.jpg");
-    #else 
+    else 
             cap.read(dst);
 
-    #endif
-#endif
+#endif  
 
         // drawing
         if (dst.rows > 0) {

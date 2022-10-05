@@ -31,12 +31,11 @@ struct Lidar{
     void start_reading();
     void stop_reading();
 
-#ifdef SCENE_REPLAY
+#
 
     std::vector<std::pair<unsigned long long, std::string>> timed_pointclouds;
     std::string lidar_dump_name;
     void read_from_file(std::string filepath);
-#endif
 
 };
 #endif // VELODYNE_READER_H

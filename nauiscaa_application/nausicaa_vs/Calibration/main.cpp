@@ -75,15 +75,15 @@ MJPEGStreamer streamer;
 
 #endif
 
-#ifdef SCENE_REPLAY
-
+bool SCENE_REPLAY;
+bool SAVE_PC;
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
 unsigned int partial_time;
 bool time_running = false;
 unsigned int  virtual_time;
-#endif
+ 
 
 int CameraCount;
 int NUMCAM;
@@ -1252,16 +1252,16 @@ void Display() {
     // Recall Display at next frame
     glutPostRedisplay();
     
-#ifdef SCENE_REPLAY
-    if (time_running) {
-        virtual_time = clock() - restart_time + partial_time;
-        if (virtual_time > end_time - start_time)
-        {
-            restart_time = clock();
-            partial_time = virtual_time = 0;
+    if (SCENE_REPLAY) {
+        if (time_running) {
+            virtual_time = clock() - restart_time + partial_time;
+            if (virtual_time > end_time - start_time)
+            {
+                restart_time = clock();
+                partial_time = virtual_time = 0;
+            }
         }
     }
-#endif
 }
 
 void Reshape(int _width, int _height) {
@@ -1377,7 +1377,7 @@ void TW_CALL detectMarker(void*) {
     md.points.clear();
     for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
         vcg::Point3f p = transfLidar[currentLidar]*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
-        if (vcg::Distance<float>(p, marker3D) < 1.0)
+        if (vcg::Distance<float>(p, marker3D) < 0.4)
             md.points.push_back(p);
     }
 
@@ -1440,9 +1440,10 @@ void TW_CALL computeFrame(void*) {
 
 void TW_CALL saveFrames(void*) {
     std::string  file = std::string("frames.bin");
-#ifdef SCENE_REPLAY
+    
+    if( SCENE_REPLAY)
      file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
-#endif
+
     FILE* fo = fopen( file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
         for (int fi = 0; fi < frames[il].size(); fi++) {
@@ -1453,9 +1454,9 @@ void TW_CALL saveFrames(void*) {
 }
 void TW_CALL loadFrames(void*) {
     std::string  file = std::string("frames.bin");
-#ifdef SCENE_REPLAY
+    if(SCENE_REPLAY)
     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
-#endif
+
     frames[0].clear();
     FILE* fo = fopen(file.c_str(), "rb");
     fseek(fo, 0, SEEK_END);
@@ -1473,18 +1474,19 @@ void TW_CALL loadFrames(void*) {
 
 void TW_CALL savePoints(void*) {
     std::string  file = std::string("points.bin");
-#ifdef SCENE_REPLAY
+    if(SCENE_REPLAY)
     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
-#endif
+ 
     FILE* fo = fopen(file.c_str(), "wb");
     fwrite(&(points[0][0]), sizeof(vcg::Point3f), points.size(), fo);
     fclose(fo);
 }
 void TW_CALL loadPoints(void*) {
     std::string  file = std::string("points.bin");
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
-#endif
+
     FILE* fo = fopen(file.c_str(), "rb");
     fseek(fo, 0, SEEK_END);
     int l = ftell(fo);
@@ -1501,9 +1503,9 @@ void TW_CALL saveAxis(void*) {
     if(MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidaf calibration", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
         return;
     std::string calibration_file = std::string("Calib.bin");
-#ifdef SCENE_REPLAY
+    if(SCENE_REPLAY)
     calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
-#endif
+
     FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
         for (int a = 0; a < 3; a++)
@@ -1514,9 +1516,10 @@ void TW_CALL saveAlignment(void*) {
     if (MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidaf calibration", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
         return;
     std::string calibration_file = std::string("Aln.bin");
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
-#endif
+
     FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
             fwrite(&transfLidar[il], 1, sizeof(vcg::Matrix44f), fo);
@@ -1532,9 +1535,9 @@ void TW_CALL saveImPoints(void*) {
 
     }
     std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
-#endif
 
     FILE* fo = fopen(correspondences_file.c_str(), "w");
     if (fo) {
@@ -1561,9 +1564,9 @@ void TW_CALL setFrame(void*) {
 
 void   loadImPoints(int iCam) {
     std::string correspondences_file = std::to_string(cameras[iCam].camID) + "_correspondences.txt";
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iCam].camID) + "\\" + correspondences_file;
-#endif
 
     FILE* fo = fopen(correspondences_file.c_str(), "r");
     if (fo) {
@@ -1594,9 +1597,10 @@ void TW_CALL loadImPoints(void*) {
 
 void TW_CALL loadAxis(void*) {
     std::string calibration_file = std::string("Calib.bin");
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
-#endif
+
     FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
         for (int a = 0; a < 3; a++)
@@ -1606,9 +1610,10 @@ void TW_CALL loadAxis(void*) {
 
 void TW_CALL loadAlignment(void*) {
     std::string calibration_file = std::string("aln.bin");
-#ifdef SCENE_REPLAY
+
+    if(SCENE_REPLAY)
     calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
-#endif
+
     FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
             fread(&transfLidar[il], 1, sizeof(vcg::Matrix44f), fo);
@@ -1835,7 +1840,6 @@ void TW_CALL initCameras(void*) {
 
 
 
-#ifdef SCENE_REPLAY
 void TW_CALL time_startstop(void*) {
     time_running = !time_running;
     if (time_running) {
@@ -1846,13 +1850,12 @@ void TW_CALL time_startstop(void*) {
         partial_time += clock() - restart_time;
     TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
-#endif
 
 void TW_CALL runTest(void*) {
     ::initLidars(0);
-#ifdef SCENE_REPLAY
+    if(SCENE_REPLAY)
     time_startstop(0);
-#endif
+
     //::loadAxis(0);
     //::computeTranformation(0);
     loadAlignment(0);
@@ -1913,14 +1916,14 @@ void TW_CALL getMapColor(  void*v, void*) {
         *(bool*)v  = cameras[currentCamera].used ;
 }
 
-#ifdef SCENE_REPLAY
+ 
 void TW_CALL setVirtualTime(const void* v, void*) {
     virtual_time = partial_time = *(int*)v;
 }
 void TW_CALL getVirtualTime(void* v, void*) {
     *(int*)v = virtual_time;
 }
-#endif
+ 
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
     std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
@@ -1956,6 +1959,8 @@ int main(int argc, char* argv[])
     camIniFile = configData[2].second; 
     meiConverterFile = configData[3].second;
     autoLaunch = stoi(configData[4].second);
+    SCENE_REPLAY = stoi(configData[5].second);
+    SAVE_PC = stoi(configData[6].second);
     State::set_filename("state.txt");
     State::load_state();
     /*PacketDecoder::HDLFrame lidarFrame2;
@@ -2104,19 +2109,19 @@ int main(int argc, char* argv[])
 
 
 
-#ifdef SCENE_REPLAY
-    end_time = std::numeric_limits<unsigned long long >::max();
-    start_time = 0;
-    read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
-    read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
-    read_first_and_last_timestamp(std::string("Images") + "\\5000\\timestamps.txt", start_time, end_time);
-    read_first_and_last_timestamp(std::string("Images") + "\\5001\\timestamps.txt", start_time, end_time);
+    if (SCENE_REPLAY) {
+        end_time = std::numeric_limits<unsigned long long >::max();
+        start_time = 0;
+        read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
+        read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
 
+        for(unsigned int i= 0; i > NUMCAM; ++i)
+            read_first_and_last_timestamp(std::string("Images") + "\\500"+std::to_string(i) + "\\timestamps.txt", start_time, end_time);
 
-    TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
-//    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
-    TwAddVarCB(bar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Streaming` help=`virtual` ");
-#endif
+        TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
+        //    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
+        TwAddVarCB(bar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Streaming` help=`virtual` ");
+    }
     
     frameBar = TwNewBar("Frames");
     TwAddVarRW(frameBar, "xCoord", TW_TYPE_FLOAT, &xCoord, " value = 0.0 label='x'   help=` x coord` ");
