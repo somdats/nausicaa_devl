@@ -1771,7 +1771,7 @@ void start_Streaming_thread() {
             cv::imencode(".jpg", dstFrame, buf);
             size_t szbuf = buf.size();
             //serverStream.send(reinterpret_cast<char*>(buf.data()));
-            serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+            //serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
     #ifdef MJPEG_WRITE
 
             streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
