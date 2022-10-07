@@ -88,6 +88,7 @@ unsigned int  virtual_time;
 int CameraCount;
 int NUMCAM;
 int autoLaunch = 0;
+int saveState;
 
 #if VIDEO_STREAM
 
@@ -1878,6 +1879,10 @@ void TW_CALL startVideoStreaming(void*) {
 
 
 void Terminate() {
+    if(saveState)
+    {
+        State::save_state();
+    }
     return;
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
@@ -1897,8 +1902,8 @@ void Terminate() {
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
-    free(pixelData);
-    State::save_state();
+    //free(pixelData);
+   
 }
 
 void TW_CALL stop(void*) {
@@ -1961,8 +1966,12 @@ int main(int argc, char* argv[])
     autoLaunch = stoi(configData[4].second);
     SCENE_REPLAY = stoi(configData[5].second);
     SAVE_PC = stoi(configData[6].second);
-    State::set_filename("state.txt");
-    State::load_state();
+    saveState = stoi(configData[7].second);
+    if (saveState)
+    {
+        State::set_filename("state.txt");
+        State::load_state();
+    }
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
