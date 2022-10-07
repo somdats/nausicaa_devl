@@ -10,9 +10,8 @@
 
 #include"camera-markers.h"
 
-//#define MARKER_DETECT
-#define LINES_DETECT
-//#define WRITE
+#define MARKER_DETECT
+
 
 using namespace cv;
 using namespace std;
@@ -27,58 +26,53 @@ void main()
     int HighT = 200;
     cameraMarkers Markers(lowT, HighT);
 
-#ifdef MARKER_DETECT
-    // create arruco markers
-    cv::Mat marker = Markers.createArucoMarkers(23, 800);
-#ifdef WRITE
-    imwrite("aruco-23-new.jpg", marker);
-#endif // WRITE
+    //cv::Mat marker = Markers.createArucoMarkers(0, 800);
+    //imwrite("aruco-0.jpg", marker);
+    //  marker = Markers.createArucoMarkers(1, 800);
+    //imwrite("aruco-1.jpg", marker);
+    //  marker = Markers.createArucoMarkers(2, 800);
+    //imwrite("aruco-2.jpg", marker);
+    // marker = Markers.createArucoMarkers(3, 800);
+    //imwrite("aruco-3.jpg", marker);
+
+    
+
     std::vector<std::vector<cv::Point2f>> markerCorners;
     std::vector<int> markerIds;
     std::vector<std::vector<cv::Point2f>> rejectedCandidates;
+    cv::Mat marker = cv::imread("marker_new.jpg");
     Markers.detectMarkers(marker, markerCorners, markerIds, rejectedCandidates);
-#endif // MARKER_DETECT
+    
+    cv::Mat outputImage = marker.clone();
+    cv::aruco::drawDetectedMarkers(outputImage, markerCorners, markerIds);
+   
 
-#ifdef LINES_DETECT
+    std::vector<cv::Point2f> pts[4];
+    for (int i = 0; i < markerCorners.size(); ++i)
+        if (markerIds[i] < 4)
+            pts[markerIds[i]].push_back(markerCorners[i][0]);
 
-    std::string inImage = "target.jpg";
-    cv::Mat src = imread(inImage, IMREAD_COLOR); // Load an image
-    //namedWindow(cv::String("Original-Image"), WINDOW_AUTOSIZE);
-    //imshow(cv::String("Original-Image"), src);
+    if (!pts[0].empty())
+        cv::circle(outputImage, pts[0][0], 20, cv::Scalar(0, 0,255,255),20);
+ 
+    cv::Point2f p;
+    std::vector<cv::Point2f> int_points;
+    for(int i= 1; i <= 3; ++i)        
+        if (pts[i].size() == 2)
+            for (int j = 1; j <= 3; ++j)
+                if(i!=j)
+                if (pts[j].size() == 2)
+                    if (Markers.intersection(pts[i][0], pts[i][1], pts[j][0], pts[j][1], p))
+                        int_points.push_back(p);
+    for (int i = 1; i <= 3; ++i)
+        if (pts[i].size() == 2)
+            cv::line(outputImage,pts[i][0], pts[i][1], cv::Scalar((i == 0) ? 255 : 0, (i == 1) ? 255 : 0, (i == 2) ? 255 : 0), 2);
 
-    //// canny threshold
-    //Markers.CannyThreshold(src);
-    //cv::Mat edges = Markers.getDetectedEdges();
-    //cv::Mat dst;
-    //if (!edges.empty())
-    //{
-    //    src.copyTo(dst, edges);
-    //    imshow(cv::String("Edge-Map"), edges);
-    //}
+    for(int i = 0; i < int_points.size(); ++i)
+        cv::circle(outputImage, pts[0][0], 30, cv::Scalar((i==0)?255:0, (i == 1) ? 255:0, (i == 2) ? 255:0), 10);
 
-    //// Contour detection
-    //// input binary edge map
-    //std::vector<std::pair<pt2f, pt2f>>linePts;
-    //linePts = Markers.detectContours(src,150,1000);
+    cv::resize(outputImage, outputImage, cv::Size(outputImage.cols / 4, outputImage.rows / 4));
+    cv::imshow("out", outputImage);
 
-    //cv::Point2f intersect_pt;
-    //bool stat = Markers.intersection(linePts[0].first, linePts[0].second, linePts[1].first, linePts[1].second, intersect_pt);
-    //cv::Point pt1(int(intersect_pt.x), int(intersect_pt.y));
-    //cv::circle(src, pt1, 7, Scalar(0, 0, 255), -1);
-    //imshow(cv::String("line-Image"), src);
-
-
-    cv::Mat  gray;
-    std::vector< Vec4f> lines;
-    cv::Ptr<cv::LineSegmentDetector> lsd = cv::createLineSegmentDetector();
-    cv::cvtColor(src, gray,cv::COLOR_BGR2GRAY);
-    lsd->detect(gray, lines);
-    for (int i = 0;i < lines.size(); ++i)
-        cv::line(src,cv::Point2f(lines[i][0], lines[i][1]), cv::Point2f(lines[i][2], lines[i][3]), (0,  0, 255));
-    cv::imwrite("LSDLines.jpg", src);
-    waitKey(0);
-
-#endif // LINES_DETECT
-
-
+    cv::waitKey(0);
 }
