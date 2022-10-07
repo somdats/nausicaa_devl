@@ -37,7 +37,7 @@ void main()
 
     
 
-    std::vector<std::vector<cv::Point2f>> markerCorners;
+ /*   std::vector<std::vector<cv::Point2f>> markerCorners;
     std::vector<int> markerIds;
     std::vector<std::vector<cv::Point2f>> rejectedCandidates;
     cv::Mat marker = cv::imread("marker_new.jpg");
@@ -72,7 +72,13 @@ void main()
         cv::circle(outputImage, pts[0][0], 30, cv::Scalar((i==0)?255:0, (i == 1) ? 255:0, (i == 2) ? 255:0), 10);
 
     cv::resize(outputImage, outputImage, cv::Size(outputImage.cols / 4, outputImage.rows / 4));
-    cv::imshow("out", outputImage);
+    cv::imshow("out", outputImage);*/
 
+    cv::Mat marker = cv::imread("marker_new.jpg");
+    cv::Point2f pos;
+    Markers.detectMarker(marker, pos);
+    cv::circle(marker,pos, 30, cv::Scalar(0,0,255), 10);
+    cv::resize(marker, marker, cv::Size(marker.cols / 4, marker.rows / 4));
+    cv::imshow("out", marker);
     cv::waitKey(0);
 }

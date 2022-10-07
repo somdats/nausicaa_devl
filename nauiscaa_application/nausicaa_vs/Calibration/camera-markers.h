@@ -46,6 +46,8 @@ namespace camMarkers {
 		std::vector<cv::Mat> getAllFittedLines();
 		bool MarkerDetected(const cv::Mat& inImage, int markerID1 = 1, int markerID2 = 2, int markerID3 = 3, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName = cv::aruco::DICT_6X6_250);
 
+		bool detectMarker(const cv::Mat& inImage, cv::Point2f& marker);
+
 	protected:
 		cv::Mat detectedEdges;
 		//cv::Mat ArucoImage;
