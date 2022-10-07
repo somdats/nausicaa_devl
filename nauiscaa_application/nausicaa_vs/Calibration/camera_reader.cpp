@@ -19,7 +19,7 @@
 
 #include"Logger.h"
 
-#if SAVE_IMG
+//#if SAVE_IMG
 std::chrono::system_clock::time_point timeCamera1;
 FILE* fi1 = nullptr;
 FILE* fi2 = nullptr;
@@ -27,7 +27,7 @@ FILE* fi3 = nullptr;
 FILE* fi4 = nullptr;
 FILE* fi5 = nullptr;
 FILE* fi6 = nullptr;
-#endif // SAVE_IMG
+//#endif // SAVE_IMG
 
 using namespace cv;
 
@@ -85,9 +85,9 @@ void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, b
     /////////////Scaramuzza camera parameter read///////////////////
     camID = cameraID;
     inStPort = port;
-#if SAVE_IMG
+if(SAVE_IMG)
     timeCamera1 = std::chrono::system_clock::now();
-#endif
+//#endif
 
 if( SCENE_REPLAY){
 
@@ -309,45 +309,49 @@ void Camera::start_reading() {
     namedWindow(std::to_string(this->camID).c_str(),1);
     setMouseCallback(std::to_string(this->camID).c_str(), CallBackFunc, this);
 
-#if SAVE_IMG
-    if (logger::isExistDirectory(DUMP_FOLDER_PATH))
+//#if SAVE_IMG
+    if (SAVE_IMG)
     {
-        std::string imgDir = DUMP_FOLDER_PATH + "/Images/";
-       
-        if (!logger::isExistDirectory(imgDir))
-            fs::create_directory(imgDir);
 
-        std::string camDir = imgDir + std::to_string(inStPort);
-        if (!logger::isExistDirectory(camDir))
-            fs::create_directory(camDir);
-      
-        std::string timeStampFileName = camDir + "/" + "timestamps.txt";
-        if (fs::exists(timeStampFileName))
-            fs::remove(timeStampFileName);
+        if (logger::isExistDirectory(DUMP_FOLDER_PATH))
+        {
+            std::string imgDir = DUMP_FOLDER_PATH + "/Images/";
 
-        if (inStPort == 5000 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-            fi1 = fopen(timeStampFileName.c_str(), "wb");
-        if (inStPort == 5001 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-            fi2 = fopen(timeStampFileName.c_str(), "wb");
+            if (!logger::isExistDirectory(imgDir))
+                fs::create_directory(imgDir);
 
-        // remove condition when all the camera functions
-        if (CameraCount > 2) {
-            if (inStPort == 5002 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-                fi3 = fopen(timeStampFileName.c_str(), "wb");
-            if (inStPort == 5003 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-                fi4 = fopen(timeStampFileName.c_str(), "wb");
-           /* if (inStPort == 5004 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-                fi5 = fopen(timeStampFileName.c_str(), "wb");
-            if (inStPort == 5005 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
-                fi6 = fopen(timeStampFileName.c_str(), "wb");*/
+            std::string camDir = imgDir + std::to_string(inStPort);
+            if (!logger::isExistDirectory(camDir))
+                fs::create_directory(camDir);
+
+            std::string timeStampFileName = camDir + "/" + "timestamps.txt";
+            if (fs::exists(timeStampFileName))
+                fs::remove(timeStampFileName);
+
+            if (inStPort == 5000 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                fi1 = fopen(timeStampFileName.c_str(), "wb");
+            if (inStPort == 5001 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                fi2 = fopen(timeStampFileName.c_str(), "wb");
+
+            // remove condition when all the camera functions
+            if (CameraCount > 2) {
+                if (inStPort == 5002 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                    fi3 = fopen(timeStampFileName.c_str(), "wb");
+                if (inStPort == 5003 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                    fi4 = fopen(timeStampFileName.c_str(), "wb");
+                /* if (inStPort == 5004 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                     fi5 = fopen(timeStampFileName.c_str(), "wb");
+                 if (inStPort == 5005 && std::string(timeStampFileName).find(std::to_string(inStPort)) != std::string::npos)
+                     fi6 = fopen(timeStampFileName.c_str(), "wb");*/
+            }
+        }
+        else
+        {
+            std::cout << "root path does not exist:" << DUMP_FOLDER_PATH << std::endl;
+
         }
     }
-    else
-    {
-        std::cout << "root path does not exist:" << DUMP_FOLDER_PATH << std::endl;
-
-    }
-#endif // SAVE_IMG
+//#endif // SAVE_IMG
 
     while (reading) {
        // latest_frame_mutex.unlock();
@@ -394,35 +398,38 @@ void Camera::start_reading() {
             }
 
 
-#if SAVE_IMG
-
-            std::string tCam;
-            bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
-            if (stat)
+//#if SAVE_IMG
+            if (SAVE_IMG)
             {
-                latest_frame_mutex.lock();
-                logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
-                latest_frame_mutex.unlock();
-                if (inStPort == 5000)
-                    fprintf(fi1, "%s\n", tCam.c_str());
-                if (inStPort == 5001)
-                    fprintf(fi2, "%s\n", tCam.c_str());
 
-                // Remove the condition when all the cameras are functional
-                if (CameraCount > 2)
+                std::string tCam;
+                bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
+                if (stat)
                 {
-                    if (inStPort == 5002)
-                        fprintf(fi3, "%s\n", tCam.c_str());
-                    if (inStPort == 5003)
-                        fprintf(fi4, "%s\n", tCam.c_str());
-                    /* if (inStPort == 5004)
-                         fprintf(fi5, "%s\n", tCam.c_str());
-                     if (inStPort == 5005)
-                         fprintf(fi6, "%s\n", tCam.c_str());*/
-                }
+                    latest_frame_mutex.lock();
+                    logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
+                    latest_frame_mutex.unlock();
+                    if (inStPort == 5000)
+                        fprintf(fi1, "%s\n", tCam.c_str());
+                    if (inStPort == 5001)
+                        fprintf(fi2, "%s\n", tCam.c_str());
 
+                    // Remove the condition when all the cameras are functional
+                    if (CameraCount > 2)
+                    {
+                        if (inStPort == 5002)
+                            fprintf(fi3, "%s\n", tCam.c_str());
+                        if (inStPort == 5003)
+                            fprintf(fi4, "%s\n", tCam.c_str());
+                        /* if (inStPort == 5004)
+                             fprintf(fi5, "%s\n", tCam.c_str());
+                         if (inStPort == 5005)
+                             fprintf(fi6, "%s\n", tCam.c_str());*/
+                    }
+
+                }
             }
-#endif // SAVE_IMG 
+//#endif // SAVE_IMG 
 
             //cv::imwrite("D:/CamImages/rectified_streamed_output.jpg", dst);
         }
@@ -458,18 +465,21 @@ void Camera::start_reading() {
 void Camera::stop_reading(){
    latest_frame_mutex.lock();
    reading = false;
-#if SAVE_IMG
-   fclose(fi1);
-   fclose(fi2);
-   // remove when all the cameras are functional
-   if (CameraCount > 2)
+//#if SAVE_IMG
+   if (SAVE_IMG)
    {
-       fclose(fi3);
-       fclose(fi4);
-       /*fclose(fi5);
-       fclose(fi6);*/
+       fclose(fi1);
+       fclose(fi2);
+       // remove when all the cameras are functional
+       if (CameraCount > 2)
+       {
+           fclose(fi3);
+           fclose(fi4);
+           /*fclose(fi5);
+           fclose(fi6);*/
+       }
    }
-#endif
+//#endif
    latest_frame_mutex.unlock();
 }
 

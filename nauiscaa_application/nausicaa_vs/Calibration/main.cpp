@@ -77,6 +77,7 @@ MJPEGStreamer streamer;
 
 bool SCENE_REPLAY;
 bool SAVE_PC;
+bool SAVE_IMG;
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
@@ -1902,7 +1903,7 @@ void Terminate() {
     if (tComm.joinable())tComm.join();
     if (tStream.joinable())tStream.join();
 
-    //free(pixelData);
+    free(pixelData);
    
 }
 
@@ -1967,6 +1968,7 @@ int main(int argc, char* argv[])
     SCENE_REPLAY = stoi(configData[5].second);
     SAVE_PC = stoi(configData[6].second);
     saveState = stoi(configData[7].second);
+    SAVE_IMG = stoi(configData[8].second);
     if (saveState)
     {
         State::set_filename("state.txt");

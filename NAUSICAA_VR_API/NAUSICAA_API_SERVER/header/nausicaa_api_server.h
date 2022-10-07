@@ -250,7 +250,7 @@
 		void  setPosition(VirtualCameraID cId, float eyeX, float eyeY, float eyeZ);
 
 		/// update (change) view direction
-		void  setViewDirection(VirtualCameraID cId, float eyeX, float eyeY, float eyeZ);
+		void  setViewDirection(VirtualCameraID cId, float xDir, float yDir, float zDir);
 
 		/// move camera along the specified axis (0:x, 1:y, 2:z) by the specified amount (in meters)
 		void  move(VirtualCameraID cId, changeDir xyz, float amount);
