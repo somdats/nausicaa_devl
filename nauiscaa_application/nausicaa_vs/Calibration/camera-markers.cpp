@@ -96,18 +96,6 @@ void cameraMarkers::ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector
     std::transform(cnts.begin(), cnts.end(),
         std::back_inserter(pts),
         [](const Point& p) { return (Point2f)p; });
-
-    //Mat pointsf;
-    //Mat(cnts).convertTo(pointsf, CV_32F);
-
-    //for (int j = 0; j < pointsf.rows; j++) {
-    //    Point2f pnt = Point2f(pointsf.at<float>(j, 0), pointsf.at<float>(j, 1));
-    //  /*  if ((pnt.x > margin && pnt.y > margin && pnt.x < detected_edges.cols - margin && pnt.y < detected_edges.rows - margin)) {
-    //        if (j % 20 == 0) {*/
-    //            pts.push_back(pnt);
-    //  /*      }
-    //    }*/
-    //}
 }
 
 void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>& cvLines) {
@@ -131,13 +119,7 @@ void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<c
     imshow(cv::String("line-Image"), edge_lines);
 }
 
-//static void HoughTransform(int, void*)
-//{
-//
-//    HoughLines(detected_edges, lines, 1, CV_PI / 180, 300, 0, 0);
-//    for (const auto& pts : lines)
-//        std::cout << pts << std::endl;
-//}
+
 void cameraMarkers::CannyThreshold(const cv::Mat& srcImage)
 {
     cv::Mat src_gray;
@@ -253,5 +235,45 @@ bool cameraMarkers::MarkerDetected(const cv::Mat& inImage, int markerID1, int ma
     return allMarkers;
 
 
+
+}
+
+bool cameraMarkers::detectMarker(const cv::Mat& inImage, cv::Point2f& marker) {
+    std::vector<std::vector<cv::Point2f>> markerCorners;
+    std::vector<int> markerIds;
+    std::vector<std::vector<cv::Point2f>> rejectedCandidates;
+ 
+    this->detectMarkers(inImage, markerCorners, markerIds, rejectedCandidates);
+
+    std::vector<cv::Point2f> pts[4];
+    for (int i = 0; i < markerCorners.size(); ++i)
+        if (markerIds[i] < 4)
+            pts[markerIds[i]].push_back(markerCorners[i][0]);
+
+    std::vector<cv::Point2f> candidates;
+
+    if (!pts[0].empty()) {
+        marker = pts[0][0];
+        return true;
+    }
+
+    cv::Point2f p;
+    for (int i = 1; i <= 3; ++i)
+        if (pts[i].size() == 2)
+            for (int j = 1; j <= 3; ++j)
+                if (i != j)
+                    if (pts[j].size() == 2)
+                        if (this->intersection(pts[i][0], pts[i][1], pts[j][0], pts[j][1], p))
+                            candidates.push_back(p);
+
+    if (candidates.empty())
+        return false;
+
+    p = cv::Point2f(0.f, 0.f);
+    for (int i = 0; i < candidates.size(); ++i)
+        p += candidates[i];
+
+    p = p*(1.f/candidates.size());
+    return true;
 
 }

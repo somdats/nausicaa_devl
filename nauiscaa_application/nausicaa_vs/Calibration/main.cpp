@@ -1387,10 +1387,10 @@ void TW_CALL detectMarker(void*) {
    
     vcg::Point3f res;
     vcg::Plane3f p0, p1, p2;
-    if (md.detect_corner(marker3D, p0,p1,p2) ){
-        planes[currentLidar][0] = PlaneC(p0);
-        planes[currentLidar][1] = PlaneC(p1);
-        planes[currentLidar][2] = PlaneC(p2);
+    if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
+    //    planes[currentLidar][0] = PlaneC(p0);
+    //    planes[currentLidar][1] = PlaneC(p1);
+    //    planes[currentLidar][2] = PlaneC(p2);
         computeFrame((void*) 0);
         tracker.currect_marker3D = marker3D;
     }
