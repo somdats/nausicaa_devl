@@ -15,6 +15,7 @@ struct LidarRender {
     std::vector < float > samples;
     std::vector < float > distances;
     GLuint buffers[3];
+    vcg::Matrix44f  transfLidar;
 
     std::vector<GLuint> iTriangles;
 

@@ -1,7 +1,7 @@
 
 #include"camera-markers.h"
 
-using namespace cv;
+
 using namespace std;
 
 //const int max_lowThreshold = 100;
@@ -14,10 +14,9 @@ using namespace std;
 //const char* window_name = "Edge Map";
 //std::vector<cv::Vec2f> lines;
 //cv::Scalar meanVal, stdDev;
-RNG rng(12345);
+cv::RNG rng(12345);
 int margin = 2;
 
-using namespace camMarkers;
 
 
 cv::Mat cameraMarkers::createArucoMarkers(int id, int sizePixel, int borderSize, cv::aruco::PREDEFINED_DICTIONARY_NAME dictName) {
@@ -51,7 +50,7 @@ void cameraMarkers::detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<
 
     cv::Mat in_gray;
     if (inputMarkers.channels() >= 3)
-        cv::cvtColor(inputMarkers, in_gray, COLOR_BGR2GRAY);
+        cv::cvtColor(inputMarkers, in_gray, cv::COLOR_BGR2GRAY);
     else
         in_gray = inputMarkers.clone();
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
@@ -65,12 +64,12 @@ void cameraMarkers::detectMarkers(cv::Mat inputMarkers, std::vector<std::vector<
 
 // Finds the intersection of two lines, or returns false.
 // The lines are defined by (o1, p1) and (o2, p2).
-bool cameraMarkers::intersection(Point2f o1, Point2f p1, Point2f o2, Point2f p2,
-    Point2f& r)
+bool cameraMarkers::intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2,
+    cv::Point2f& r)
 {
-    Point2f x = o2 - o1;
-    Point2f d1 = p1 - o1;
-    Point2f d2 = p2 - o2;
+    cv::Point2f x = o2 - o1;
+    cv::Point2f d1 = p1 - o1;
+    cv::Point2f d2 = p2 - o2;
 
     float cross = d1.x * d2.y - d1.y * d2.x;
     if (abs(cross) < /*EPS*/1e-8)
@@ -90,12 +89,12 @@ void cameraMarkers::ConvertMatToPoint(cv::Mat img, std::vector<cv::Point>& point
 }
 
 
-void cameraMarkers::ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector<Point2f>& pts)
+void cameraMarkers::ContourPtsToCVPts(const std::vector<cv::Point>& cnts, vector<cv::Point2f>& pts)
 {
     size_t count = cnts.size();
     std::transform(cnts.begin(), cnts.end(),
         std::back_inserter(pts),
-        [](const Point& p) { return (Point2f)p; });
+        [](const cv::Point& p) { return (cv::Point2f)p; });
 }
 
 void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<cv::Point2f>& cvLines) {
@@ -112,10 +111,10 @@ void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<c
         float y1 = int(y0 + 1000 * (a));
         float x2 = int(x0 - 1000 * (-b));
         float y2 = int(y0 - 1000 * (a));
-        cv::line(edge_lines, cv::Point(x1, y1), cv::Point(x2, y2), Scalar(0, 0, 255),
-            2, LINE_8);
+        cv::line(edge_lines, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255),
+            2, cv::LINE_8);
     }
-    namedWindow(cv::String("line-Image"), WINDOW_AUTOSIZE);
+    cv::namedWindow(cv::String("line-Image"), cv::WINDOW_AUTOSIZE);
     imshow(cv::String("line-Image"), edge_lines);
 }
 
@@ -123,8 +122,8 @@ void cameraMarkers::drawLines(const cv::Mat& cannyEdgeImage, const std::vector<c
 void cameraMarkers::CannyThreshold(const cv::Mat& srcImage)
 {
     cv::Mat src_gray;
-    cvtColor(srcImage, src_gray, COLOR_BGR2GRAY);
-    blur(src_gray, detectedEdges, Size(3, 3));
+    cvtColor(srcImage, src_gray, cv::COLOR_BGR2GRAY);
+    blur(src_gray, detectedEdges, cv::Size(3, 3));
     //Canny(detected_edges, detected_edges, meanVal(0)-  2.0 *stdDev(0), meanVal(0) + 2.0 * stdDev(0), kernel_size);
     Canny(detectedEdges, detectedEdges, lowerThres, lowerThres * 3.0, kernel_size);
     /*  cv::Mat dst;
@@ -135,11 +134,11 @@ void cameraMarkers::CannyThreshold(const cv::Mat& srcImage)
 
 // returns a set of lines represented by two extremas ( Po - t*dir, Po + t*dir) with high no. of contour pts within a range (lt,ht)
 // returns all fitted-line w detected from a binary-edge image 
-std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& inImage, int lt, int ht, Scalar linecolor) {
+std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& inImage, int lt, int ht, cv::Scalar linecolor) {
 
     contours.clear();
     fittedLines.clear();
-    findContours(detectedEdges, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+    findContours(detectedEdges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
     int count = 0;
     std::vector<std::pair<pt2f, pt2f>>lines_pts;
@@ -149,11 +148,11 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& 
         // contour-pts to cvpts
         std::vector<cv::Point2f> pts;
         ContourPtsToCVPts(contours[i], pts);
-        Mat fitLine;
-        cv::fitLine(pts, fitLine, DIST_L1, 0, 0.01, 0.01);
+        cv::Mat fitLine;
+        cv::fitLine(pts, fitLine, cv::DIST_L1, 0, 0.01, 0.01);
         fittedLines.emplace_back(fitLine);
         if (contours[i].size() < ht && contours[i].size() > lt) {
-            Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+            cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
             //drawContours(src, contours, i, color, 2, 8, hierarchy, 0);
 
 
@@ -170,7 +169,7 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& 
 
             cv::Point O = cv::Point(int(x0 - t * vx), int(y0 - t * vy));
             cv::Point P = cv::Point(int(x0 + t * vx), int(y0 + t * vy));
-            cv::line(inImage, O, P, linecolor, 2, LINE_AA, 0);
+            cv::line(inImage, O, P, linecolor, 2, cv::LINE_AA, 0);
             if (contours[i].size() < ht && contours[i].size() > lt)
             {
                 pt2f sPt = cv::Point2f(x0 - t * vx, y0 - t * vy);
@@ -186,9 +185,9 @@ std::vector<std::pair<pt2f, pt2f>> cameraMarkers::detectContours(const cv::Mat& 
     return lines_pts;
 }
 
-vector<Point>  cameraMarkers::getContours(int idx)
+vector<cv::Point>  cameraMarkers::getContours(int idx)
 {
-    vector<Point>singleContour;
+    vector<cv::Point>singleContour;
     if (idx < contours.size())
         singleContour = contours[idx];
     else
@@ -197,7 +196,7 @@ vector<Point>  cameraMarkers::getContours(int idx)
     return singleContour;
 
 }
-vector<vector<Point> >cameraMarkers::getContours()
+vector<vector<cv::Point> >cameraMarkers::getContours()
 {
     return contours;
 }

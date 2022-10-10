@@ -3,6 +3,7 @@
 
 #include "defines.h"
 
+
 #include <opencv2/opencv.hpp>
 
 #include <mutex>
@@ -13,7 +14,7 @@
 #include"..\headers\ocam_functions.h"
 #include"..\headers\calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
-
+#include "camera-markers.h"
  
 
 struct Camera{
@@ -35,6 +36,7 @@ struct Camera{
     int ax;
     bool aligned;
     bool used;
+    cameraMarkers markerFinder;
 
     float _debk;
 

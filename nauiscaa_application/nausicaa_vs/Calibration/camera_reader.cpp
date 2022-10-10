@@ -18,6 +18,7 @@
 #include <chrono>
 
 #include"Logger.h"
+#include "camera-markers.h"
 
 //#if SAVE_IMG
 std::chrono::system_clock::time_point timeCamera1;
@@ -29,7 +30,7 @@ FILE* fi5 = nullptr;
 FILE* fi6 = nullptr;
 //#endif // SAVE_IMG
 
-using namespace cv;
+ 
 
 using namespace std;
 
@@ -53,15 +54,15 @@ int findPoint(Camera* cam, cv::Point2f p) {
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
     Camera * cam =  (Camera*)userdata;
-     if  ( event == EVENT_LBUTTONDOWN  ){
-         if(flags & EVENT_FLAG_CTRLKEY)
+     if  ( event == cv::EVENT_LBUTTONDOWN  ){
+         if(flags & cv::EVENT_FLAG_CTRLKEY)
              {
                  cam->p2i.push_back(cv::Point(x,y));
 //                 cam->ax=(cam->ax+1)%cam->p3.size();
              }
      }
 
-     else if  ( event == EVENT_RBUTTONDOWN )
+     else if  ( event == cv::EVENT_RBUTTONDOWN )
      {
          int ip = findPoint(cam, cv::Point(x, y));
          if (ip != -1) {
@@ -72,10 +73,10 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
                      cam->p2i.push_back(camCopy[i]);
             }
      }
-     else if  ( event == EVENT_MBUTTONDOWN )
+     else if  ( event == cv::EVENT_MBUTTONDOWN )
      {
      }
-     else if ( event == EVENT_MOUSEMOVE )
+     else if ( event == cv::EVENT_MOUSEMOVE )
      {
 
      }
@@ -174,7 +175,7 @@ if( SCENE_REPLAY){
 
         std::cout << "Camera Intrinsics for rectification:" << new_camera_matrix << std::endl;
        cv::Mat R = cv::Mat::eye(3, 3, CV_32F);
-        omnidir::initUndistortRectifyMap(cameraMatrix, distCoeffs, mei.xiFactor, R, new_camera_matrix, imageSize,
+       cv::omnidir::initUndistortRectifyMap(cameraMatrix, distCoeffs, mei.xiFactor, R, new_camera_matrix, imageSize,
             CV_32F, map1, map2, cv::omnidir::RECTIFY_PERSPECTIVE);
         //std::cout << "map1:" << map1 << std::endl;
         cameraMatrix = new_camera_matrix;
@@ -301,13 +302,13 @@ void Camera::start_reading() {
 
        /* VideoCapture cap("udpsrc port=5000 caps = \"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink",
                 CAP_GSTREAMER);*/
-        cap.open(Camerafull0args, CAP_GSTREAMER);
+        cap.open(Camerafull0args, cv::CAP_GSTREAMER);
     }
 
     //latest_frame_mutex.lock();
     reading = true;
-    namedWindow(std::to_string(this->camID).c_str(),1);
-    setMouseCallback(std::to_string(this->camID).c_str(), CallBackFunc, this);
+    cv::namedWindow(std::to_string(this->camID).c_str(),1);
+    cv::setMouseCallback(std::to_string(this->camID).c_str(), CallBackFunc, this);
 
 //#if SAVE_IMG
     if (SAVE_IMG)
@@ -355,7 +356,7 @@ void Camera::start_reading() {
 
     while (reading) {
        // latest_frame_mutex.unlock();
-        Mat frame;
+        cv::Mat frame;
 
 
 
@@ -444,6 +445,12 @@ void Camera::start_reading() {
 
         // drawing
         if (dst.rows > 0) {
+            // DEBUG  --------------------------------
+             cv::Point2f pos;
+             markerFinder.detectMarker(dst, pos);
+             cv::circle(dst, pos, 30, cv::Scalar(0, 0, 255), 10);
+            /////------------------------------------------------------
+
             for (int i = 0; i < this->p2i.size(); ++i)
                 if (p2i[i] != cv::Point2f(-1, -1)) {
                     cv::Scalar col(255, 255, 255);
@@ -453,7 +460,7 @@ void Camera::start_reading() {
             imshow(std::to_string(this->camID).c_str(), dst);
 
         }
-        if (waitKey(1) == 'b') {
+        if (cv::waitKey(1) == 'b') {
              break;
         }
         //latest_frame_mutex.lock();
@@ -531,9 +538,9 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
 
 
 #ifdef RECTIFY_FIRST
-        bool status = cv::solvePnP(p3, p2_auto,cameraMatrix,dc,r,t,false, SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
+        bool status = cv::solvePnP(p3, p2_auto,cameraMatrix,dc,r,t,false, cv::SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
         std::cout << " Status of PnP:" << status << std::endl;
-        cv::TermCriteria criteria(TermCriteria::COUNT + TermCriteria::EPS, 20, 1e-8);
+        cv::TermCriteria criteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 20, 1e-8);
         cv::solvePnPRefineLM(p3, p2_auto, cameraMatrix, dc, r, t, criteria);
 #else
         cv::solvePnP(p3,p2,cameraMatrix,this->distCoeffs,r,t,false,SOLVEPNP_EPNP);

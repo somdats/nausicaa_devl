@@ -201,7 +201,7 @@ float max_size_on_screen = 200.f;
 
 
 // this matrix brings the point clouds to a common (local) reference system
-vcg::Matrix44f transfLidar[2]; 
+//vcg::Matrix44f transfLidar[2]; 
 
 // this matrix brings the point clouds from a  common reference system to (local) one on the same point by rotated by pitch and roll
 // in order to compensate for the floating
@@ -689,7 +689,7 @@ void drawScene() {
             }
         GLERR();
 
-        glMultMatrix(transfLidar[il]);
+        glMultMatrix(lidars[il].transfLidar);
         glMultMatrix(toSteadyFrame);
         for(int ic=0; ic < NUMCAM; ++ic) toCamera[ic].SetIdentity();
 
@@ -702,7 +702,7 @@ void drawScene() {
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
-            vcg::Matrix44f l2w = toSteadyFrame* transfLidar[il];
+            vcg::Matrix44f l2w = toSteadyFrame* lidars[il].transfLidar;
             glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &l2w[0][0]);
 
             // THIS ONLY NEED TO BE DONE ONCE
@@ -982,7 +982,7 @@ void Display() {
                 glBegin(GL_POINTS);
                 for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
                     p = mesh.vert[i].cP();
-                    p = transfLidar[currentLidar] * p;
+                    p = lidars[currentLidar].transfLidar * p;
                     gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
                     if (boxsel.IsIn(vcg::Point3f(x, y, 0))) {
                         selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
@@ -1043,7 +1043,7 @@ void Display() {
                
                 for (int il = 0; il < N_LIDARS; ++il) {
 
-                    toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * transfLidar[il];  // opengl matrices
+                    toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
 
                     glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
 
@@ -1354,7 +1354,7 @@ void TW_CALL computeTranformation(void*) {
         T[3][3] = 1.0;
 
         T = vcg::Inverse(T);
-        transfLidar[il] = T;
+        lidars[il].transfLidar = T;
     }
 }
 
@@ -1369,7 +1369,7 @@ void TW_CALL detectMarker(void*) {
    
     md.points.clear();
     for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
-        vcg::Point3f p = transfLidar[currentLidar]*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
+        vcg::Point3f p = lidars[currentLidar].transfLidar*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
         if (vcg::Distance<float>(p, marker3D) < 0.4)
             md.points.push_back(p);
     }
@@ -1512,7 +1512,7 @@ void TW_CALL saveAlignment(void*) {
 
     FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
-            fwrite(&transfLidar[il], 1, sizeof(vcg::Matrix44f), fo);
+            fwrite(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
     fclose(fo);
 }
 
@@ -1547,7 +1547,7 @@ void TW_CALL saveImPoints(void*) {
 
 void TW_CALL setFrame(void*) {
     for (int i = 0; i < N_LIDARS; ++i)
-        transfLidar[i] = vcg::Inverse(boatFrame) * transfLidar[i];
+        lidars[i].transfLidar = vcg::Inverse(boatFrame) * lidars[i].transfLidar;
     alphaFrame = betaFrame = gammaFrame = xFrame = yFrame = zFrame = 0.0;
     boatFrame.SetIdentity();
 }
@@ -1606,7 +1606,7 @@ void TW_CALL loadAlignment(void*) {
 
     FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
-            fread(&transfLidar[il], 1, sizeof(vcg::Matrix44f), fo);
+            fread(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
     fclose(fo);
 }
 
@@ -1794,8 +1794,8 @@ void TW_CALL start_server(void*) {
 
 void TW_CALL initLidars(void*) {
 
-    transfLidar[0].SetIdentity();
-    transfLidar[1].SetIdentity();
+    lidars[0].transfLidar.SetIdentity();
+    lidars[1].transfLidar.SetIdentity();
     lidars[0].lidar.init(2368, "./Calibration/16db.xml");
     lidars[1].lidar.init(2369, "./Calibration/16db.xml");
 
