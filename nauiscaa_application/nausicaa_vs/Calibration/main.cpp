@@ -56,7 +56,8 @@
 
 #include "velodyne_reader.h"
 #include "camera_reader.h"
-#include "detect_3d_marker.h">
+#include "detect_3d_marker.h"
+#include "lidar_render.h"
 #include <opencv2/imgproc.hpp>
 
 ///server header
@@ -77,6 +78,7 @@ MJPEGStreamer streamer;
 
 bool SCENE_REPLAY;
 bool SAVE_PC;
+bool SAVE_IMG;
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
@@ -233,16 +235,6 @@ TwBar* bar, // Pointer to the tweak bar
 vcg::Point2f corners_sel_2D[2];
 bool selecting = false;
 bool escapemode = true;
-struct GLERR {
-    GLERR() {
-        int err = glGetError();
-        if (err) {
-            printf((const char*)gluErrorString(err));
-            exit(0);
-        }
-    }
-};
-
 
 using namespace vcg;
 
@@ -253,108 +245,108 @@ struct Tracker {
 };
 Tracker tracker;
 
-#define NL 16
+
 #define N_LIDARS 2
 static std::string camIniFile; // "../calib_results_30062022.txt";
-struct LidarRender {
-
-    Lidar  lidar;
-
-    vcg::Box3f bbox;
-    std::vector < float > samples;
-    std::vector < float > distances;
-    GLuint buffers[3];
-
-    std::vector<GLuint> iTriangles;
-
-    int n_strips;
-    int n_verts;
-    float deltaA;
-
-    void fillGrid() {
-        memset(&samples[0],0,sizeof(float)*3*n_verts);
-        memset(&distances[0], 0, sizeof(float) *  n_verts);
-
-        int az = lidar.latest_frame.azimuth[0];
-        int idStrip = floor(az / deltaA);
-        for (unsigned int i = 0; i < lidar.latest_frame.x.size(); ++i)
-            if (lidar.latest_frame.laser_id[i] < 16)
-            {
-
-                idStrip = floor(lidar.latest_frame.azimuth[i] / deltaA);
-
-                int j = lidar.latest_frame.laser_id[i];
-                // laser_id are interleaved -15° to 0, 1 to 15°
-                // Engineears suck
-                j = (j % 2) ? 7 + j / 2 + 1 : j / 2;
-
-                samples[(idStrip * NL + j) * 3] = lidar.latest_frame.x[i];
-                samples[(idStrip * NL + j) * 3 + 1] = lidar.latest_frame.y[i];
-                samples[(idStrip * NL + j) * 3 + 2] = lidar.latest_frame.z[i];
-                distances[(idStrip * NL + j)] = lidar.latest_frame.distance[i];
-                assert(idStrip < n_strips);
-                assert((idStrip * NL + j) * 3 + 2 < samples.size());
-            }
-
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    void init() {
-        int ns = 0;
-        if (lidar.latest_frame.azimuth.empty())
-            return;
-        for (unsigned int i = 0; i < lidar.latest_frame.azimuth.size() - 1; ++i)
-            if (lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i] > 0) {
-                deltaA += lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i];
-                ns++;
-            }
-        deltaA /= ns;
-
-        n_strips = ceil(36000 / deltaA);
-        n_verts = ceil(n_strips * NL);
-
-        samples.resize(n_verts * 3);
-
-        distances.resize(n_verts, 0.f);
-
-        glCreateBuffers(3, buffers);
-        GLERR();
-        fillGrid();
-        GLERR();
-
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        for (int i = 0; i < n_strips - 1; ++i)
-            for (int j = 0; j < NL - 1; ++j)
-            {
-                iTriangles.push_back(i * NL + j);
-                iTriangles.push_back((i + 1) * NL + j);
-                iTriangles.push_back(i * NL + j + 1);
-
-                iTriangles.push_back(i * NL + j + 1);
-                iTriangles.push_back((i + 1) * NL + j);
-                iTriangles.push_back((i + 1) * NL + j + 1);
-            }
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, iTriangles.size() * sizeof(int), &*iTriangles.begin(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    }
-
-};
+//struct LidarRender {
+//
+//    Lidar  lidar;
+//
+//    vcg::Box3f bbox;
+//    std::vector < float > samples;
+//    std::vector < float > distances;
+//    GLuint buffers[3];
+//
+//    std::vector<GLuint> iTriangles;
+//
+//    int n_strips;
+//    int n_verts;
+//    float deltaA;
+//
+//    void fillGrid() {
+//        memset(&samples[0],0,sizeof(float)*3*n_verts);
+//        memset(&distances[0], 0, sizeof(float) *  n_verts);
+//
+//        int az = lidar.latest_frame.azimuth[0];
+//        int idStrip = floor(az / deltaA);
+//        for (unsigned int i = 0; i < lidar.latest_frame.x.size(); ++i)
+//            if (lidar.latest_frame.laser_id[i] < 16)
+//            {
+//
+//                idStrip = floor(lidar.latest_frame.azimuth[i] / deltaA);
+//
+//                int j = lidar.latest_frame.laser_id[i];
+//                // laser_id are interleaved -15° to 0, 1 to 15°
+//                // Engineears suck
+//                j = (j % 2) ? 7 + j / 2 + 1 : j / 2;
+//
+//                samples[(idStrip * NL + j) * 3] = lidar.latest_frame.x[i];
+//                samples[(idStrip * NL + j) * 3 + 1] = lidar.latest_frame.y[i];
+//                samples[(idStrip * NL + j) * 3 + 2] = lidar.latest_frame.z[i];
+//                distances[(idStrip * NL + j)] = lidar.latest_frame.distance[i];
+//                assert(idStrip < n_strips);
+//                assert((idStrip * NL + j) * 3 + 2 < samples.size());
+//            }
+//
+//        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+//        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+//        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    }
+//
+//    void init() {
+//        int ns = 0;
+//        if (lidar.latest_frame.azimuth.empty())
+//            return;
+//        for (unsigned int i = 0; i < lidar.latest_frame.azimuth.size() - 1; ++i)
+//            if (lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i] > 0) {
+//                deltaA += lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i];
+//                ns++;
+//            }
+//        deltaA /= ns;
+//
+//        n_strips = ceil(36000 / deltaA);
+//        n_verts = ceil(n_strips * NL);
+//
+//        samples.resize(n_verts * 3);
+//
+//        distances.resize(n_verts, 0.f);
+//
+//        glCreateBuffers(3, buffers);
+//        GLERR();
+//        fillGrid();
+//        GLERR();
+//
+//        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+//        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+//        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//        for (int i = 0; i < n_strips - 1; ++i)
+//            for (int j = 0; j < NL - 1; ++j)
+//            {
+//                iTriangles.push_back(i * NL + j);
+//                iTriangles.push_back((i + 1) * NL + j);
+//                iTriangles.push_back(i * NL + j + 1);
+//
+//                iTriangles.push_back(i * NL + j + 1);
+//                iTriangles.push_back((i + 1) * NL + j);
+//                iTriangles.push_back((i + 1) * NL + j + 1);
+//            }
+//
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+//        glBufferData(GL_ELEMENT_ARRAY_BUFFER, iTriangles.size() * sizeof(int), &*iTriangles.begin(), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//    }
+//
+//};
 
 LidarRender lidars[2];
 
@@ -628,7 +620,7 @@ void drawString(vcg::Point3f p, const char* string, int size) {
     glColor3f(1, 1, 1);
     int fontsize = size / (1 + std::string(string).length());
     void  * font = fonts[3];
-    for(int fi = 0; fi < 4; fi)
+    for(int fi = 0; fi < 4; ++fi)
         if (fontsize < sizes[fi])
         {
             font = fonts[fi];
@@ -1387,9 +1379,6 @@ void TW_CALL detectMarker(void*) {
     vcg::Point3f res;
     vcg::Plane3f p0, p1, p2;
     if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
-    //    planes[currentLidar][0] = PlaneC(p0);
-    //    planes[currentLidar][1] = PlaneC(p1);
-    //    planes[currentLidar][2] = PlaneC(p2);
         computeFrame((void*) 0);
         tracker.currect_marker3D = marker3D;
     }
@@ -1772,9 +1761,11 @@ void start_Streaming_thread() {
             cv::imencode(".jpg", dstFrame, buf);
             size_t szbuf = buf.size();
             //serverStream.send(reinterpret_cast<char*>(buf.data()));
-            //serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+#define JPEGS_WRITE
+    #ifdef JPEGS_WRITE          
+            serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
+    #endif  
     #ifdef MJPEG_WRITE
-
             streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     #endif // MJPEG_WRITE
