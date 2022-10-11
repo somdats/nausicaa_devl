@@ -57,6 +57,7 @@
 #include "velodyne_reader.h"
 #include "camera_reader.h"
 #include "detect_3d_marker.h"
+#include "correspondences_detector.h"
 #include "lidar_render.h"
 #include <opencv2/imgproc.hpp>
 
@@ -231,6 +232,10 @@ TwBar* bar, // Pointer to the tweak bar
 * frameBar, 
 * pointsBar;
 
+// calibration
+bool calibrating;
+CorrespondencesDetector corrDet;
+
 //selection
 vcg::Point2f corners_sel_2D[2];
 bool selecting = false;
@@ -238,115 +243,11 @@ bool escapemode = true;
 
 using namespace vcg;
 
-struct Tracker {
-    Tracker() :active3D(false), active2D(false) {}
-    bool active3D, active2D;
-    vcg::Point3f currect_marker3D;
-};
-Tracker tracker;
-
 
 #define N_LIDARS 2
 static std::string camIniFile; // "../calib_results_30062022.txt";
-//struct LidarRender {
-//
-//    Lidar  lidar;
-//
-//    vcg::Box3f bbox;
-//    std::vector < float > samples;
-//    std::vector < float > distances;
-//    GLuint buffers[3];
-//
-//    std::vector<GLuint> iTriangles;
-//
-//    int n_strips;
-//    int n_verts;
-//    float deltaA;
-//
-//    void fillGrid() {
-//        memset(&samples[0],0,sizeof(float)*3*n_verts);
-//        memset(&distances[0], 0, sizeof(float) *  n_verts);
-//
-//        int az = lidar.latest_frame.azimuth[0];
-//        int idStrip = floor(az / deltaA);
-//        for (unsigned int i = 0; i < lidar.latest_frame.x.size(); ++i)
-//            if (lidar.latest_frame.laser_id[i] < 16)
-//            {
-//
-//                idStrip = floor(lidar.latest_frame.azimuth[i] / deltaA);
-//
-//                int j = lidar.latest_frame.laser_id[i];
-//                // laser_id are interleaved -15° to 0, 1 to 15°
-//                // Engineears suck
-//                j = (j % 2) ? 7 + j / 2 + 1 : j / 2;
-//
-//                samples[(idStrip * NL + j) * 3] = lidar.latest_frame.x[i];
-//                samples[(idStrip * NL + j) * 3 + 1] = lidar.latest_frame.y[i];
-//                samples[(idStrip * NL + j) * 3 + 2] = lidar.latest_frame.z[i];
-//                distances[(idStrip * NL + j)] = lidar.latest_frame.distance[i];
-//                assert(idStrip < n_strips);
-//                assert((idStrip * NL + j) * 3 + 2 < samples.size());
-//            }
-//
-//        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-//        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//
-//        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-//        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//    }
-//
-//    void init() {
-//        int ns = 0;
-//        if (lidar.latest_frame.azimuth.empty())
-//            return;
-//        for (unsigned int i = 0; i < lidar.latest_frame.azimuth.size() - 1; ++i)
-//            if (lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i] > 0) {
-//                deltaA += lidar.latest_frame.azimuth[i + 1] - lidar.latest_frame.azimuth[i];
-//                ns++;
-//            }
-//        deltaA /= ns;
-//
-//        n_strips = ceil(36000 / deltaA);
-//        n_verts = ceil(n_strips * NL);
-//
-//        samples.resize(n_verts * 3);
-//
-//        distances.resize(n_verts, 0.f);
-//
-//        glCreateBuffers(3, buffers);
-//        GLERR();
-//        fillGrid();
-//        GLERR();
-//
-//        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-//        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//
-//        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-//        glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//
-//        for (int i = 0; i < n_strips - 1; ++i)
-//            for (int j = 0; j < NL - 1; ++j)
-//            {
-//                iTriangles.push_back(i * NL + j);
-//                iTriangles.push_back((i + 1) * NL + j);
-//                iTriangles.push_back(i * NL + j + 1);
-//
-//                iTriangles.push_back(i * NL + j + 1);
-//                iTriangles.push_back((i + 1) * NL + j);
-//                iTriangles.push_back((i + 1) * NL + j + 1);
-//            }
-//
-//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-//        glBufferData(GL_ELEMENT_ARRAY_BUFFER, iTriangles.size() * sizeof(int), &*iTriangles.begin(), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-//
-//    }
-//
-//};
+
+                               
 
 LidarRender lidars[2];
 
@@ -363,7 +264,7 @@ vcg::Trackball track[2];
 int width, height;
 
 /// we choosed a subset of the avaible drawing modes
-enum DrawMode { PERPOINTS = 0, SMOOTH, WIRE, FLATWIRE, HIDDEN, FLAT };
+enum DrawMode { PERPOINTS = 0, SMOOTH, NONE };
 
 /// the current drawmode
 DrawMode drawmode;
@@ -1024,9 +925,6 @@ void Display() {
         for (int il = 0; il < N_LIDARS; ++il)
             updatePC(il);
 
-        if (tracker.active3D)
-            detectMarker(0);
-
         if (enable_proj) {
             for (int iCam = 0; iCam < NUMCAM;++iCam)
                 if(cameras[iCam].aligned)
@@ -1110,7 +1008,9 @@ void Display() {
         {
             glColor3f(1, 0, 0);
             glPushMatrix();
-            vcg::Point3f p = marker3D;
+//            vcg::Point3f p = marker3D;
+            vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
+
             glTranslatef(p[0], p[1], p[2]);
             gluSphere(gluNewQuadric(), 0.02, 10, 10);
             glPopMatrix();
@@ -1245,6 +1145,11 @@ void Display() {
     // Recall Display at next frame
     glutPostRedisplay();
     
+    // calibration
+    if (calibrating) {
+        corrDet.detect();
+    }
+
     if (SCENE_REPLAY) {
         if (time_running) {
             virtual_time = clock() - restart_time + partial_time;
@@ -1330,7 +1235,9 @@ void TW_CALL alignCamera(void*) {
     if (cameras[currentCamera].p3.size() == cameras[currentCamera].p2i.size() && cameras[currentCamera].p3.size() > 3)
         cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
 }
-
+void TW_CALL autoalignLidars(void*) {
+    corrDet.alignLidars();
+}
 void TW_CALL assignPointsToCamera(void*) {
 //    cameras[currentCamera].p3.clear();
     for (int ip = 0; ip < points.size();++ip)
@@ -1365,7 +1272,7 @@ void TW_CALL addMarkerToPoints(void*) {
 void TW_CALL computeFrame(void*);
 void TW_CALL detectMarker(void*) {
     
-    lidars[currentLidar].lidar.latest_frame_mutex.lock();
+ /*   lidars[currentLidar].lidar.latest_frame_mutex.lock();
    
     md.points.clear();
     for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
@@ -1381,7 +1288,8 @@ void TW_CALL detectMarker(void*) {
     if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
         computeFrame((void*) 0);
         tracker.currect_marker3D = marker3D;
-    }
+    }*/
+
 }
 
 
@@ -1397,8 +1305,7 @@ void TW_CALL computeLine(void*) {
     lines3d.push_back(l);
 }
 void TW_CALL  setClosMarker(void*) {
-    marker3D = closest_sel;
-    tracker.currect_marker3D = closest_sel;
+    corrDet.currentP3D[currentLidar] = closest_sel;
 }
 
 void TW_CALL computeFrame(void*) {
@@ -1712,6 +1619,7 @@ void start_camera(int iC) {
     cameras[iC].start_reading();
 }
 
+
 void acceptCommunicationThread() {
     while (!serverComm.stop_signal)
         serverComm.accepting_connections();
@@ -1963,6 +1871,8 @@ int main(int argc, char* argv[])
         State::set_filename("state.txt");
         State::load_state();
     }
+    corrDet.init(NUMCAM);
+
     /*PacketDecoder::HDLFrame lidarFrame2;
   
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
@@ -2053,7 +1963,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "closest as marker", ::setClosMarker, 0, " label='set closest as marker' group=`Register Lidars` help=`compute line` ");
     TwAddButton(bar, "detect marker", ::detectMarker, 0, " label='Detect Marker' group=`Register Lidars` help=`compute line` ");
     TwAddButton(bar, "add marker to points", ::addMarkerToPoints, 0, " label='Add Marker to P' group=`Register Lidars` help=`compute line` ");
-    TwAddVarRW(bar, "tracking 3D", TW_TYPE_BOOL8, &tracker.active3D, " label='tracking3D ' group=`Register Lidars` help=` track3D` ");
+    TwAddVarRW(bar, "calibrating", TW_TYPE_BOOL8, &calibrating, " label='calibrating' group=`Register Lidars` help=` calibrating` ");
 
     TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
     TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
@@ -2064,6 +1974,7 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "Current Plane", TW_TYPE_UINT32, &currentPlane, " label='currrent Plane' min=0 max=2 group=`Register Lidars` help=` current plane` ");
     TwAddVarRW(bar, "Current Axis", TW_TYPE_UINT32, &ax, " label='currrent Axis on the image' min=0 max=2 group=`Register Lidars` help=` current axis` ");
     TwAddButton(bar, "align lidar", ::computeTranformation, 0, " label='Align LIdars' group=`Register Lidars` help=`Align` ");
+    TwAddButton(bar, "auto align lidar", autoalignLidars, 0, " label='Auto Align LIdars' group=`Register Lidars` help=`Align` ");
     TwAddButton(bar, "save", ::saveAxis, 0, " label='saveAxis' group=`Register Lidars` help=`rotate frame` ");
     TwAddButton(bar, "load", ::loadAxis, 0, " label='loadAxis' group=`Register Lidars` help=`rotate frame` ");
     TwAddButton(bar, "saveAln", ::saveAlignment, 0, " label='saveAlignemnt' group=`Register Lidars` help=` ` ");
@@ -2100,13 +2011,11 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "Server", ::start_server, 0, "label='Start Server' group='Streaming' help=`streaming` ");
 
     // ShapeEV associates Shape enum values with labels that will be displayed instead of enum values
-    TwEnumVal drawmodes[6] = { {SMOOTH, "Smooth"}, {PERPOINTS, "Per Points"}, {WIRE, "Wire"}, {FLATWIRE, "FlatWire"},{HIDDEN, "Hidden"},{FLAT, "Flat"} };
+    TwEnumVal drawmodes[3] = { {SMOOTH, "Smooth"}, {PERPOINTS, "Per Points"}, {NONE, "none"}};
     // Create a type for the enum shapeEV
-    TwType drawMode = TwDefineEnum("DrawMode", drawmodes, 6);
+    TwType drawMode = TwDefineEnum("DrawMode", drawmodes, 3);
     // add 'g_CurrentShape' to 'bar': this is a variable of type ShapeType. Its key shortcuts are [<] and [>].
     TwAddVarRW(bar, "Draw Mode", drawMode, &drawmode, " keyIncr='<' keyDecr='>' group=`Rendering` help='Change draw mode.' ");
-
-
 
 
     if (SCENE_REPLAY) {

@@ -218,7 +218,7 @@ if( SCENE_REPLAY){
 
 
 
-    cv::Mat dst;
+   // cv::Mat dst;
     cv::Size imageSize(cv::Size(1948,1096));
 
 #ifdef RECTIFY_FIRST
@@ -446,9 +446,9 @@ void Camera::start_reading() {
         // drawing
         if (dst.rows > 0) {
             // DEBUG  --------------------------------
-             cv::Point2f pos;
-             markerFinder.detectMarker(dst, pos);
-             cv::circle(dst, pos, 30, cv::Scalar(0, 0, 255), 10);
+            // cv::Point2f pos;
+            // markerFinder.detectMarker(dst, pos);
+            // cv::circle(dst, pos, 30, cv::Scalar(0, 0, 255), 10);
             /////------------------------------------------------------
 
             for (int i = 0; i < this->p2i.size(); ++i)
