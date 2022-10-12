@@ -1,9 +1,16 @@
 #pragma once
 
-#include "camera_reader.h"
+#include <vcg/space/point3.h>
+#include <vcg/space/point2.h>
+#include <vector>
+#include <utility> 
 #include <GL/glew.h>
 
-extern std::vector<::Camera>  cameras;
+ 
+
+typedef  std::pair< vcg::Point3f, vcg::Point2f> Correspondence3D2D;
+typedef std::pair< vcg::Point3f, vcg::Point3f> Correspondence3D3D;
+
 struct LidarRender;
 extern LidarRender lidars[2];
 

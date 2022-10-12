@@ -2,7 +2,7 @@
 #define CAMERA_READER_H
 
 #include "defines.h"
-
+#include "common.h"
 
 #include <opencv2/opencv.hpp>
 
@@ -15,7 +15,6 @@
 #include"..\headers\calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
 #include "camera-markers.h"
- 
 
 struct Camera{
     Camera() :aligned(false), used(false) { p3.clear();p2i.clear(); }
@@ -238,6 +237,7 @@ this->_debk = k*ks;
     void start_reading();
     void stop_reading();
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
+    vcg::Shotf SolvePnP_new(std::vector <Correspondence3D2D> corrs);
 
 
 std::vector<std::pair<unsigned long long, std::string>> timed_images;

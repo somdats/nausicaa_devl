@@ -299,6 +299,16 @@ void initMesh()
     glWrap.Update();
 }
 
+struct VirtualClock {
+    
+    unsigned long long clock() {return ticks[iTicks];}
+    void advance() { iTicks=(iTicks+1)% ticks.size(); }
+    int iTicks;
+    std::vector<unsigned long long> ticks;
+
+};
+
+VirtualClock vclock;
 
 
 void updatePC(int il) {
@@ -1152,12 +1162,13 @@ void Display() {
 
     if (SCENE_REPLAY) {
         if (time_running) {
-            virtual_time = clock() - restart_time + partial_time;
+            virtual_time = vclock.clock() - restart_time + partial_time;
             if (virtual_time > end_time - start_time)
             {
-                restart_time = clock();
+                restart_time = vclock.clock();
                 partial_time = virtual_time = 0;
             }
+            vclock.advance();
         }
     }
 }
@@ -1234,6 +1245,9 @@ void   alignCamera(int ic) {
 void TW_CALL alignCamera(void*) {
     if (cameras[currentCamera].p3.size() == cameras[currentCamera].p2i.size() && cameras[currentCamera].p3.size() > 3)
         cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
+}
+void TW_CALL autoalignCameras(void*) {
+    corrDet.alignCameras();
 }
 void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
@@ -1705,6 +1719,14 @@ void TW_CALL initLidars(void*) {
     lidars[0].transfLidar.SetIdentity();
     lidars[1].transfLidar.SetIdentity();
     lidars[0].lidar.init(2368, "./Calibration/16db.xml");
+
+    // INIT vclock
+    for (int i = 0; i < lidars[0].lidar.timed_pointclouds.size(); ++i)
+        vclock.ticks.push_back(lidars[0].lidar.timed_pointclouds[i].first);
+    vclock.iTicks = 0;
+    // ------------------
+
+
     lidars[1].lidar.init(2369, "./Calibration/16db.xml");
 
     tLidars[0] = std::thread(&start_lidar,0);
@@ -1743,11 +1765,11 @@ void TW_CALL initCameras(void*) {
 void TW_CALL time_startstop(void*) {
     time_running = !time_running;
     if (time_running) {
-        restart_time = clock();
+        restart_time = vclock.clock();
         virtual_time = partial_time;
     }
     else
-        partial_time += clock() - restart_time;
+        partial_time += vclock.clock() - restart_time;
     TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
 
@@ -1827,7 +1849,6 @@ void TW_CALL setVirtualTime(const void* v, void*) {
 void TW_CALL getVirtualTime(void* v, void*) {
     *(int*)v = virtual_time;
 }
- 
 
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
     std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
@@ -1835,7 +1856,6 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
     char time_alfanumeric[20];
     unsigned long long first = -1;
     std::string ta, ms;
-    
 
     while (!feof(ft)) {
         fscanf(ft, "%s", time_alfanumeric);
@@ -1980,6 +2000,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "saveAln", ::saveAlignment, 0, " label='saveAlignemnt' group=`Register Lidars` help=` ` ");
     TwAddButton(bar, "loadAln", ::loadAlignment, 0, " label='loadAlignment' group=`Register Lidars` help=` ` ");
 
+    TwAddButton(bar, "align cameras", ::autoalignCameras, 0, " label='Align All Cameras' group=`Align Cameras` help=`Align` ");
     TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
     TwAddVarCB(bar, "Map Color", TW_TYPE_BOOL8, setMapColor, getMapColor, (void*)0, " label='map color' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "assign points", ::assignPointsToCamera, 0, " label='assign 3D points' group=`Align Cameras` help=`copy points` ");

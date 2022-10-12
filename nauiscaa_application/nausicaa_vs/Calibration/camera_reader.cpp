@@ -19,6 +19,7 @@
 
 #include"Logger.h"
 #include "camera-markers.h"
+#include "correspondences_detector.h"
 
 //#if SAVE_IMG
 std::chrono::system_clock::time_point timeCamera1;
@@ -647,4 +648,141 @@ vcg::Shotf Camera::SolvePnP(std::vector<vcg::Point3f> p3vcg){
     this->used = true;
     return shot;
 
+}
+
+
+vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
+    cv::Mat cm, dc;
+    cv::Mat r, t;
+    r = cv::Mat(3, 1, CV_32F);
+    t = cv::Mat(4, 1, CV_32F);
+    dc = cv::Mat(4, 1, CV_32F);
+    dc = 0;
+    //    dc.at<float>(0,0)=0.f;
+    std::vector<cv::Point3d> p3;
+    std::vector<cv::Point2d> p2, p2_auto;
+
+    std::vector<cv::Mat> rvecs, tvecs;
+
+
+    for (int i = 0; i < corrs.size(); ++i) p2_auto.push_back(cv::Point2d(corrs[i].second.X(), corrs[i].second.Y()));
+
+    for (int i = 0; i < corrs.size(); ++i) p3.push_back(cv::Point3f(corrs[i].first.X(), corrs[i].first.Y(), corrs[i].first.Z()));
+
+    cv::Mat rot_cv(3, 3, CV_32F);
+
+    try {
+
+#ifdef RECTIFY_FIRST
+        bool status = cv::solvePnP(p3, p2_auto, cameraMatrix, dc, r, t, false, cv::SOLVEPNP_EPNP /*SOLVEPNP_AP3P   SOLVEPNP_P3P*/);
+        std::cout << " Status of PnP:" << status << std::endl;
+        cv::TermCriteria criteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 20, 1e-8);
+        cv::solvePnPRefineLM(p3, p2_auto, cameraMatrix, dc, r, t, criteria);
+#else
+        cv::solvePnP(p3, p2, cameraMatrix, this->distCoeffs, r, t, false, SOLVEPNP_EPNP);
+#endif
+        std::cout << "rotation vector" << r << std::endl;
+
+        cv::Rodrigues(r, rot_cv);
+        std::cout << "rotation matrix" << rot_cv << std::endl;
+        std::cout << "translations" << t << std::endl;
+        /* cv::Mat J;
+         std::vector<Point2f> p;
+         projectPoints(p3, r, t, cameraMatrix, Mat(), p, J);
+         for (int i = 0; i < p.size(); ++i)
+         {
+             std::cout << p[i] << std::endl;
+         }*/
+
+    }
+    catch (cv::Exception& e)
+    {
+        const char* err_msg = e.what();
+        std::cout << "exception caught: " << err_msg << std::endl;
+    }
+
+    cv::Mat p3m;
+    p3m = cv::Mat(3, 1, CV_32F);
+    std::vector < cv::Mat> camSp;
+    camSp.resize(this->p3.size());
+    std::cout << "projection check " << std::endl;
+    for (int i = 0; i < this->p3.size(); ++i) {
+        p3m.at<float>(0, 0) = p3[i].x;
+        p3m.at<float>(1, 0) = p3[i].y;
+        p3m.at<float>(2, 0) = p3[i].z;
+        camSp[i] = rot_cv * p3m + t;
+        //camSp[i] /=camSp[i].at<float>(2,0);
+
+        cv::Mat p_ = cameraMatrix * camSp[i];
+        //std::cout << p_ << std::endl;
+        //std::cout << "3D: "<<p3m<< std::endl;
+       /* std::cout << "3DCS: "<<camSp[i]<< std::endl;
+        std::cout<< "2D: "<<p_ << std::endl;*/
+        std::cout << "2Dnr: " << p_ / p_.at<float>(2, 0) << std::endl;
+        cv::Point2f p(p_.at<float>(0, 0), p_.at<float>(1, 0));
+        //std::cout<< p2[i]  << std::endl <<  std::endl;
+
+    }
+
+
+    vcg::Shotf shot;
+    shot.Intrinsics = this->vcg_cam;
+    vcg::Matrix44f rot;
+    rot.SetIdentity();
+
+    for (int i = 0; i < 3;i++)
+        for (int j = 0; j < 3;j++)
+            rot[i][j] = rot_cv.at<float>(i, j);
+
+    //----------------------------------------------------
+    extrinsics.SetIdentity();
+    for (int i = 0; i < 3;i++)
+        for (int j = 0; j < 3;j++)
+            extrinsics[i][j] = rot_cv.at<float>(i, j);
+
+    extrinsics[0][3] = t.at<float>(0, 0);
+    extrinsics[1][3] = t.at<float>(1, 0);
+    extrinsics[2][3] = t.at<float>(2, 0);
+
+    vcg::Point4f _p = extrinsics * vcg::Point4f(0, 0, 0, 1);
+    _p = cameraMatrix44 * _p;
+    _p /= _p.Z();
+    // ---------------------------------------------------
+
+
+    rot_cv = rot_cv.t();
+
+    // DEBUG back projection (OK)
+    //     for(int i=0; i < 4; ++i){
+    //        std::cout << "cam space" << camSp[i] << std::endl;
+    //       std::cout << "p3 retransf" << rot_cv*camSp[i]-rot_cv*t << std::endl;
+    //       std::cout << "p3 input " << p3[i] << std::endl;
+    //     }
+
+        // rotate by 180° around X for converting opencv to opengl convention
+    rot.transposeInPlace();
+    rot.SetColumn(1, rot.GetColumn3(1) * -1);
+    rot.SetColumn(2, rot.GetColumn3(2) * -1);
+    rot.transposeInPlace();
+
+    shot.Extrinsics.SetRot(rot);
+
+    cv::Mat vp = -rot_cv * t;
+    std::cout << "camera position " << vp << std::endl;
+    shot.SetViewPoint(vcg::Point3f(vp.at<float>(0, 0), vp.at<float>(1, 0), vp.at<float>(2, 0)));
+
+
+    // TEST VCG CAMERA
+    //for(int i = 0 ; i < this->p3.size(); ++i) {
+
+    //    vcg::Point2f pr = shot.Project(p3vcg[i]);
+
+    //    printf("%f %f %f ->",p3vcg[i][0],p3vcg[i][1],p3vcg[i][2]);
+    //    printf("%f %f --- %f %f\n",pr[0],pr[1],p2[i].x,p2[i].y);
+    //}
+    this->aligned = true;
+    this->used = true;
+    return shot;
+
+    return vcg::Shotf();
 }
