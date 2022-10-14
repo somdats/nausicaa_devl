@@ -139,16 +139,21 @@ void VRSubsystem::disableAllCameras() {
 }
 
 markerID VRSubsystem::addMarker(char * png_image, int size_in_bytes, float width_mt, const char* label, int label_length) {
-
 	clientComm.send_message(message()[std::string("addMarker")][std::string(label)][width_mt].msg, png_image, size_in_bytes);
-	return 0;
+	return clientComm.receive_int();
 }
  
-void VRSubsystem::placeMarker(markerID id, float longitude, float latitude, float altitude) {}
+void VRSubsystem::placeMarker(markerID id, float longitude, float latitude, float altitude) {
+	clientComm.send_message(message()[std::string("placeMarker")][id][longitude][latitude][altitude].msg);
+}
  
-void VRSubsystem::showMarker(markerID id, int invisible_visible) {}
+void VRSubsystem::showMarker(markerID id, int invisible_visible) {
+	clientComm.send_message(message()[std::string("showMarker")][id][invisible_visible].msg);
+}
 
-void VRSubsystem::clearMarkers(){};
+void VRSubsystem::clearMarkers(){
+	clientComm.send_message(message()[std::string("clearMarkers")].msg);
+};
 
 void VirtualCamera::setViewport(VirtualCameraID cId, int new_viewportX, int new_viewportY) {
 	clientComm.send_message(message()[std::string("setViewport")][cId][new_viewportX][new_viewportY].msg);
@@ -190,6 +195,7 @@ void VirtualCamera::setPosition(VirtualCameraID cId, float eyeX, float eyeY, flo
 
 void VirtualCamera::setViewDirection(VirtualCameraID cId, float dirX, float dirY, float dirZ) {
 	clientComm.send_message(message()[std::string("setViewDirection")][cId][dirX][dirY][dirZ].msg);
+	std::cout << "setViewDirection" << std::endl;
 }
 void VirtualCamera::setCameraFrustrum(VirtualCameraID cId, float sx, float dx, float bt, float tp, float focalLength,
 	int viewPortX, int viewPortY) {

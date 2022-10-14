@@ -19,7 +19,7 @@ bool streamON;
 bool lidarOn[2];
 bool camerasOn[6];
 
-std::mutex m;
+std::mutex m, activeCamera_mutex;
 std::condition_variable condv;
 bool picked = false;
 
@@ -93,7 +93,10 @@ void call_API_function(std::string message) {
 	if (fname == std::string("renderFromCamera"))
 	{
 		int id = deserialize_int(message);
+		activeCamera_mutex.lock();
 		activeCamera = id ;
+		activeCamera_mutex.unlock();
+
 		std::cout << "rendering from camera:" << std::endl;
 	}
 	else
@@ -168,15 +171,36 @@ void call_API_function(std::string message) {
 	else
 	if (fname == std::string("addMarker"))
 	{
-		int newID = markers.size();
-		markers[newID].label  = deserialize_string(message);
-		//markers[newID].pos[0] = deserialize_float(message);
-		//markers[newID].pos[1] = deserialize_float(message);
-		//markers[newID].pos[2] = deserialize_float(message);
-		markers[newID].png_data = new unsigned char[serverComm.blob_bin_length];
-		memcpy_s(markers[newID].png_data, serverComm.blob_bin_length, serverComm.blob_bin, serverComm.blob_bin_length);
-		markers[newID].png_data_length = serverComm.blob_bin_length;
+		int newId = markers.size();
+		markers[newId].label  = deserialize_string(message);
+		markers[newId].png_data = new unsigned char[serverComm.blob_bin_length];
+		memcpy_s(markers[newId].png_data, serverComm.blob_bin_length, serverComm.blob_bin, serverComm.blob_bin_length);
+		markers[newId].png_data_length = serverComm.blob_bin_length;
+		markers[newId].width = 1.0;
+		markers[newId].visible = false;
+		serverComm.send(std::to_string(newId));
 	}
+	else
+	if (fname == std::string("placeMarker"))
+	{
+		int id = deserialize_int(message);
+		markers[id].pos[0] = deserialize_float(message);
+		markers[id].pos[1] = deserialize_float(message);
+		markers[id].pos[2] = deserialize_float(message);
+	}
+	else
+	if (fname == std::string("showMarker"))
+	{
+		int id		= deserialize_int(message);
+		int visible = deserialize_int(message);
+		markers[id].visible = (visible) ? true : false;
+	}
+	else
+	if (fname == std::string("clearMarkers"))
+	{
+		markers.clear();
+	}
+	else
 	if (fname == std::string("setPerspective"))
 	{
 		int id			= deserialize_int(message);

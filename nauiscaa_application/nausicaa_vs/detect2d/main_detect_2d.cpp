@@ -13,9 +13,9 @@
 #define MARKER_DETECT
 
 
-using namespace cv;
+ 
 using namespace std;
-using namespace camMarkers;
+
 
 
 

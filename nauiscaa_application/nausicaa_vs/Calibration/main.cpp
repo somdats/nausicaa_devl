@@ -714,7 +714,7 @@ void drawScene() {
                         }
                     }
                 }
-
+            activeCamera_mutex.lock();
             vcg::Matrix44f billboard_frame = virtualCameras[activeCamera].Extrinsics.Rot();
             vcg::Point3f pov = virtualCameras[activeCamera].GetViewPoint();
             billboard_frame.transposeInPlace();
@@ -722,6 +722,7 @@ void drawScene() {
             float sx, dx, bt, tp, n;
             virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
             float met_2_pixels =  virtualCameras[activeCamera].Intrinsics.ViewportPx[0]/ (dx - sx);
+            activeCamera_mutex.unlock();
 
             std::vector<Marker> sorted_markers;
             for (std::map<unsigned int, Marker>::iterator im = markers.begin(); im != markers.end(); ++im)
@@ -1055,10 +1056,10 @@ void Display() {
             glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
             float sx, dx, bt, tp, n;
+            activeCamera_mutex.lock();
             virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
-
-
             GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
+            activeCamera_mutex.unlock();
 
             drawScene();
             if (::pick_point) {
@@ -1683,7 +1684,7 @@ void start_Streaming_thread() {
             cv::imencode(".jpg", dstFrame, buf);
             size_t szbuf = buf.size();
             //serverStream.send(reinterpret_cast<char*>(buf.data()));
-#define JPEGS_WRITE
+//#define JPEGS_WRITE
     #ifdef JPEGS_WRITE          
             serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
     #endif  
