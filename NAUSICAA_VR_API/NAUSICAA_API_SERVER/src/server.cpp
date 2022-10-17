@@ -83,33 +83,45 @@ int Server::accepting_connections() {
 	}
 	 
 		return 0;
-//
-//if ((new_socket = accept(s, (struct sockaddr*)&client, &c)) != INVALID_SOCKET)
-//{
-//	
-//	printf("Connection accepted from %s on port %d\n", inet_ntoa(client.sin_addr), port);
-//	return 1;
-//}
-//else
-//	return 0;
 }
 
 
+int Server::receive(char *buf, int n) {
+	
+	buf += n;
+	do{ 
+		int nr = recv(new_socket, buf-n, n, 0);
+		if (nr < 0)
+			return nr;
+		n -= nr;
+	} while (n > 0);
+	return 1;
+}
 int Server::incoming_message(std::string& message) {
 	/* a message has the form
 	*  NUMBERMESSAGE[BLOB] where:
-	*  NUMBER  = firs 4 bytes  encoding the length of the text part of the message as an int
+	*  NUMBER  = first 4 bytes  encoding the length of the text part of the message as an int
 	*  MESSAGE 
+	*  NUMBER  = second 4 bytes  encoding the length of the binary part of the message as an int
 	*  BLOB    = binary data attached to the message
 	*/
 	char recvbuf[65536];
 	int recvbuflen = 65536;
-	int iResult = recv(new_socket, recvbuf, recvbuflen, 0);
+	int iResult   = receive(recvbuf, 8);
+	
 	if (iResult > 0) {
 		int size_string_part = *(int*)recvbuf;
-		message = std::string(recvbuf+ 4, size_string_part);
-		blob_bin_length = iResult - 4 - size_string_part;
-		memcpy_s(blob_bin, blob_bin_length, recvbuf + 4 + size_string_part, blob_bin_length);
+		blob_bin_length = *(int*)(recvbuf+4);
+		if (receive(recvbuf, size_string_part) < 0)
+			return 1;
+		message = std::string(recvbuf, size_string_part);
+		if (blob_bin_length > 0) {
+			if (receive(recvbuf, blob_bin_length) < 0)
+				return 1;
+
+			memcpy_s(blob_bin, blob_bin_length, recvbuf, blob_bin_length);
+		}
+
 		printf("received %s \n", message.c_str());
 		return 0;
 	}
@@ -117,11 +129,11 @@ int Server::incoming_message(std::string& message) {
 		message = std::string();
 		return 1;
 	}
-
 }
 
 int Server::send(std::string message) {
 	printf("error status %d \n", WSAGetLastError());
+	printf("sending %s \n", message.c_str());
 	int result = ::send(new_socket, message.c_str(), message.size(), 0);
 	if (result == SOCKET_ERROR) {
 		printf("\n ERROR %d \n", WSAGetLastError());

@@ -30,6 +30,8 @@ struct Server {
 
 	int accepting_connections();
 
+	int receive(char * buf, int n);
+
 	int incoming_message(std::string& message);
 
 	int send(std::string message);

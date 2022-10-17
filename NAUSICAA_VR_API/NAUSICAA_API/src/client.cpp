@@ -59,10 +59,12 @@ int Client::disconnect() {
 int   Client::send_message(std::string msg, char * blob, int blob_size  ) {
 
 	*((int*)message) = msg.length();
-	memcpy_s(message+4, msg.length(), msg.c_str(), msg.length());
-	memcpy_s(message+4+ msg.length(), blob_size, blob, blob_size);
+	*((int*)(message+4)) = blob_size;
 
-	if (send(s, message ,4+ msg.length()+ blob_size, 0) < 0)
+	memcpy_s(message+8, msg.length(), msg.c_str(), msg.length());
+	memcpy_s(message+8+ msg.length(), blob_size, blob, blob_size);
+
+	if (send(s, message ,8+ msg.length()+ blob_size, 0) < 0)
 	{
 		puts("Send failed");
 		return 1;
