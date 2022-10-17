@@ -10,6 +10,7 @@
 
 
 struct Server {
+
 	WSADATA wsa;
 	SOCKET s, new_socket;
 	struct sockaddr_in server, client;
@@ -24,6 +25,8 @@ struct Server {
 	int start_server(int );
 
 	void stop_server();
+
+	void close_socket();
 
 	int accepting_connections();
 

@@ -1805,6 +1805,11 @@ void Terminate() {
     {
         State::save_state();
     }
+    serverComm.stop_server();
+    serverStream.stop_server();
+    serverComm.close_socket();
+    serverStream.close_socket();
+
     return;
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();

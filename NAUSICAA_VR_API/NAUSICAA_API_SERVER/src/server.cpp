@@ -62,15 +62,36 @@ void Server::stop_server() {
 	stop_signal = true;
 }
 
-int Server::accepting_connections() {
-if ((new_socket = accept(s, (struct sockaddr*)&client, &c)) != INVALID_SOCKET)
-{
-	
-	printf("Connection accepted from %s on port %d\n", inet_ntoa(client.sin_addr), port);
-	return 1;
+void Server::close_socket() {
+	if (closesocket(new_socket) != 0)
+		printf("error in closing socket\n");
 }
-else
-	return 0;
+
+int Server::accepting_connections() {
+	int tempc;
+	struct sockaddr_in tempClient;
+	SOCKET tempSocket;
+//	tempSocket = accept(s, (struct sockaddr*)&tempClient, &tempc);
+
+	if ((tempSocket = accept(s, (struct sockaddr*)&tempClient, &c)) != INVALID_SOCKET){
+		char* ip = inet_ntoa(tempClient.sin_addr);
+		if (true || std::string(ip) == std::string("213.82.97.234")) {
+			new_socket = tempSocket;
+			client = tempClient;
+			return 1;
+		}
+	}
+	 
+		return 0;
+//
+//if ((new_socket = accept(s, (struct sockaddr*)&client, &c)) != INVALID_SOCKET)
+//{
+//	
+//	printf("Connection accepted from %s on port %d\n", inet_ntoa(client.sin_addr), port);
+//	return 1;
+//}
+//else
+//	return 0;
 }
 
 

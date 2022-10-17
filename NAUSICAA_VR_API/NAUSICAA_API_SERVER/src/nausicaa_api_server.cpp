@@ -35,6 +35,7 @@ Server serverComm, serverStream;
 
 void call_API_function(std::string message) {
 	std::string fname = func_name(message);
+	std::cout << fname << std::endl;
 	if (fname == std::string("startStreaming"))
 	{
 		streamON = true;

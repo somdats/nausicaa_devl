@@ -52,6 +52,9 @@ int Client::connect(std::string addr, int _port) {
 
 }
 
+int Client::disconnect() {
+	return closesocket(s);
+}
 
 int   Client::send_message(std::string msg, char * blob, int blob_size  ) {
 

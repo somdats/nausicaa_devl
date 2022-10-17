@@ -34,6 +34,7 @@ int  VRSubsystem::connectToVRServer(const char* ip_addr) {
 
 void VRSubsystem::disconnectToVRServer() {
 	clientComm.send_message(message()[std::string("disconnectToVRServer")].msg);
+	clientComm.disconnect();
 	std::cout << "disconnect To VRServer" << std::endl;
 }
 
