@@ -1892,6 +1892,7 @@ int main(int argc, char* argv[])
     SCENE_REPLAY = stoi(configData[5].second);
     SAVE_PC = stoi(configData[6].second);
     saveState = stoi(configData[7].second);
+    SAVE_IMG = stoi(configData[8].second);
     if (saveState)
     {
         State::set_filename("state.txt");

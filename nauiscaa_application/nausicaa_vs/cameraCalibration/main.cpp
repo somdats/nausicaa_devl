@@ -14,16 +14,35 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include"calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/highgui.hpp"
 #include <filesystem>
 
+#include <chrono>
 
 namespace fs = std::filesystem;
+using namespace cv;
+bool clahe = false;
+
+using std::chrono::high_resolution_clock;
+
+enum ConvolutionType {
+    /* Return the full convolution, including border */
+    CONVOLUTION_FULL,
+    /* Return only the part that corresponds to the original image */
+    CONVOLUTION_SAME,
+    /* Return only the submatrix containing elements that were not influenced by the border */
+    CONVOLUTION_VALID
+};
+
 
 
 static std::string fishEyeCalibrationFile = "D:/naus/nausicaa_devl/nauiscaa_application/calib_results_02092022.txt";
 static std::string catadioptricCalibrationFile = "";
 
-#define RECTIFY 
+const int histSize = 256;
+
+//#define RECTIFY 
 
 void DrawMarkersImage(cv::Mat& inImage, std::vector<cv::Point2i>markers, int markerType, cv::Scalar color)
 
@@ -89,7 +108,11 @@ std::string typestr(int type) {
 
     return r;
 }
-
+void OutputTime(const std::string& str, const high_resolution_clock::time_point& start_time, const high_resolution_clock::time_point& end_time)
+{
+    std::cout << str << ":" << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1000.0 << "ms" << std::endl;
+    return;
+}
 //int main(int argc, char *argv[])
 //{   
 //  /* --------------------------------------------------------------------*/
@@ -239,7 +262,7 @@ std::string meiCalibFile = "D:/naus/nausicaa_devl/nauiscaa_application/calib_res
 
 
 
-bool readMeiCalibration(std::string calibrationFile, MeiCalibration& meiCalib) 
+bool readMeiCalibration(std::string calibrationFile, MeiCalibration& meiCalib)
 {
 
     FILE* f;
@@ -291,15 +314,914 @@ bool readMeiCalibration(std::string calibrationFile, MeiCalibration& meiCalib)
     fclose(f);
     return true;
 }
+
+void drawHistogram(cv::Mat& b_hist, std::string channel, bool eq = false) {
+
+    int hist_w = 512;
+    int hist_h = 400;
+    int bin_w = cvRound((double)hist_w / histSize);
+
+    cv::Mat histImage(hist_h, hist_w, CV_8UC3, cv::Scalar(0, 0, 0));
+
+    cv::normalize(b_hist, b_hist, 0, histImage.rows, cv::NORM_MINMAX, -1,
+        cv::Mat());
+    /* cv::normalize(g_hist, g_hist, 0, histImage.rows, cv::NORM_MINMAX, -1,
+         cv::Mat());
+     cv::normalize(r_hist, r_hist, 0, histImage.rows, cv::NORM_MINMAX, -1,
+         cv::Mat());*/
+
+    for (int i = 1; i < histSize; i++) {
+        cv::Scalar color;
+        if (channel == "Blue")
+            color = cv::Scalar(255, 0, 0);
+        if (channel == "Green")
+            color = cv::Scalar(0, 255, 0);
+        if (channel == "Red")
+            color = cv::Scalar(0, 0, 255);
+        if (eq)
+        {
+            cv::line(
+                histImage,
+                cv::Point(bin_w * (i - 1), hist_h - cvRound(b_hist.at<float>(i - 1))),
+                cv::Point(bin_w * (i), hist_h - cvRound(b_hist.at<float>(i))),
+                cv::Scalar(0, 255, 255), 2, 8, 0);
+            continue;
+        }
+        cv::line(
+            histImage,
+            cv::Point(bin_w * (i - 1), hist_h - cvRound(b_hist.at<float>(i - 1))),
+            cv::Point(bin_w * (i), hist_h - cvRound(b_hist.at<float>(i))),
+            color, 2, 8, 0);
+        /*  cv::line(
+              histImage,
+              cv::Point(bin_w * (i - 1), hist_h - cvRound(g_hist.at<float>(i - 1))),
+              cv::Point(bin_w * (i), hist_h - cvRound(g_hist.at<float>(i))),
+              cv::Scalar(0, 255, 0), 2, 8, 0);
+          cv::line(
+              histImage,
+              cv::Point(bin_w * (i - 1), hist_h - cvRound(r_hist.at<float>(i - 1))),
+              cv::Point(bin_w * (i), hist_h - cvRound(r_hist.at<float>(i))),
+              cv::Scalar(0, 0, 255), 2, 8, 0);*/
+    }
+    if (eq)
+    {
+        std::string histoChannel = "histogram-" + channel;
+        cv::namedWindow(cv::String(histoChannel), cv::WINDOW_NORMAL);
+        cv::imshow(cv::String(histoChannel), histImage);
+        return;
+    }
+    std::string histoChannel = "histogram-" + channel;
+    cv::namedWindow(cv::String(histoChannel), cv::WINDOW_NORMAL);
+    cv::imshow(cv::String(histoChannel), histImage);
+
+}
+
+void adaptiveImageEnhancement(const cv::Mat& src, cv::Mat& dst)
+{
+    int r = src.rows;
+    int c = src.cols;
+    int n = r * c;
+
+    cv::Mat HSV;
+    cv::cvtColor(src, HSV, COLOR_BGR2HSV_FULL);
+    std::vector<cv::Mat> HSV_channels;
+    cv::split(HSV, HSV_channels);
+    cv::Mat S = HSV_channels[1];
+    cv::Mat V = HSV_channels[2];
+
+    int ksize = 5;
+    cv::Mat gauker1 = cv::getGaussianKernel(ksize, 15);
+    cv::Mat gauker2 = cv::getGaussianKernel(ksize, 80);
+    cv::Mat gauker3 = cv::getGaussianKernel(ksize, 250);
+
+    cv::Mat gauV1, gauV2, gauV3;
+    cv::filter2D(V, gauV1, CV_64F, gauker1, cv::Point(-1, -1), 0, cv::BORDER_CONSTANT);
+    cv::filter2D(V, gauV2, CV_64F, gauker2, cv::Point(-1, -1), 0, cv::BORDER_CONSTANT);
+    cv::filter2D(V, gauV3, CV_64F, gauker3, cv::Point(-1, -1), 0, cv::BORDER_CONSTANT);
+
+    cv::Mat V_g = (gauV1 + gauV2 + gauV3) / 3.0;
+
+    cv::Scalar avg_S = cv::mean(S);
+    double k1 = 0.1 * avg_S[0];
+    double k2 = avg_S[0];
+
+    cv::Mat V_double;
+    V.convertTo(V_double, CV_64F);
+
+    cv::Mat V1 = ((255 + k1) * V_double).mul(1.0 / (cv::max(V_double, V_g) + k1));
+    cv::Mat V2 = ((255 + k2) * V_double).mul(1.0 / (cv::max(V_double, V_g) + k2));
+
+    cv::Mat X1 = V1.reshape(0, n);
+    cv::Mat X2 = V2.reshape(0, n);
+
+    cv::Mat X(n, 2, CV_64F);
+    X1.copyTo(X(cv::Range(0, n), cv::Range(0, 1)));
+    X2.copyTo(X(cv::Range(0, n), cv::Range(1, 2)));
+
+    cv::Mat covar, mean;
+    cv::calcCovarMatrix(X, covar, mean, COVAR_NORMAL | COVAR_ROWS, CV_64F);
+
+    cv::Mat eigenValues; //The eigenvalues are stored in the descending order.
+    cv::Mat eigenVectors; //The eigenvectors are stored as subsequent matrix rows.
+    cv::eigen(covar, eigenValues, eigenVectors);
+
+    double w1 = eigenVectors.at<double>(0, 0) / (eigenVectors.at<double>(0, 0) + eigenVectors.at<double>(0, 1));
+    double w2 = 1 - w1;
+
+    cv::Mat F = w1 * V1 + w2 * V2;
+
+    F.convertTo(F, CV_8U);
+
+    HSV_channels[2] = F;
+    cv::merge(HSV_channels, HSV);
+    cv::cvtColor(HSV, dst, COLOR_HSV2BGR_FULL);
+
+    return;
+}
+
+void WTHE(const cv::Mat& src, cv::Mat& dst, float ru = 0.9, float vu = 0.9)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat YUV;
+    std::vector<cv::Mat> YUV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, YUV, COLOR_BGR2YUV);
+        cv::split(YUV, YUV_channels);
+        L = YUV_channels[0];
+    }
+
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat hist;
+    calcHist(&L, 1, 0, cv::Mat(), hist, 1, &histsize, &histRanges, true, false);
+
+    float total_pixels_inv = 1.0f / total_pixels;
+    cv::Mat P = hist.clone();
+    for (int i = 0; i < 256; i++) {
+        P.at<float>(i) = P.at<float>(i) * total_pixels_inv;
+    }
+
+    cv::Mat Pwt = P.clone();
+    double minP, maxP;
+    cv::minMaxLoc(P, &minP, &maxP);
+    float Pu = vu * maxP;
+    float Pl = minP;
+    for (int i = 0; i < 256; i++) {
+        float Pi = P.at<float>(i);
+        if (Pi > Pu)
+            Pwt.at<float>(i) = Pu;
+        else if (Pi < Pl)
+            Pwt.at<float>(i) = 0;
+        else
+            Pwt.at<float>(i) = std::pow((Pi - Pl) / (Pu - Pl), ru) * Pu;
+    }
+
+    cv::Mat Cwt = Pwt.clone();
+    float cdf = 0;
+    for (int i = 0; i < 256; i++) {
+        cdf += Pwt.at<float>(i);
+        Cwt.at<float>(i) = cdf;
+    }
+
+    float Wout = 255.0f;
+    float Madj = 0.0f;
+    std::vector<uchar> table(256, 0);
+    for (int i = 0; i < 256; i++) {
+        table[i] = cv::saturate_cast<uchar>(Wout * Cwt.at<float>(i) + Madj);
+    }
+
+    cv::LUT(L, table, L);
+
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(YUV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_YUV2BGR);
+    }
+    //histogram after processing
+    cv::Mat eqHist;
+    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+    //drawhistogram
+    drawHistogram(eqHist, "eq-Blue", true);
+    return;
+}
+
+void JHE(const cv::Mat& src, cv::Mat& dst)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat YUV;
+    std::vector<cv::Mat> YUV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, YUV, COLOR_BGR2YUV);
+        cv::split(YUV, YUV_channels);
+        L = YUV_channels[0];
+    }
+
+    // Compute average image.
+    cv::Mat avg_L;
+    cv::boxFilter(L, avg_L, -1, cv::Size(3, 3), cv::Point(-1, -1), true, cv::BORDER_CONSTANT);
+
+    // Computer joint histogram.
+    cv::Mat jointHist = cv::Mat::zeros(256, 256, CV_32S);
+    for (int r = 0; r < rows; r++) {
+        uchar* L_it = L.ptr<uchar>(r);
+        uchar* avg_L_it = avg_L.ptr<uchar>(r);
+        for (int c = 0; c < cols; c++) {
+            int i = L_it[c];
+            int j = avg_L_it[c];
+            jointHist.at<int>(i, j)++;
+        }
+    }
+
+    // Compute CDF.
+    cv::Mat CDF = cv::Mat::zeros(256, 256, CV_32S);
+    int min_CDF = total_pixels + 1;
+    int cumulative = 0;
+    for (int i = 0; i < 256; i++) {
+        int* jointHist_it = jointHist.ptr<int>(i);
+        int* CDF_it = CDF.ptr<int>(i);
+        for (int j = 0; j < 256; j++) {
+            int count = jointHist_it[j];
+            cumulative += count;
+            if (cumulative > 0 && cumulative < min_CDF)
+                min_CDF = cumulative;
+            CDF_it[j] = cumulative;
+        }
+    }
+
+    // Compute equalized joint histogram.
+    cv::Mat h_eq = cv::Mat::zeros(256, 256, CV_8U);
+    for (int i = 0; i < 256; i++) {
+        uchar* h_eq_it = h_eq.ptr<uchar>(i);
+        int* cdf_it = CDF.ptr<int>(i);
+        for (int j = 0; j < 256; j++) {
+            int cur_cdf = cdf_it[j];
+            h_eq_it[j] = cv::saturate_cast<uchar>(255.0 * (cur_cdf - min_CDF) / (total_pixels - 1));
+        }
+    }
+
+    // Map to get enhanced image.
+    for (int r = 0; r < rows; r++) {
+        uchar* L_it = L.ptr<uchar>(r);
+        uchar* avg_L_it = avg_L.ptr<uchar>(r);
+        for (int c = 0; c < cols; c++) {
+            int i = L_it[c];
+            int j = avg_L_it[c];
+            L_it[c] = h_eq.at<uchar>(i, j);
+        }
+    }
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(YUV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_YUV2BGR);
+    }
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat eqHist;
+    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+    //drawhistogram
+    drawHistogram(eqHist, "eq-Blue", true);
+    return;
+}
+
+
+void AGCIE(const cv::Mat& src, cv::Mat& dst)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat HSV;
+    std::vector<cv::Mat> HSV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, HSV, COLOR_BGR2HSV_FULL);
+        cv::split(HSV, HSV_channels);
+        L = HSV_channels[2];
+    }
+
+    cv::Mat L_norm;
+    L.convertTo(L_norm, CV_64F, 1.0 / 255.0);
+
+    cv::Mat mean, stddev;
+    cv::meanStdDev(L_norm, mean, stddev);
+    double mu = mean.at<double>(0, 0);
+    double sigma = stddev.at<double>(0, 0);
+
+    double tau = 3.0;
+
+    double gamma;
+    //if (4 * sigma <= 1.0 / tau) { // low-contrast
+    //    gamma = -std::log2(sigma);
+    //}
+    //else { // high-contrast
+    //    gamma = std::exp((1.0 - mu - sigma) / 2.0);
+    //}
+    gamma = 0.45;
+
+    std::vector<double> table_double(256, 0);
+    for (int i = 1; i < 256; i++) {
+        table_double[i] = i / 255.0;
+    }
+
+    if (mu >= 0.5) { // bright image
+        for (int i = 1; i < 256; i++) {
+            table_double[i] = std::pow(table_double[i], gamma);
+        }
+    }
+    else { // dark image
+        double mu_gamma = std::pow(mu, gamma);
+        for (int i = 1; i < 256; i++) {
+            double in_gamma = std::pow(table_double[i], gamma);;
+            table_double[i] = in_gamma / (in_gamma + (1.0 - in_gamma) * mu_gamma);
+        }
+    }
+
+    std::vector<uchar> table_uchar(256, 0);
+    for (int i = 1; i < 256; i++) {
+        table_uchar[i] = cv::saturate_cast<uchar>(255.0 * table_double[i]);
+    }
+
+    cv::LUT(L, table_uchar, L);
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(HSV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_HSV2BGR_FULL);
+    }
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat eqHist;
+    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+    //drawhistogram
+    drawHistogram(eqHist, "eq-Blue", true);
+
+    return;
+}
+
+void GCEHistMod(const cv::Mat& src, cv::Mat& dst, int threshold = 5, int b = 23, int w = 230, double alpha = 2, int g = 10)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat HSV;
+    std::vector<cv::Mat> HSV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, HSV, COLOR_BGR2HSV_FULL);
+        cv::split(HSV, HSV_channels);
+        L = HSV_channels[2];
+    }
+
+    std::vector<int> hist(256, 0);
+
+    int k = 0;
+    int count = 0;
+    for (int r = 0; r < rows; r++) {
+        const uchar* data = L.ptr<uchar>(r);
+        for (int c = 0; c < cols; c++) {
+            int diff = (c < 2) ? data[c] : std::abs(data[c] - data[c - 2]);
+            k += diff;
+            if (diff > threshold) {
+                hist[data[c]]++;
+                count++;
+            }
+        }
+    }
+
+    double kg = k * g;
+    double k_prime = kg / std::pow(2, std::ceil(std::log2(kg)));
+
+    double umin = 10;
+    double u = std::min(count / 256.0, umin);
+
+    std::vector<double> modified_hist(256, 0);
+    double sum = 0;
+    for (int i = 0; i < 256; i++) {
+        if (i > b && i < w)
+            modified_hist[i] = std::round((1 - k_prime) * u + k_prime * hist[i]);
+        else
+            modified_hist[i] = std::round(((1 - k_prime) * u + k_prime * hist[i]) / (1 + alpha));
+        sum += modified_hist[i];
+    }
+
+    std::vector<double> CDF(256, 0);
+    double culsum = 0;
+    for (int i = 0; i < 256; i++) {
+        culsum += modified_hist[i] / sum;
+        CDF[i] = culsum;
+    }
+
+    std::vector<uchar> table_uchar(256, 0);
+    for (int i = 1; i < 256; i++) {
+        table_uchar[i] = cv::saturate_cast<uchar>(255.0 * CDF[i]);
+    }
+
+    cv::LUT(L, table_uchar, L);
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(HSV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_HSV2BGR_FULL);
+    }
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat eqHist;
+    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+    //drawhistogram
+    drawHistogram(eqHist, "eq-Blue", true);
+    return;
+}
+
+
+
+cv::Mat histogramEqualize(const cv::Mat& inImage, bool equalize)
+{
+    //Convert the image from BGR to YCrCb color space
+    Mat hist_equalized_image;
+    cvtColor(inImage, hist_equalized_image, COLOR_BGR2YCrCb);
+    // hist_equalized_image = inImage.clone();
+
+        // calculate histogram
+    float range[] = { 0, 256 };
+    const float* histRange = { range };
+
+    bool uniform = true;
+    bool accumulate = false;
+
+    cv::Mat b_hist, g_hist, r_hist;
+
+
+    ///// CLAHE
+    if (clahe)
+    {
+        cv::Mat clahe_img;
+        cvtColor(inImage, clahe_img, COLOR_BGR2Lab);
+        std::vector<Mat>lab_planes;
+        split(clahe_img, lab_planes);
+        cv::calcHist(&lab_planes[0], 1, 0, cv::
+            Mat(), b_hist, 1, &histSize,
+            &histRange, uniform, accumulate);
+
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(16, 16));
+        clahe->apply(lab_planes[0], lab_planes[0]);
+        merge(lab_planes, clahe_img);
+    }
+
+
+    //Split the image into 3 channels; Y, Cr and Cb channels respectively and store it in a std::vector
+    std::vector<Mat> bgr_planes;
+    split(hist_equalized_image, bgr_planes);
+
+
+    cv::Scalar m, std;
+    cv::meanStdDev(bgr_planes[0], m, std, cv::Mat());
+    std::cout << "Mean:" << m[0] << ",stdDev:" << std[0] << std::endl;
+
+    cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize,
+        &histRange, uniform, accumulate);
+    /*  cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize,
+          &histRange, uniform, accumulate);
+      cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize,
+          &histRange, uniform, accumulate);*/
+
+    drawHistogram(b_hist, "Blue");
+    /*drawHistogram(g_hist, "Green");
+    drawHistogram(r_hist, "Red");*/
+
+    if (equalize)
+    {
+        //Equalize the histogram of only the B channel 
+        equalizeHist(bgr_planes[0], bgr_planes[0]);
+
+        //Equalize the histogram of only the G channel 
+        //equalizeHist(bgr_planes[1], bgr_planes[1]);
+
+        //Equalize the histogram of only the R channel 
+        //equalizeHist(bgr_planes[2], bgr_planes[2]);
+
+        //Merge 3 channels in the vector to form the color image in color space.
+        merge(bgr_planes, hist_equalized_image);
+        cv::Mat b_hist_eq, g_hist_eq, r_hist_eq;
+
+        cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist_eq, 1, &histSize,
+            &histRange, uniform, accumulate);
+        /* cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist_eq, 1, &histSize,
+             &histRange, uniform, accumulate);
+         cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist_eq, 1, &histSize,
+             &histRange, uniform, accumulate);*/
+
+        drawHistogram(b_hist_eq, "eq-Blue", true);
+        /* drawHistogram(g_hist_eq, "eq-Green",true);
+         drawHistogram(r_hist_eq, "eq-Red",true);*/
+        cv::Mat result;
+        cvtColor(hist_equalized_image, result, COLOR_YCrCb2BGR);
+        return result;
+    }
+    else
+        return inImage;
+
+    //Convert the histogram equalized image from YCrCb to BGR color space again
+   // cvtColor(hist_equalized_image, hist_equalized_image, COLOR_YCrCb2BGR);
+
+}
+
+// This is a OpenCV-based implementation of conv2 in Matlab.
+cv::Mat conv2(const cv::Mat& img, const cv::Mat& ikernel, ConvolutionType type)
+{
+    cv::Mat dest;
+    cv::Mat kernel;
+    cv::flip(ikernel, kernel, -1);
+    cv::Mat source = img;
+    if (CONVOLUTION_FULL == type)
+    {
+        source = cv::Mat();
+        const int additionalRows = kernel.rows - 1, additionalCols = kernel.cols - 1;
+        copyMakeBorder(img, source, (additionalRows + 1) / 2, additionalRows / 2, (additionalCols + 1) / 2, additionalCols / 2, cv::BORDER_CONSTANT, cv::Scalar(0));
+    }
+    cv::Point anchor(kernel.cols - kernel.cols / 2 - 1, kernel.rows - kernel.rows / 2 - 1);
+    int borderMode = cv::BORDER_CONSTANT;
+    filter2D(source, dest, img.depth(), kernel, anchor, 0, borderMode);
+
+    if (CONVOLUTION_VALID == type)
+    {
+        dest = dest.colRange((kernel.cols - 1) / 2, dest.cols - kernel.cols / 2).rowRange((kernel.rows - 1) / 2, dest.rows - kernel.rows / 2);
+    }
+    return dest;
+}
+
+void LDR(const cv::Mat& src, cv::Mat& dst, double alpha)
+{
+    int R = src.rows;
+    int C = src.cols;
+
+    cv::Mat Y;
+    std::vector<cv::Mat> YUV_channels;
+    if (src.channels() == 1) {
+        Y = src.clone();
+    }
+    else {
+        cv::Mat YUV;
+        cv::cvtColor(src, YUV, COLOR_BGR2YUV);
+        cv::split(YUV, YUV_channels);
+        Y = YUV_channels[0];
+    }
+
+    cv::Mat U = cv::Mat::zeros(255, 255, CV_64F);
+    {
+        cv::Mat tmp_k(255, 1, CV_64F);
+        for (int i = 0; i < 255; i++)
+            tmp_k.at<double>(i) = i + 1;
+
+        for (int layer = 1; layer <= 255; layer++) {
+            cv::Mat mi, ma;
+            cv::min(tmp_k, 256 - layer, mi);
+            cv::max(tmp_k - layer, 0, ma);
+            cv::Mat m = mi - ma;
+            m.copyTo(U.col(layer - 1));
+        }
+    }
+
+    // unordered 2D histogram acquisition
+    cv::Mat h2d = cv::Mat::zeros(256, 256, CV_64F);
+    for (int j = 0; j < R; j++) {
+        for (int i = 0; i < C; i++) {
+            uchar ref = Y.at<uchar>(j, i);
+
+            if (j != R - 1) {
+                uchar trg = Y.at<uchar>(j + 1, i);
+                h2d.at<double>(std::max(ref, trg), std::min(ref, trg)) += 1;
+            }
+            if (i != C - 1) {
+                uchar trg = Y.at<uchar>(j, i + 1);
+                h2d.at<double>(std::max(ref, trg), std::min(ref, trg)) += 1;
+            }
+        }
+    }
+
+    // Intra-Layer Optimization
+    cv::Mat D = cv::Mat::zeros(255, 255, CV_64F);
+    cv::Mat s = cv::Mat::zeros(255, 1, CV_64F);
+
+    for (int layer = 1; layer <= 255; layer++) {
+        cv::Mat h_l = cv::Mat::zeros(256 - layer, 1, CV_64F);
+
+        int tmp_idx = 1;
+        for (int j = 1 + layer; j <= 256; j++) {
+            int i = j - layer;
+            h_l.at<double>(tmp_idx - 1) = std::log(h2d.at<double>(j - 1, i - 1) + 1); // Equation (2)
+            tmp_idx++;
+        }
+
+        s.at<double>(layer - 1) = cv::sum(h_l)[0];
+
+        if (s.at<double>(layer - 1) == 0)
+            continue;
+
+        cv::Mat kernel = cv::Mat::ones(layer, 1, CV_64F);
+        cv::Mat m_l = conv2(h_l, kernel, ConvolutionType::CONVOLUTION_FULL); // Equation (30)
+
+        double mi;
+        cv::minMaxLoc(m_l, &mi, 0);
+        cv::Mat d_l = m_l - mi;
+        d_l = d_l.mul(1.0 / U.col(layer - 1)); // Equation (33)
+
+        if (cv::sum(d_l)[0] == 0)
+            continue;
+
+        D.col(layer - 1) = d_l / cv::sum(d_l)[0];
+    }
+
+    // Inter - Layer Aggregation
+    double max_s;
+    cv::minMaxLoc(s, 0, &max_s);
+    cv::Mat W;
+    cv::pow(s / max_s, alpha, W); // Equation (23)
+    cv::Mat d = D * W; // Equation (24)
+
+    // reconstruct transformation function
+    d /= cv::sum(d)[0];
+    cv::Mat tmp = cv::Mat::zeros(256, 1, CV_64F);
+    for (int k = 1; k <= 255; k++) {
+        tmp.at<double>(k) = tmp.at<double>(k - 1) + d.at<double>(k - 1);
+    }
+    tmp.convertTo(tmp, CV_8U, 255.0);
+
+    cv::LUT(Y, tmp, Y);
+
+    if (src.channels() == 1) {
+        dst = Y.clone();
+    }
+    else {
+        cv::merge(YUV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_YUV2BGR);
+    }
+
+    return;
+}
+void IAGCWD(const cv::Mat& src, cv::Mat& dst, double alpha_dimmed = 0.75, double alpha_bright = 0.25, int T_t = 112, double tau_t = 0.3, double tau = 0.5)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat HSV;
+    std::vector<cv::Mat> HSV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, HSV, COLOR_HSV2BGR_FULL);
+        cv::split(HSV, HSV_channels);
+        L = HSV_channels[2];
+    }
+
+    double mean_L = cv::mean(L).val[0];
+    double t = (mean_L - T_t) / T_t;
+
+    double alpha;
+    bool truncated_cdf;
+    if (t < -tau_t) {
+        //process dimmed image
+        alpha = alpha_dimmed;
+        truncated_cdf = false;
+    }
+    else if (t > tau_t) {
+        //process bright image
+        alpha = alpha_bright;
+        truncated_cdf = true;
+        L = 255 - L;
+    }
+    else {
+        //do nothing
+        dst = src.clone();
+        return;
+    }
+
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat hist;
+    calcHist(&L, 1, 0, cv::Mat(), hist, 1, &histsize, &histRanges, true, false);
+
+    double total_pixels_inv = 1.0 / total_pixels;
+    cv::Mat PDF = cv::Mat::zeros(256, 1, CV_64F);
+    for (int i = 0; i < 256; i++) {
+        PDF.at<double>(i) = hist.at<float>(i) * total_pixels_inv;
+    }
+
+    double pdf_min, pdf_max;
+    cv::minMaxLoc(PDF, &pdf_min, &pdf_max);
+    cv::Mat PDF_w = PDF.clone();
+    for (int i = 0; i < 256; i++) {
+        PDF_w.at<double>(i) = pdf_max * std::pow((PDF_w.at<double>(i) - pdf_min) / (pdf_max - pdf_min), alpha);
+    }
+
+    cv::Mat CDF_w = PDF_w.clone();
+    double culsum = 0;
+    for (int i = 0; i < 256; i++) {
+        culsum += PDF_w.at<double>(i);
+        CDF_w.at<double>(i) = culsum;
+    }
+    CDF_w /= culsum;
+
+    cv::Mat inverse_CDF_w = 1.0 - CDF_w;
+    if (truncated_cdf) {
+        inverse_CDF_w = cv::max(tau, inverse_CDF_w);
+    }
+
+    std::vector<uchar> table(256, 0);
+    for (int i = 1; i < 256; i++) {
+        table[i] = cv::saturate_cast<uchar>(255.0 * std::pow(i / 255.0, inverse_CDF_w.at<double>(i)));
+    }
+
+    cv::LUT(L, table, L);
+
+    if (t > tau_t) {
+        L = 255 - L;
+    }
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(HSV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_HSV2BGR_FULL);
+    }
+
+    return;
+}
+void AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+    int channels = src.channels();
+    int total_pixels = rows * cols;
+
+    cv::Mat L;
+    cv::Mat HSV;
+    std::vector<cv::Mat> HSV_channels;
+    if (channels == 1) {
+        L = src.clone();
+    }
+    else {
+        cv::cvtColor(src, HSV, COLOR_BGR2HSV_FULL);
+        cv::split(HSV, HSV_channels);
+        L = HSV_channels[2];
+    }
+
+    int histsize = 256;
+    float range[] = { 0,256 };
+    const float* histRanges = { range };
+    int bins = 256;
+    cv::Mat hist;
+    calcHist(&L, 1, 0, cv::Mat(), hist, 1, &histsize, &histRanges, true, false);
+
+    double total_pixels_inv = 1.0 / total_pixels;
+    cv::Mat PDF = cv::Mat::zeros(256, 1, CV_64F);
+    for (int i = 0; i < 256; i++) {
+        PDF.at<double>(i) = hist.at<float>(i) * total_pixels_inv;
+    }
+
+    double pdf_min, pdf_max;
+    cv::minMaxLoc(PDF, &pdf_min, &pdf_max);
+    cv::Mat PDF_w = PDF.clone();
+    for (int i = 0; i < 256; i++) {
+        PDF_w.at<double>(i) = pdf_max * std::pow((PDF_w.at<double>(i) - pdf_min) / (pdf_max - pdf_min), alpha);
+    }
+
+    cv::Mat CDF_w = PDF_w.clone();
+    double culsum = 0;
+    for (int i = 0; i < 256; i++) {
+        culsum += PDF_w.at<double>(i);
+        CDF_w.at<double>(i) = culsum;
+    }
+    CDF_w /= culsum;
+
+    std::vector<uchar> table(256, 0);
+    for (int i = 1; i < 256; i++) {
+        table[i] = cv::saturate_cast<uchar>(255.0 * std::pow(i / 255.0, 1 - CDF_w.at<double>(i)));
+    }
+
+    cv::LUT(L, table, L);
+
+    if (channels == 1) {
+        dst = L.clone();
+    }
+    else {
+        cv::merge(HSV_channels, dst);
+        cv::cvtColor(dst, dst, COLOR_HSV2BGR_FULL);
+    }
+
+    cv::Mat eqHist;
+    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+    //drawhistogram
+    drawHistogram(eqHist, "eq-Blue", true);
+    return;
+}
+
+
 void main()
 {
+    // Histogram Equalization
+    std::string inImage = "D:/Nausicaa_Data/Data_23092022_2/Images/5000/1663929753113.jpeg";
+    bool equalize = true;
+    high_resolution_clock::time_point start_time, end_time;
+
+    //load image
+    cv::Mat srcFrame, dstFrame;
+    srcFrame = cv::imread(inImage);
+    cv::namedWindow(cv::String(std::string("Original - Image")), cv::WINDOW_KEEPRATIO);
+    cv::imshow(cv::String(std::string("Original - Image")), srcFrame);
+
+    //histogram equalize
+    //dstFrame=histogramEqualize(srcFrame, equalize);
+
+    //GCEHistMod(srcFrame, dstFrame);
+    
+    
+    //AGCIE(srcFrame, dstFrame);
+
+    // JHE(srcFrame, dstFrame);
+
+     start_time = high_resolution_clock::now();
+     WTHE(srcFrame, dstFrame);
+     end_time = high_resolution_clock::now();
+     OutputTime("WTHE", start_time, end_time);
+
+    //LDR(srcFrame, dstFrame, 4.0);
+
+   /*  start_time = high_resolution_clock::now();
+     AGCWD(srcFrame, dstFrame,0.5);
+     end_time = high_resolution_clock::now();
+     OutputTime("ADIE", start_time, end_time);*/
+
+    /* start_time = high_resolution_clock::now();
+     adaptiveImageEnhancement(srcFrame, dstFrame);
+     end_time = high_resolution_clock::now();
+     OutputTime("ADIE", start_time, end_time);*/
+   
+     //IAGCWD(srcFrame, dstFrame);
+
+    //cv::imwrite("D:/Nausicaa_Data/Histogram/agcwd.jpg", dstFrame);
+
+    cv::namedWindow(cv::String(std::string("Equalized - Image")), cv::WINDOW_KEEPRATIO);
+    cv::imshow(cv::String(std::string("Equalized - Image")), dstFrame);
+    cv::waitKey(0);
+
+
+#ifdef RECTIFY
     struct ocam_model o;
     get_ocam_model(&o, fishEyeCalibrationFile.c_str());
-#ifdef RECTIFY
     cv::Size imgSize(cv::Size(1948, 1096));
     MeiCalibration mei;
     readMeiCalibration(meiCalibFile, mei);
-    for (const auto& dirpath : fs::directory_iterator(inputFolderPath + "Images/" ))
+    for (const auto& dirpath : fs::directory_iterator(inputFolderPath + "Images/"))
     {
         std::cout << dirpath.path() << std::endl;
         auto imgFolder = dirpath.path();
@@ -315,9 +1237,9 @@ void main()
             std::string ff = entry.path().string();
             //std::cout << ff << std::endl;
             std::string base_filename = ff.substr(ff.find_last_of("/\\") + 1);
-            
+
             std::string outFileName = outFolder + "/" + base_filename;
-            
+
             cv::Mat map1, map2;
             cv::Mat inFrame, dstFrame;
             if (base_filename != "timestamps.txt")
@@ -365,7 +1287,7 @@ void main()
     }
 #endif // RECTIFY
 
-  
+
     //cv::Mat src1 = cv::imread("rectified_streamed_output_04052022.jpg"); //rectified_streamed_output
     //std::vector<cv::Point2i> p2, pt_ex, pt_ex2;
 
