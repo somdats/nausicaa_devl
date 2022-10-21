@@ -102,6 +102,16 @@ void MarkerDetector::remove_fitted(vcg::Plane3f plane) {
 	points = newPoints;
 }
 
+void MarkerDetector::remove_unfitted(vcg::Plane3f plane) {
+	std::vector<vcg::Point3f> newPoints;
+	for (unsigned int i = 0; i < points.size(); ++i) {
+		float dst = fabs(vcg::SignedDistancePlanePoint(plane, points[i]));
+		if (dst < 0.03)
+			newPoints.push_back(points[i]);
+	}
+	points = newPoints;
+}
+
 bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3f& p2) {
 	static int ip = -1;
 	++ip;
@@ -169,46 +179,91 @@ bool MarkerDetector::detect_corner(vcg::Point3f& corner) {
 	return detect_corner(corner, _p0, _p1, _p2);
 };
 
+void  PoissonDistribution2D(std::vector<vcg::Point3f> corrs, unsigned int n, float radius, std::vector<vcg::Point3f>& res) {
+	unsigned int n_tries = 0;
+	while (res.size() < n && n_tries < corrs.size()) {
+		unsigned int i = rand() / float(RAND_MAX) * (corrs.size() - 1);
+		int y=0;
+		for (y = 0; y < res.size(); ++y)
+			if ((corrs[i]  - res[y] ).Norm() < radius)
+				break;
+		if (y == res.size())
+			res.push_back(corrs[i]);
+		n_tries++;
+	}
+}
+
+void find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
+
+	float alpha = 0.f;
+	vcg::Box3f bbox;
+	float minDist = 1000;
+	float min_alpha = 40.f;
+	
+	for (; alpha <  60.f;alpha = alpha + 1.0)
+	{
+		bbox.SetNull();
+		R.SetRotateDeg(alpha, vcg::Point3f(0, 0, 1));
+		for (unsigned int i = 0; i < pts.size(); ++i)
+			bbox.Add(R*vcg::Point3f(pts[i][0], pts[i][1],0.0));
+		float d = fabs(bbox.DimX() - 0.59);
+		if ( d < minDist) {
+			minDist = d;
+			min_alpha = alpha;
+			center = bbox.Center();
+		}
+	}
+	R.SetRotateDeg(min_alpha, vcg::Point3f(0, 0, 1));
+}
+
 
 bool MarkerDetector::detect_quad_center(vcg::Point3f& corner) {
 	vcg::Plane3f plane;
-	vcg::FitPlaneToPointSet(points, plane);
-	_save_points(points, "points.ply");
-	_save_plane(plane, "plane.ply");
+	int n_fitted = 0;
 
+	_save_points(points, "points.ply");
+
+	fit_plane(plane, points, n_fitted);
+	_save_plane(plane, "plane_fitted_RNS.ply");
+	remove_unfitted(plane);
+
+	_save_points(points, "points_fitted.ply");
+
+ 
+	vcg::Point3f n = plane.Direction();
+	vcg::Point3f o = plane.Projection(points[0]);
+	vcg::Point3<float> uv[2];
+	vcg::GetUV(n, uv[0], uv[1]);
+
+	vcg::Matrix44f T,T_i;
+	T.SetIdentity();
+	T.SetColumn(0, uv[0]);
+	T.SetColumn(1, uv[1]);
+	T.SetColumn(2, n);
+	T.SetColumn(3, o);
+	T_i = vcg::Inverse(T);// lazy
 
 	std::vector<vcg::Point3f> projected;
+
+
 	for (unsigned int i = 0; i < points.size(); ++i) 
-		projected.push_back(plane.Projection(points[i]));
+		projected.push_back( T_i*points[i]);
+	
+	_save_points(projected, "projected.ply");
+	vcg::Matrix44f R,R_i;
+	vcg::Point3f p;
+	find_orientation(projected,R,p);
+	R_i = vcg::Transpose(R);
 
+	for (unsigned int i = 0; i < projected.size(); ++i)
+		projected[i] = R * projected[i];
+	_save_points(projected, "aa.ply");
 
-	Eigen::Matrix<float, 3, 3> covMat = Eigen::Matrix<float, 3, 3>::Zero();
-	vcg::Point3<float> b;
-	ComputeCovarianceMatrix(projected, b, covMat);
+	corner = T * R_i * p;
 
-	Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, 3, 3> > eig(covMat);
-	Eigen::Matrix<float, 3, 1> eval = eig.eigenvalues();
-	Eigen::Matrix<float, 3, 3> evec = eig.eigenvectors();
-	eval = eval.cwiseAbs();
-	int minInd;
-	eval.minCoeff(&minInd);
+	projected.clear();
+	projected.push_back(corner);
+	_save_points(projected, "corner.ply");
 
-
-	vcg::Point3<float> uv[2];
-	for (unsigned int i = 0; i < 2;++i) {
-		uv[i][0] = evec(0, (minInd + 1 + i) % 3);
-		uv[i][1] = evec(1, (minInd + 1 + i) % 3);
-		uv[i][2] = evec(2, (minInd + 1 + i) % 3);
-		uv[i].Normalize();
-	}
-	const vcg::Point3f o = projected[0];
-
-	vcg::Box2f box;
-	for (unsigned int i = 0; i < projected.size();++i) {
-		vcg::Point3f po = projected[i] - o;
-		box.Add(vcg::Point2f(po * uv[0], po * uv[1]));
-	}
-	vcg::Point2f c = box.Center();
-	corner = o + uv[0] * c[0] + uv[1] * c[1];
 	return true;
 }
