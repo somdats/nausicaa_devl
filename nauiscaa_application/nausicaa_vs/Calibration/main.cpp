@@ -40,11 +40,12 @@
 #include <AntTweakBar.h>
 
   /// vcg imports
+#include "vcg_mesh.h" 
 #include <vcg/complex/complex.h>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/complex/algorithms/update/normal.h>
 #include <vcg/complex/algorithms/create/platonic.h>
-#include "vcg_mesh.h" 
+
 
 /// wrapper imports
 #include <wrap/io_trimesh/import.h>
@@ -803,13 +804,14 @@ void drawScene() {
     /* END DRAW SCENE */
 }
 void TW_CALL detectMarker(void*);
+
+
 void Display() {
     assert(_CrtCheckMemory());
     static bool init = true;
     if (init) {
         init = false;
         initializeGLStuff();
-       
         pixelData = reinterpret_cast<GLubyte*>(malloc(3 * sizeof(GLubyte) * cameraFBO.w * cameraFBO.h));
     }
     assert(_CrtCheckMemory());
@@ -868,10 +870,12 @@ void Display() {
 /*         float d = 1.0f / mesh.bbox.Diag();
         vcg::glScale(d);
         glTranslate(-glWrap.m->bbox.Center());
-*/
+
         float d = 1.0f / lidars[currentLidar].bbox.Diag();
         vcg::glScale(d);
         glTranslate(-lidars[currentLidar].bbox.Center());
+*/
+        vcg::glScale(0.2);
 
         draw_frame(boatFrame);
 
@@ -1764,6 +1768,7 @@ void TW_CALL initCameras(void*) {
 
 
 void TW_CALL time_startstop(void*) {
+    if (vclock.ticks.empty()) return;
     time_running = !time_running;
     if (time_running) {
         restart_time = vclock.clock();

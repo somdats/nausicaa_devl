@@ -27,10 +27,11 @@ bool CorrespondencesDetector::detect3D(int lidarID, vcg::Point3f& p) {
 	md.points.clear();
 	 for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {		 
 		 vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
-		 if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.4)
+		 if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.5) //   marker size
 			 md.points.push_back(p);
 		}
-	 if (md.detect_corner(p, p0[lidarID], p1[lidarID], p2[lidarID])) {
+//	 if (md.detect_corner(p, p0[lidarID], p1[lidarID], p2[lidarID])) {
+	 if ( md.points.size()>20 && md.detect_quad_center(p)) {
 		 correspondences3D3Dbbox.Add(p);
 		 return true;
 	 }
@@ -82,7 +83,7 @@ void CorrespondencesDetector::detect(){
 	if (detected3D[0] && detected3D[1])
 		correspondences3D3D.push_back(Correspondence3D3D(std::pair(currentP3D[0], currentP3D[1])));
 
-	if (detected3D[0] || detected3D[1])
+	if (true || detected3D[0] || detected3D[1])
 	{
 		std::vector<bool> detected2D(nCams, false);
 		std::vector < vcg::Point2f> p2D(nCams);

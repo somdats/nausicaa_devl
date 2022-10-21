@@ -251,7 +251,7 @@ bool cameraMarkers::detectMarker(const cv::Mat& inImage, cv::Point2f& marker) {
 
     std::vector<cv::Point2f> candidates;
 
-    if (!pts[0].empty()) {
+    if (false &&!pts[0].empty()) {
         marker = pts[0][0];
         return true;
     }
@@ -273,6 +273,7 @@ bool cameraMarkers::detectMarker(const cv::Mat& inImage, cv::Point2f& marker) {
         p += candidates[i];
 
     p = p*(1.f/candidates.size());
+    marker = p;
     return true;
 
 }

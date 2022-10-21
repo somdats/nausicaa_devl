@@ -6,7 +6,7 @@
 #include <vcg/space/intersection3.h> 
 #include <wrap/io_trimesh/export.h>
 
-//#define PRINTOUT_DEBUG
+#define PRINTOUT_DEBUG
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {
 #ifdef PRINTOUT_DEBUG
@@ -107,12 +107,15 @@ bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3
 	++ip;
 	int value = 0;
 	std::vector <vcg::Point3f> pts;
+
+	_save_points(points, (std::to_string(ip) + "_input.ply").c_str());
+
 //	printf("----plane 0 ------- \n");
 	close_to_plane(p0, pts, 0.08);
 	fit_plane(p0, pts, value);
 	if(!fit_plane(p0,points,value)) return false;
 	close_to_plane(p0, pts, 0.01);
-	vcg::FitPlaneToPointSet(pts, p0);
+//	vcg::FitPlaneToPointSet(pts, p0);
 
 	 _save_plane(p0, (std::to_string(ip)+"_plane0.ply").c_str());
 	remove_fitted(p0);
@@ -124,7 +127,7 @@ bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3
 	fit_plane(p1, pts, value);
 	if (!fit_plane(p1, points, value)) return false;
 	close_to_plane(p1, pts, 0.01);
-	vcg::FitPlaneToPointSet(pts, p1);
+//	vcg::FitPlaneToPointSet(pts, p1);
 	_save_plane(p1, (std::to_string(ip) + "_plane1.ply").c_str());
 
 	remove_fitted(p1);
@@ -136,7 +139,7 @@ bool MarkerDetector::find_planes(vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3
 	fit_plane(p2, pts, value);
 	if (!fit_plane(p2, points, value)) return false;
 	close_to_plane(p2, pts, 0.01);
-	vcg::FitPlaneToPointSet(pts, p2);
+//	vcg::FitPlaneToPointSet(pts, p2);
 	_save_plane(p2, (std::to_string(ip) + "_plane2.ply").c_str());
 
 	remove_fitted(p2);
@@ -165,3 +168,47 @@ bool MarkerDetector::detect_corner(vcg::Point3f& corner) {
 	vcg::Plane3f  _p0, _p1, _p2;
 	return detect_corner(corner, _p0, _p1, _p2);
 };
+
+
+bool MarkerDetector::detect_quad_center(vcg::Point3f& corner) {
+	vcg::Plane3f plane;
+	vcg::FitPlaneToPointSet(points, plane);
+	_save_points(points, "points.ply");
+	_save_plane(plane, "plane.ply");
+
+
+	std::vector<vcg::Point3f> projected;
+	for (unsigned int i = 0; i < points.size(); ++i) 
+		projected.push_back(plane.Projection(points[i]));
+
+
+	Eigen::Matrix<float, 3, 3> covMat = Eigen::Matrix<float, 3, 3>::Zero();
+	vcg::Point3<float> b;
+	ComputeCovarianceMatrix(projected, b, covMat);
+
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix<float, 3, 3> > eig(covMat);
+	Eigen::Matrix<float, 3, 1> eval = eig.eigenvalues();
+	Eigen::Matrix<float, 3, 3> evec = eig.eigenvectors();
+	eval = eval.cwiseAbs();
+	int minInd;
+	eval.minCoeff(&minInd);
+
+
+	vcg::Point3<float> uv[2];
+	for (unsigned int i = 0; i < 2;++i) {
+		uv[i][0] = evec(0, (minInd + 1 + i) % 3);
+		uv[i][1] = evec(1, (minInd + 1 + i) % 3);
+		uv[i][2] = evec(2, (minInd + 1 + i) % 3);
+		uv[i].Normalize();
+	}
+	const vcg::Point3f o = projected[0];
+
+	vcg::Box2f box;
+	for (unsigned int i = 0; i < projected.size();++i) {
+		vcg::Point3f po = projected[i] - o;
+		box.Add(vcg::Point2f(po * uv[0], po * uv[1]));
+	}
+	vcg::Point2f c = box.Center();
+	corner = o + uv[0] * c[0] + uv[1] * c[1];
+	return true;
+}
