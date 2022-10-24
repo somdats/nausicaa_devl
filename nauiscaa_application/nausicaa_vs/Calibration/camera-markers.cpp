@@ -251,29 +251,31 @@ bool cameraMarkers::detectMarker(const cv::Mat& inImage, cv::Point2f& marker) {
 
     std::vector<cv::Point2f> candidates;
 
-    if (false &&!pts[0].empty()) {
+    if (!pts[0].empty()) {
         marker = pts[0][0];
         return true;
     }
+    return false;
 
-    cv::Point2f p;
-    for (int i = 1; i <= 3; ++i)
-        if (pts[i].size() == 2)
-            for (int j = 1; j <= 3; ++j)
-                if (i != j)
-                    if (pts[j].size() == 2)
-                        if (this->intersection(pts[i][0], pts[i][1], pts[j][0], pts[j][1], p))
-                            candidates.push_back(p);
 
-    if (candidates.empty())
-        return false;
+    //cv::Point2f p;
+    //for (int i = 1; i <= 3; ++i)
+    //    if (pts[i].size() == 2)
+    //        for (int j = 1; j <= 3; ++j)
+    //            if (i != j)
+    //                if (pts[j].size() == 2)
+    //                    if (this->intersection(pts[i][0], pts[i][1], pts[j][0], pts[j][1], p))
+    //                        candidates.push_back(p);
 
-    p = cv::Point2f(0.f, 0.f);
-    for (int i = 0; i < candidates.size(); ++i)
-        p += candidates[i];
+    //if (candidates.empty())
+    //    return false;
 
-    p = p*(1.f/candidates.size());
-    marker = p;
-    return true;
+    //p = cv::Point2f(0.f, 0.f);
+    //for (int i = 0; i < candidates.size(); ++i)
+    //    p += candidates[i];
+
+    //p = p*(1.f/candidates.size());
+    //marker = p;
+    //return true;
 
 }

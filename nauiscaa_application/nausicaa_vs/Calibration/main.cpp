@@ -313,7 +313,7 @@ VirtualClock vclock;
 
 
 void updatePC(int il) {
-    static bool first = true;
+    static bool first[2] = { true,true };
     lidars[il].lidar.latest_frame_mutex.lock();
 
     mesh.Clear();
@@ -323,10 +323,8 @@ void updatePC(int il) {
         return;
     }
 
-    if (first) {
-        lidars[0].init();
-        lidars[1].init();
-    }
+    if (first[il])  
+        lidars[il].init();
 
 
     glWrap.m = &mesh;
@@ -340,10 +338,10 @@ void updatePC(int il) {
 
     lidars[il].fillGrid();
 
-    if (first) {
+    if (first[0]||first[1]) {
         initMesh();
         lidars[il].bbox = mesh.bbox;
-        first = false;
+        first[il] = false;
     }
     lidars[il].lidar.latest_frame_mutex.unlock();
 }
@@ -635,7 +633,7 @@ void drawScene() {
 
         }
        // glColor3f(il == 0, il == 0, il == 1);
-        glColor3f(il == 0 || 1, il == 0, 0);
+        glColor3f(1.0, 1.0, il == 1);
 
         GLERR();
         glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
@@ -845,6 +843,15 @@ void Display() {
 
     if (lidars[currentLidar].lidar.reading)
         updatePC(currentLidar);
+
+    // calibration
+    if (calibrating) {
+        corrDet.detect();
+    }
+
+    // correspondences debug
+    if (corrDet.debug_mode)
+        corrDet.draw_debug();
 
 
     if (!mesh.vert.empty()) {
@@ -1160,10 +1167,7 @@ void Display() {
     // Recall Display at next frame
     glutPostRedisplay();
     
-    // calibration
-    if (calibrating) {
-        corrDet.detect();
-    }
+
 
     if (SCENE_REPLAY) {
         if (time_running) {
@@ -1861,6 +1865,14 @@ void TW_CALL getVirtualTime(void* v, void*) {
     *(int*)v = virtual_time;
 }
 
+void TW_CALL corrDet_save_correspondences(void*) {
+    corrDet.save_correspondences("corrs.bin");
+}
+void TW_CALL corrDet_load_correspondences(void*) {
+    corrDet.load_correspondences("corrs.bin");
+
+}
+
 void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
     std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
     FILE* ft = fopen(timestamps.c_str(), "r");
@@ -1996,6 +2008,9 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "detect marker", ::detectMarker, 0, " label='Detect Marker' group=`Register Lidars` help=`compute line` ");
     TwAddButton(bar, "add marker to points", ::addMarkerToPoints, 0, " label='Add Marker to P' group=`Register Lidars` help=`compute line` ");
     TwAddVarRW(bar, "calibrating", TW_TYPE_BOOL8, &calibrating, " label='calibrating' group=`Register Lidars` help=` calibrating` ");
+    TwAddButton(bar, "save corrs", corrDet_save_correspondences, 0, " label='save corrs' group=`Register Lidars` help=`compute line` ");
+    TwAddButton(bar, "load corrs", corrDet_load_correspondences, 0, " label='load corrs' group=`Register Lidars` help=`compute line` ");
+
 
     TwAddButton(bar, "rotateX", ::rotateAxis, (void*)&axes[0], " label='rotate frame X' group=`Register Lidars` help=`rotate frame X` ");
     TwAddButton(bar, "rotateY", ::rotateAxis, (void*)&axes[1], " label='rotate frame Y' group=`Register Lidars` help=`rotate frame Y` ");
@@ -2012,6 +2027,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "saveAln", ::saveAlignment, 0, " label='saveAlignemnt' group=`Register Lidars` help=` ` ");
     TwAddButton(bar, "loadAln", ::loadAlignment, 0, " label='loadAlignment' group=`Register Lidars` help=` ` ");
 
+    TwAddVarRW(bar, "Debug Cor", TW_TYPE_BOOL8, &corrDet.debug_mode, " label='debug coors' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "align cameras", ::autoalignCameras, 0, " label='Align All Cameras' group=`Align Cameras` help=`Align` ");
     TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
     TwAddVarCB(bar, "Map Color", TW_TYPE_BOOL8, setMapColor, getMapColor, (void*)0, " label='map color' group=`Align Cameras` help=`map color` ");
@@ -2057,7 +2073,7 @@ int main(int argc, char* argv[])
         read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
         read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
 
-        for(unsigned int i= 0; i > NUMCAM; ++i)
+        for(unsigned int i= 0; i < NUMCAM; ++i)
             read_first_and_last_timestamp(std::string("Images") + "\\500"+std::to_string(i) + "\\timestamps.txt", start_time, end_time);
 
         TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");

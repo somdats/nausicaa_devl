@@ -12,7 +12,7 @@
 
 class CorrespondencesDetector {
 public:
-	CorrespondencesDetector( )  {}
+	CorrespondencesDetector( ) :debug_mode(false) {}
 	 
 	//correspondence for each camera (0..NUMCAM)
 	std::vector<std::vector< Correspondence3D2D > >  correspondences3D2D;
@@ -21,8 +21,8 @@ public:
 	void init(unsigned int _nCams) { nCams = _nCams;correspondences3D2D.resize(nCams);}
 
 	bool detect3D(int lidarID,vcg::Point3f & p);
-	bool detect2D(int camID, vcg::Point2f& p);
 	
+	bool detect2D(int camID, vcg::Point2f& p);
 
 	void detect();
 
@@ -32,6 +32,14 @@ public:
 	bool alignLidars();
 
 	vcg::Point3f currentP3D[2];
+
+	// debug
+	void drawAll2DCorrs(int camID);
+	void draw_debug();
+	bool debug_mode;
+	void save_correspondences(const char*filename);
+	void load_correspondences(const char* filename);
+
 
 private:
 	bool lockAll();

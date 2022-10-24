@@ -6,7 +6,7 @@
 #include <vcg/space/intersection3.h> 
 #include <wrap/io_trimesh/export.h>
 
-#define PRINTOUT_DEBUG
+//#define PRINTOUT_DEBUG
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {
 #ifdef PRINTOUT_DEBUG
@@ -193,7 +193,7 @@ void  PoissonDistribution2D(std::vector<vcg::Point3f> corrs, unsigned int n, flo
 	}
 }
 
-void find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
+bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
 
 	float alpha = 0.f;
 	vcg::Box3f bbox;
@@ -206,7 +206,9 @@ void find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::P
 		R.SetRotateDeg(alpha, vcg::Point3f(0, 0, 1));
 		for (unsigned int i = 0; i < pts.size(); ++i)
 			bbox.Add(R*vcg::Point3f(pts[i][0], pts[i][1],0.0));
-		float d = fabs(bbox.DimX() - 0.59);
+		float dx = fabs(bbox.DimX() - 0.59);
+		float dy = fabs(bbox.DimY() - 0.59);
+		float d  = std::min(dx,dy);
 		if ( d < minDist) {
 			minDist = d;
 			min_alpha = alpha;
@@ -214,6 +216,7 @@ void find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::P
 		}
 	}
 	R.SetRotateDeg(min_alpha, vcg::Point3f(0, 0, 1));
+	return minDist < (0.59 / 55);
 }
 
 
@@ -252,7 +255,8 @@ bool MarkerDetector::detect_quad_center(vcg::Point3f& corner) {
 	_save_points(projected, "projected.ply");
 	vcg::Matrix44f R,R_i;
 	vcg::Point3f p;
-	find_orientation(projected,R,p);
+	if (!find_orientation(projected, R, p))
+		return false;
 	R_i = vcg::Transpose(R);
 
 	for (unsigned int i = 0; i < projected.size(); ++i)
