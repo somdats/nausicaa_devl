@@ -198,9 +198,9 @@ bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::P
 	float alpha = 0.f;
 	vcg::Box3f bbox;
 	float minDist = 1000;
-	float min_alpha = 40.f;
+	float min_alpha = 35.f;
 	
-	for (; alpha <  60.f;alpha = alpha + 1.0)
+	for (; alpha <  55.f;alpha = alpha + 1.0)
 	{
 		bbox.SetNull();
 		R.SetRotateDeg(alpha, vcg::Point3f(0, 0, 1));

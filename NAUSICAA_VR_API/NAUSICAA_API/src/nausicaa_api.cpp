@@ -139,6 +139,16 @@ void VRSubsystem::disableAllCameras() {
 	clientComm.send_message(message()[std::string("disableAllCameras")].msg);
 }
 
+void VRSubsystem::disableBackground() {
+	clientComm.send_message(message()[std::string("disableBackground")].msg);
+	std::cout << "disable background " <<  std::endl;
+}
+
+void VRSubsystem::enableBackground() {
+	clientComm.send_message(message()[std::string("enableBackground")].msg);
+	std::cout << "enable background " << std::endl;
+}
+
 markerID VRSubsystem::addMarker(char * png_image, int size_in_bytes, float width_mt, const char* label, int label_length) {
 	clientComm.send_message(message()[std::string("addMarker")][std::string(label)][width_mt].msg, png_image, size_in_bytes);
 	return clientComm.receive_int();

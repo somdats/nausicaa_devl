@@ -18,6 +18,7 @@ unsigned int activeCamera;
 bool streamON;
 bool lidarOn[2];
 bool camerasOn[6];
+bool showBackground;
 
 std::mutex m, activeCamera_mutex;
 std::condition_variable condv;
@@ -168,6 +169,16 @@ void call_API_function(std::string message) {
 	{
 		for (int i = 0; i < NUMCAM; ++i)
 			camerasOn[i] = false;
+	}
+	else
+	if (fname == std::string("disableBackground"))
+	{
+		showBackground = false;
+	}
+	else
+	if (fname == std::string("enableBackground"))
+	{
+		showBackground = true;
 	}
 	else
 	if (fname == std::string("addMarker"))

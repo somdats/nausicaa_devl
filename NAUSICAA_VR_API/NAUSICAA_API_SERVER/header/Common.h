@@ -17,6 +17,7 @@ extern unsigned int activeCamera;
 extern bool streamON;
 extern bool lidarOn[2];
 extern bool camerasOn[6];
+extern bool showBackground;
 
 extern std::mutex m,activeCamera_mutex;
 extern std::condition_variable condv;

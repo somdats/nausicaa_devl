@@ -119,12 +119,7 @@ extern "C" {
 		int NAUSICAA_VR_API connectToVRServer(const char* ip_addr);
 
 		/** @name Rendering
-		* Il sistema offre la possibilità di visualizzare il dato ricostruito  definendo
-		* una videocamera virtuale, con parametri intrinseci (FOV, zoom) ed estrinseci (posizione e orientamento)
-		* definiti dall’utente. Per maggior praticità di prevedere che l’utente possa definire più camera
-		* virtuali per passare da una all’altra (o per affiancarle sullo schermo).
-		* In ogni momento, i parametri della camera virtual selezionata potranno essere cambiati
-		* tramite un'apposita GUI
+		* Definition and manipulation of virtual cameras
 		*/
 		///@{
 		//! Add a virtual camera
@@ -147,12 +142,12 @@ extern "C" {
 
 		void NAUSICAA_VR_API renderFromCamera(VirtualCameraID id);
 
-		//! Selezione la qualità del rendering
+		//! Rendering quality [NOT YET IMPLEMENTED]
 		/*!  Lowest qualiy corresponds to an output-sensitive rendering
-		 *   which guarantees a constant frame rate of 25-30 frames al sencondo.
+		 *   which guarantees a constant frame rate of 25-30 frames per sencond.
 		 *   With higher quality you can have more accurate reconstructions
 		 *   with a less fluid rendering.
-			 \param valore tra 0.0 e 1.0
+			 \param valore between 0.0 e 1.0
 		*/
 		void NAUSICAA_VR_API selectQuality(float val);
 
@@ -222,6 +217,18 @@ extern "C" {
 			  
 		*/
 		void NAUSICAA_VR_API disableAllCameras();
+
+		//! exclude background from the scene
+		/*!
+
+		*/
+		void NAUSICAA_VR_API disableBackground();
+
+		//! include background in the scene
+		/*!
+
+		*/
+		void NAUSICAA_VR_API enableBackground();
 		///@}
 
 		/** @name Gliphs

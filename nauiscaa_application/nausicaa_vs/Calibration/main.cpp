@@ -159,7 +159,7 @@ bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
 bool enable_proj = false;
-bool drawBackground = false;
+ 
 
 // values to define the boatFrame
 float alphaFrame, betaFrame, gammaFrame;
@@ -791,7 +791,7 @@ void drawScene() {
         GLERR();
     }
 
-    if(drawBackground)
+    if(showBackground)
     if (drawmode == SMOOTH && enable_proj) {
         glUseProgram(point_shader.pr);
         glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
@@ -2052,7 +2052,7 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "showfromcamera", TW_TYPE_BOOL8, &showfromcamera, " label='showfromcamera' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "mapcolor", TW_TYPE_BOOL8, &enable_proj, " label='map color' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
-    TwAddVarRW(bar, "drawbackground", TW_TYPE_BOOL8, &drawBackground, " label='draw background' group=`Rendering` help=` draw all` ");
+    TwAddVarRW(bar, "drawbackground", TW_TYPE_BOOL8, &showBackground, " label='draw background' group=`Rendering` help=` draw all` ");
     
 
     TwAddButton(bar, "test", ::runTest, 0, " label='RUNTEST' group='Test' help=`test` ");
