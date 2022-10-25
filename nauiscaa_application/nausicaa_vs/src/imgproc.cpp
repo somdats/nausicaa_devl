@@ -2,7 +2,7 @@
 
 #include"..\headers\imgproc.h"
 
-
+using namespace cv;
 
 void imgprocess::drawImageHistogram(cv::Mat& b_hist, std::string channel, bool eq) {
 
@@ -64,7 +64,7 @@ void imgprocess::drawImageHistogram(cv::Mat& b_hist, std::string channel, bool e
     cv::imshow(cv::String(histoChannel), histImage);
 
 }
-void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha) {
+void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha, bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;
@@ -78,7 +78,7 @@ void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha) {
         L = src.clone();
     }
     else {
-        cv::cvtColor(src, HSV, COLOR_BGR2HSV_FULL);
+        cv::cvtColor(src, HSV, cv::COLOR_BGR2HSV_FULL);
         cv::split(HSV, HSV_channels);
         L = HSV_channels[2];
     }
@@ -133,7 +133,7 @@ void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha) {
     return;
 
 }
-void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu ) {
+void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu,  bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;
@@ -212,7 +212,7 @@ void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu ) {
     return;
 
 }
-void imgprocess::JHE(const cv::Mat& src, cv::Mat& dst) {
+void imgprocess::JHE(const cv::Mat& src, cv::Mat& dst,  bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;

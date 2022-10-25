@@ -81,6 +81,7 @@ MJPEGStreamer streamer;
 bool SCENE_REPLAY;
 bool SAVE_PC;
 bool SAVE_IMG;
+bool histoEq;
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
@@ -1751,7 +1752,7 @@ void TW_CALL initCameras(void*) {
     cameras.resize(NUMCAM);
     for (int i = 0; i < NUMCAM; ++i)
     {
-        cameras[i].init(5000 + i, camIniFile, 5000 + i, true);
+        cameras[i].init(5000 + i, camIniFile, 5000 + i, true,histoEq);
         CameraCount++; // temporary hack to get the number of activated cameras
     }
     // disable the condition when all the camera functions
@@ -1899,6 +1900,7 @@ int main(int argc, char* argv[])
 {
     assert(_CrtCheckMemory());
     
+    // read configuration parameters from file
     std::string inFile = "config.txt";
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
@@ -1910,6 +1912,9 @@ int main(int argc, char* argv[])
     SAVE_PC = stoi(configData[6].second);
     saveState = stoi(configData[7].second);
     SAVE_IMG = stoi(configData[8].second);
+    histoEq = static_cast<bool>(stoi(configData[9].second));
+
+
     if (saveState)
     {
         State::set_filename("state.txt");

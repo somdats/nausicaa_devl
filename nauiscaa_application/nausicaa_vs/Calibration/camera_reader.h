@@ -15,7 +15,7 @@
 #include"..\headers\calib_converter.h"
 #include "opencv2/ccalib/omnidir.hpp"
 #include "camera-markers.h"
-
+#include"..\headers\imgproc.h"
 struct Camera{
     Camera() :aligned(false), used(false) { p3.clear();p2i.clear(); }
     Camera(const Camera & _) {}
@@ -230,7 +230,7 @@ this->_debk = k*ks;
     std::vector < cv::Point2f> p2i;             // 2D point correspondences
     std::vector<vcg::Point3f> p3;   // 3D point correspondences
 
-    void init(uint port, std::string camera_intrinsics_file, int cameraID,  bool scaramuzza = true);
+    void init(uint port, std::string camera_intrinsics_file, int cameraID,  bool scaramuzza = true, bool hEq = false);
 
     void export_camera_match(CameraMatch & c);
 
@@ -238,6 +238,8 @@ this->_debk = k*ks;
     void stop_reading();
     vcg::Shotf SolvePnP(std::vector<vcg::Point3f> p3vcg);
     vcg::Shotf SolvePnP_new(std::vector <Correspondence3D2D> corrs);
+
+    bool histoEq = false;
 
 
 std::vector<std::pair<unsigned long long, std::string>> timed_images;

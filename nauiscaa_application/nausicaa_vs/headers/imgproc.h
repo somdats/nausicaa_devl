@@ -8,8 +8,6 @@
 
 #include <chrono>
 
-namespace fs = std::filesystem;
-using namespace cv;
 
 using std::chrono::high_resolution_clock;
 const int histSize = 256;
@@ -30,7 +28,7 @@ namespace imgprocess {
 
 
     void drawImageHistogram(cv::Mat& b_hist, std::string channel, bool eq = false);
-    void AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha);
-    void WTHE(const cv::Mat& src, cv::Mat& dst, float ru = 0.9, float vu = 0.9);
-    void JHE(const cv::Mat& src, cv::Mat& dst);
+    void AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha, bool drawHis = false);
+    void WTHE(const cv::Mat& src, cv::Mat& dst, float ru = 0.9, float vu = 0.9, bool drawHis = false);
+    void JHE(const cv::Mat& src, cv::Mat& dst, bool drawHis = false);
 }
