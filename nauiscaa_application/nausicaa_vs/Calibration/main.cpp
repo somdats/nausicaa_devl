@@ -1028,7 +1028,7 @@ void Display() {
                     glPopMatrix();
                 }
         {
-            glColor3f(1, 0, 0);
+            glColor3f(corrDet.trackingState[currentLidar]==1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2) ;
             glPushMatrix();
 //            vcg::Point3f p = marker3D;
             vcg::Point3f p = ::corrDet.currentP3D[currentLidar];

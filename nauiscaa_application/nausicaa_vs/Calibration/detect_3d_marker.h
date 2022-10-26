@@ -20,6 +20,6 @@ struct MarkerDetector {
 	bool detect_corner(vcg::Point3f& corner, vcg::Plane3f& p0, vcg::Plane3f& p1, vcg::Plane3f& p2);
 	bool detect_corner(vcg::Point3f& corner);
 
-	bool detect_quad_center(vcg::Point3f& corner);
+	bool detect_quad_center(vcg::Point3f& corner, vcg::Point3f& n);
 
 };

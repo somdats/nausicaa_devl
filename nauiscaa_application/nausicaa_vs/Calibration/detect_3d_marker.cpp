@@ -195,12 +195,18 @@ void  PoissonDistribution2D(std::vector<vcg::Point3f> corrs, unsigned int n, flo
 
 bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
 
-	float alpha = 0.f;
 	vcg::Box3f bbox;
+	float th = 0.02;
 	float minDist = 1000;
-	float min_alpha = 35.f;
-	
-	for (; alpha <  55.f;alpha = alpha + 1.0)
+	float alpha = 0.0;
+	float min_alpha = alpha;
+
+	bbox.SetNull();
+	for (unsigned int i = 0; i < pts.size(); ++i)
+		bbox.Add(vcg::Point3f(pts[i][0], pts[i][1], 0.0));
+	center = bbox.Center();
+
+	for (; alpha <  180.0;alpha = alpha + 1.0)
 	{
 		bbox.SetNull();
 		R.SetRotateDeg(alpha, vcg::Point3f(0, 0, 1));
@@ -208,32 +214,35 @@ bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::P
 			bbox.Add(R*vcg::Point3f(pts[i][0], pts[i][1],0.0));
 		float dx = fabs(bbox.DimX() - 0.59);
 		float dy = fabs(bbox.DimY() - 0.59);
-		float d  = std::min(dx,dy);
-		if ( d < minDist) {
+		float d  = std::max(dx,dy);
+		if ( (dx<th) && (dy<th) && d < minDist) {
 			minDist = d;
 			min_alpha = alpha;
 			center = bbox.Center();
 		}
 	}
 	R.SetRotateDeg(min_alpha, vcg::Point3f(0, 0, 1));
-	return minDist < (0.59 / 55);
+	return minDist < th;
 }
 
 
-bool MarkerDetector::detect_quad_center(vcg::Point3f& corner) {
+bool MarkerDetector::detect_quad_center(vcg::Point3f& corner, vcg::Point3f &n) {
+	static int tim = -1;
+	tim++;
+
 	vcg::Plane3f plane;
 	int n_fitted = 0;
 
-	_save_points(points, "points.ply");
+	_save_points(points, (std::string("outdeb\\")+std::to_string(tim) + "_points.ply").c_str());
 
 	fit_plane(plane, points, n_fitted);
-	_save_plane(plane, "plane_fitted_RNS.ply");
+	_save_plane(plane, (std::string("outdeb\\") + std::to_string(tim) + "_plane_fitted_RNS.ply").c_str());
 	remove_unfitted(plane);
 
-	_save_points(points, "points_fitted.ply");
+	_save_points(points, (std::string("outdeb\\") + std::to_string(tim) + "_points_fitted.ply").c_str());
 
  
-	vcg::Point3f n = plane.Direction();
+	n = plane.Direction();
 	vcg::Point3f o = plane.Projection(points[0]);
 	vcg::Point3<float> uv[2];
 	vcg::GetUV(n, uv[0], uv[1]);
@@ -252,22 +261,26 @@ bool MarkerDetector::detect_quad_center(vcg::Point3f& corner) {
 	for (unsigned int i = 0; i < points.size(); ++i) 
 		projected.push_back( T_i*points[i]);
 	
-	_save_points(projected, "projected.ply");
+	_save_points(projected, (std::string("outdeb\\") + std::to_string(tim) + "_projected.ply").c_str());
 	vcg::Matrix44f R,R_i;
 	vcg::Point3f p;
-	if (!find_orientation(projected, R, p))
+	if (!find_orientation(projected, R, p)) {
+		vcg::Transpose(R);
+		corner = T * R * p;
 		return false;
-	R_i = vcg::Transpose(R);
+	}
+	R_i = R;
+	vcg::Transpose(R_i);
 
 	for (unsigned int i = 0; i < projected.size(); ++i)
 		projected[i] = R * projected[i];
-	_save_points(projected, "aa.ply");
+	_save_points(projected, (std::string("outdeb\\") + std::to_string(tim) + "_aa.ply").c_str());
 
 	corner = T * R_i * p;
 
 	projected.clear();
 	projected.push_back(corner);
-	_save_points(projected, "corner.ply");
-
+	_save_points(projected, (std::string("outdeb\\") + std::to_string(tim) + "_corner.ply").c_str());
+	 
 	return true;
 }

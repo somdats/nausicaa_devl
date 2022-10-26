@@ -1,5 +1,6 @@
 #include <vcg/space/distance3.h>
 #include <vcg/space/point_matching.h>
+#include <vcg/space/fitting3.h>
 #include "correspondences_detector.h"
 #include "lidar_render.h"
 #include "camera_reader.h"
@@ -11,7 +12,7 @@ extern std::vector<::Camera> cameras;
 template <class VTYPE>
 void  PoissonDistribution(std::vector<VTYPE> corrs, unsigned int n, float radius,  std::vector<VTYPE> &res ) {
 	unsigned int n_tries = 0;
-	while (res.size() < n && n_tries < corrs.size()) {
+	while (res.size() < n && n_tries < corrs.size()*n) {
 		unsigned int i = rand() / float(RAND_MAX) * (corrs.size() - 1);
 		int y;
 		for ( y = 0; y < res.size(); ++y)
@@ -24,20 +25,62 @@ void  PoissonDistribution(std::vector<VTYPE> corrs, unsigned int n, float radius
 } 
 
 
-
+bool  CorrespondencesDetector::region_selection(int lidarID) {
+	md.points.clear();
+		switch (0 /* trackingState[lidarID] */ ) {
+		case 0:  
+			for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
+				vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+				if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.5) //   marker size
+					md.points.push_back(p);
+			}
+			break;
+		case 1:  
+			for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
+				vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+				float planedist = fabs((p - currentP3D[lidarID]) * currentN3D[lidarID]);
+				if ((vcg::Distance<float>(p, currentP3D[lidarID]) < 0.7) && (planedist < 0.1))
+					md.points.push_back(p);
+			}
+			break;
+		case 2:
+			vcg::Plane3f searchPlane;
+			vcg::Box3f b;b.SetNull();
+			std::vector<vcg::Point3f> toFit;
+			
+			for (unsigned int i = trackingHistory[lidarID].size() - 1; i > 0;i--) {
+				b.Add(trackingHistory[lidarID][i]);
+				toFit.push_back(trackingHistory[lidarID][i]);
+				if (b.Diag() > 0.1)
+					break;
+			}
+			if (b.Diag() > 0.1) {
+				vcg::FitPlaneToPointSet(toFit, searchPlane);
+				for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
+					vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+					float planedist = fabs(vcg::SignedDistancePointPlane(p, searchPlane));
+					if ((vcg::Distance<float>(p, currentP3D[lidarID]) < 1.7) && (planedist < 0.2))
+						md.points.push_back(p);
+				}
+			}
+			break;
+		}
+	return md.points.size() > 20;
+}
 
 bool CorrespondencesDetector::detect3D(int lidarID, vcg::Point3f& p) { 
-	md.points.clear();
-	 for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {		 
-		 vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
-		 if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.5) //   marker size
-			 md.points.push_back(p);
+	if (region_selection(lidarID)) {
+		vcg::Point3f n;
+		if  (md.detect_quad_center(p, n)) {
+			correspondences3D3Dbbox.Add(p);
+			trackingHistory[lidarID].push_back(p);
+			trackingState[lidarID] = 1;
+			currentN3D[lidarID] = n;
+			return true;
 		}
-//	 if (md.detect_corner(p, p0[lidarID], p1[lidarID], p2[lidarID])) {
-	 if ( md.points.size()>20 && md.detect_quad_center(p)) {
-		 correspondences3D3Dbbox.Add(p);
-		 return true;
-	 }
+		else
+			trackingState[lidarID] = 2;
+	}
 
 	return false;
 }
@@ -58,7 +101,8 @@ void CorrespondencesDetector::drawAll2DCorrs(int camID) {
 	vcg::Point2f  p;
 	for (unsigned int i = 0; i < correspondences3D2D[camID].size();++i) {
 		p = correspondences3D2D[camID][i].second;
-		cv::circle(cameras[camID].dst, cv::Point2f(p[0],p[1]), 30, cv::Scalar(0, 0, 255), 10);
+		//cv::circle(cameras[camID].dst, cv::Point2f(p[0],p[1]), 30, cv::Scalar(0, 0, 255), 10);
+		cv::drawMarker(cameras[camID].dst, cv::Point2f(p[0], p[1]), 0, 5);
 	}
 }
 
@@ -109,8 +153,8 @@ void CorrespondencesDetector::detect(){
 			for (unsigned int i = 0; i < nCams; ++i)
 				if (cameras[i].reading)
 					if (detect2D(i, p2D[i]))
-						for (int iL = 0; iL < 2; ++iL) if
-							(detected3D[0])
+		//				for (int iL = 0; iL < 2; ++iL)
+							if(detected3D[0])
 								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[0], p2D[i])));
 
 	}
@@ -148,7 +192,7 @@ bool CorrespondencesDetector::alignLidars(){
 
 	std::vector<  Correspondence3D3D   > res;
 	PoissonDistribution(correspondences3D3D, 10, 1, res);
-	if (res.size() < 4 || correspondences3D3Dbbox.Diag() < 3.0)
+	if (res.size() < 4)
 		return false;
 
 	for (unsigned int i = 0; i < res.size();++i) {
@@ -168,7 +212,7 @@ void CorrespondencesDetector::save_correspondences(const char* filename) {
 	fwrite(&*correspondences3D3D.begin(), sizeof(Correspondence3D3D), correspondences3D3D.size(), fo);
 	n = correspondences3D2D.size();
 	fwrite(&n, 4, 1, fo);
-	fwrite(&*correspondences3D3D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
+	fwrite(&*correspondences3D2D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
 	fclose(fo);
 }
 
@@ -180,6 +224,6 @@ void CorrespondencesDetector::load_correspondences(const char* filename) {
 	fread(&* correspondences3D3D.begin(), sizeof(Correspondence3D3D), correspondences3D3D.size(), fo);
 	n = correspondences3D2D.size();
 	fread(&n, 4, 1, fo);
-	fread(&*correspondences3D3D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
+	fread(&*correspondences3D2D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
 	fclose(fo);
 }
