@@ -81,6 +81,8 @@ bool CorrespondencesDetector::detect3D(int lidarID, vcg::Point3f& p) {
 		else
 			trackingState[lidarID] = 2;
 	}
+	else
+		trackingState[lidarID] = 0;
 
 	return false;
 }
@@ -102,7 +104,7 @@ void CorrespondencesDetector::drawAll2DCorrs(int camID) {
 	for (unsigned int i = 0; i < correspondences3D2D[camID].size();++i) {
 		p = correspondences3D2D[camID][i].second;
 		//cv::circle(cameras[camID].dst, cv::Point2f(p[0],p[1]), 30, cv::Scalar(0, 0, 255), 10);
-		cv::drawMarker(cameras[camID].dst, cv::Point2f(p[0], p[1]), 0, 5);
+		cv::drawMarker(cameras[camID].dst, cv::Point2f(p[0], p[1]), cv::Scalar(0, 0, 255),cv::MARKER_CROSS, 5);
 	}
 }
 
@@ -153,9 +155,9 @@ void CorrespondencesDetector::detect(){
 			for (unsigned int i = 0; i < nCams; ++i)
 				if (cameras[i].reading)
 					if (detect2D(i, p2D[i]))
-		//				for (int iL = 0; iL < 2; ++iL)
-							if(detected3D[0])
-								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[0], p2D[i])));
+						for (int iL = 0; iL < 2; ++iL)
+							if(detected3D[iL])
+								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[0], p2D[i]),iL));
 
 	}
 
@@ -168,6 +170,18 @@ bool CorrespondencesDetector::alignCamera(int camID){
 
 	int n = 4;
 	std::vector<Correspondence3D2D> corr;
+	bool lidars_aligned = (lidars[1].transfLidar != vcg::Matrix44f().Identity());
+
+	std::vector<Correspondence3D2D> allcorrs;
+	for (unsigned int i = 0; i < correspondences3D2D[camID].size(); ++i)
+		if (correspondences3D2D[camID][i].iLidar == 0)
+			allcorrs.push_back(correspondences3D2D[camID][i]);
+		else
+			if (lidars_aligned) {
+				allcorrs.push_back(correspondences3D2D[camID][i]);
+				allcorrs.back().first = lidars[1].transfLidar * allcorrs.back().first;
+			}
+
 	PoissonDistribution(this->correspondences3D2D[camID], n, 150, corr);
 	if (corr.size() < n)
 		return false;
@@ -212,7 +226,11 @@ void CorrespondencesDetector::save_correspondences(const char* filename) {
 	fwrite(&*correspondences3D3D.begin(), sizeof(Correspondence3D3D), correspondences3D3D.size(), fo);
 	n = correspondences3D2D.size();
 	fwrite(&n, 4, 1, fo);
-	fwrite(&*correspondences3D2D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
+	for (unsigned int i = 0; i < correspondences3D2D.size(); ++i) {
+		n = correspondences3D2D[i].size();
+		fwrite(&n, 4, 1, fo);
+		fwrite(&*correspondences3D2D[i].begin(), sizeof(Correspondence3D2D), correspondences3D2D[i].size(), fo);
+	}
 	fclose(fo);
 }
 
@@ -222,8 +240,13 @@ void CorrespondencesDetector::load_correspondences(const char* filename) {
 	fread(& n, 4, 1, fo);
 	correspondences3D3D.resize(n);
 	fread(&* correspondences3D3D.begin(), sizeof(Correspondence3D3D), correspondences3D3D.size(), fo);
-	n = correspondences3D2D.size();
 	fread(&n, 4, 1, fo);
-	fread(&*correspondences3D2D.begin(), sizeof(Correspondence3D2D), correspondences3D2D.size(), fo);
+	correspondences3D2D.resize(n);
+	
+	for (unsigned int i = 0; i < correspondences3D2D.size(); ++i) {
+		fread(&n, 4, 1, fo);
+		correspondences3D2D[i].resize(n);
+		fread(&*correspondences3D2D[i].begin(), sizeof(Correspondence3D2D), correspondences3D2D[i].size(), fo);
+	}
 	fclose(fo);
 }

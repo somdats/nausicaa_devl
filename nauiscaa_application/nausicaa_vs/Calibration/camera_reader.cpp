@@ -458,8 +458,11 @@ void Camera::start_reading() {
                     cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
                     cv::putText(dst, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2, false);
                 }
-            imshow(std::to_string(this->camID).c_str(), dst);
-
+            cv::namedWindow(std::to_string(this->camID).c_str(), cv::WINDOW_AUTOSIZE);
+            cv::resizeWindow(std::to_string(this->camID).c_str(), cv::Size(500, dst.rows * 500.f / dst.cols));
+            cv::Mat resized;
+            cv::resize(dst, resized, cv::Size(500, dst.rows * 500.f / dst.cols));
+            cv::imshow(std::to_string(this->camID).c_str(), resized);
         }
         if (cv::waitKey(1) == 'b') {
              break;

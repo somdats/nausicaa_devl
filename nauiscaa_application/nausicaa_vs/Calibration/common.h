@@ -8,7 +8,17 @@
 
  
 
-typedef  std::pair< vcg::Point3f, vcg::Point2f> Correspondence3D2D;
+struct  Correspondence3D2D : public   std::pair< vcg::Point3f, vcg::Point2f> {
+    Correspondence3D2D( ) {  }
+    Correspondence3D2D(const Correspondence3D2D& c) { (*this) = c; }
+    Correspondence3D2D(std::pair < vcg::Point3f  , vcg::Point2f > p32 , int il) {
+        (*this).first  = p32.first;
+        (*this).second = p32.second;
+     iLidar = il;
+    }
+    int iLidar;
+};
+
 typedef std::pair< vcg::Point3f, vcg::Point3f> Correspondence3D3D;
 
 struct LidarRender;

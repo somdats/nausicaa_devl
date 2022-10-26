@@ -154,7 +154,7 @@ int currentLidar = 0;
 int currentPlane = 0;
 int currentCamera = 0;
 int ax = 0;
-bool showPlanes = true;
+bool showPlanes = false;
 bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
@@ -302,9 +302,10 @@ void initMesh()
 
 struct VirtualClock {
     
-    unsigned long long clock() {return ticks[iTicks];}
-    void advance() { iTicks=(iTicks+1)% ticks.size(); }
+    unsigned long long clock() {return (realtime)?::clock():ticks[iTicks];}
+    void advance() { if(!realtime) iTicks=(iTicks+1)% ticks.size(); }
     int iTicks;
+    bool realtime;
     std::vector<unsigned long long> ticks;
 
 };
@@ -1906,7 +1907,10 @@ int main(int argc, char* argv[])
     camIniFile = configData[2].second; 
     meiConverterFile = configData[3].second;
     autoLaunch = stoi(configData[4].second);
-    SCENE_REPLAY = stoi(configData[5].second);
+    int sr =  stoi(configData[5].second);
+    SCENE_REPLAY = (sr > 0);
+    vclock.realtime = (sr == 2);
+
     SAVE_PC = stoi(configData[6].second);
     saveState = stoi(configData[7].second);
     SAVE_IMG = stoi(configData[8].second);
@@ -2089,6 +2093,7 @@ int main(int argc, char* argv[])
     TwAddButton(frameBar, "addPoint", ::addPoint, 0, " label='add this point' help=`add this point to the list of known points` ");
     TwAddButton(frameBar, "saveFrames", ::saveFrames, 0, " label='saveFrames'  help=`save frames` ");
     TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
+    TwDefine("Frames iconified=true ");
 
     vcg::Matrix44f I;I.SetIdentity();
     frames[currentLidar].push_back(I);
@@ -2098,7 +2103,7 @@ int main(int argc, char* argv[])
     pointsBar = TwNewBar("Points");
     TwAddButton(pointsBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
     TwAddButton(pointsBar, "loadPoints", ::loadPoints, 0, " label='loadPoints'  help=`load points` ");
-
+    TwDefine("Points iconified=true ");
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
 
