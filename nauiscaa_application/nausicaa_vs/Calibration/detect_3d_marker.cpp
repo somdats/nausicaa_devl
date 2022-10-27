@@ -7,6 +7,7 @@
 #include <wrap/io_trimesh/export.h>
 
 //#define PRINTOUT_DEBUG
+int EDGE_QUAD = 0.99;
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {
 #ifdef PRINTOUT_DEBUG
@@ -196,7 +197,7 @@ void  PoissonDistribution2D(std::vector<vcg::Point3f> corrs, unsigned int n, flo
 bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
 
 	vcg::Box3f bbox;
-	float th = 0.02;
+	float th = 0.03;
 	float minDist = 1000;
 	float alpha = 0.0;
 	float min_alpha = alpha;
@@ -212,8 +213,8 @@ bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::P
 		R.SetRotateDeg(alpha, vcg::Point3f(0, 0, 1));
 		for (unsigned int i = 0; i < pts.size(); ++i)
 			bbox.Add(R*vcg::Point3f(pts[i][0], pts[i][1],0.0));
-		float dx = fabs(bbox.DimX() - 0.59);
-		float dy = fabs(bbox.DimY() - 0.59);
+		float dx = fabs(bbox.DimX() - EDGE_QUAD);
+		float dy = fabs(bbox.DimY() - EDGE_QUAD);
 		float d  = std::max(dx,dy);
 		if ( (dx<th) && (dy<th) && d < minDist) {
 			minDist = d;
