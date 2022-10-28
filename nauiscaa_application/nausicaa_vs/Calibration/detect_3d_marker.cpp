@@ -7,7 +7,7 @@
 #include <wrap/io_trimesh/export.h>
 
 //#define PRINTOUT_DEBUG
-int EDGE_QUAD = 0.99;
+float EDGE_QUAD = 0.99;
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {
 #ifdef PRINTOUT_DEBUG
@@ -194,10 +194,10 @@ void  PoissonDistribution2D(std::vector<vcg::Point3f> corrs, unsigned int n, flo
 	}
 }
 
-bool find_orientation(std::vector<vcg::Point3f> pts, vcg::Matrix44f &  R, vcg::Point3f &center) {
+bool find_orientation(std::vector<vcg::Point3f> pts, float th,vcg::Matrix44f &  R, vcg::Point3f &center) {
 
 	vcg::Box3f bbox;
-	float th = 0.03;
+	
 	float minDist = 1000;
 	float alpha = 0.0;
 	float min_alpha = alpha;
@@ -265,7 +265,9 @@ bool MarkerDetector::detect_quad_center(vcg::Point3f& corner, vcg::Point3f &n) {
 	_save_points(projected, (std::string("outdeb\\") + std::to_string(tim) + "_projected.ply").c_str());
 	vcg::Matrix44f R,R_i;
 	vcg::Point3f p;
-	if (!find_orientation(projected, R, p)) {
+
+	float th = points[0].Norm() * 0.01;
+	if (!find_orientation(projected,th, R, p)) {
 		vcg::Transpose(R);
 		corner = T * R * p;
 		return false;

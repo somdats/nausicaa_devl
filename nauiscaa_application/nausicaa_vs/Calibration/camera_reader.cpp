@@ -707,9 +707,9 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
     cv::Mat p3m;
     p3m = cv::Mat(3, 1, CV_32F);
     std::vector < cv::Mat> camSp;
-    camSp.resize(this->p3.size());
+    camSp.resize(p3.size());
     std::cout << "projection check " << std::endl;
-    for (int i = 0; i < this->p3.size(); ++i) {
+    for (int i = 0; i < p3.size(); ++i) {
         p3m.at<float>(0, 0) = p3[i].x;
         p3m.at<float>(1, 0) = p3[i].y;
         p3m.at<float>(2, 0) = p3[i].z;
@@ -722,8 +722,8 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
        /* std::cout << "3DCS: "<<camSp[i]<< std::endl;
         std::cout<< "2D: "<<p_ << std::endl;*/
         std::cout << "2Dnr: " << p_ / p_.at<float>(2, 0) << std::endl;
-        cv::Point2f p(p_.at<float>(0, 0), p_.at<float>(1, 0));
-        //std::cout<< p2[i]  << std::endl <<  std::endl;
+        //cv::Point2f p(p_.at<float>(0, 0), p_.at<float>(1, 0));
+        std::cout<< p2_auto[i]  << std::endl <<  std::endl;
 
     }
 
@@ -756,11 +756,11 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
     rot_cv = rot_cv.t();
 
     // DEBUG back projection (OK)
-    //     for(int i=0; i < 4; ++i){
-    //        std::cout << "cam space" << camSp[i] << std::endl;
-    //       std::cout << "p3 retransf" << rot_cv*camSp[i]-rot_cv*t << std::endl;
-    //       std::cout << "p3 input " << p3[i] << std::endl;
-    //     }
+         //for(int i=0; i < p3.size(); ++i){
+         //   std::cout << "cam space" << camSp[i] << std::endl;
+         //  std::cout << "p3 retransf" << rot_cv*camSp[i]-rot_cv*t << std::endl;
+         //  std::cout << "p3 input " << p3[i] << std::endl;
+         //}
 
         // rotate by 180° around X for converting opencv to opengl convention
     rot.transposeInPlace();

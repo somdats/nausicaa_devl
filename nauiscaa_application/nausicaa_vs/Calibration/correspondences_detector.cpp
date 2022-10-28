@@ -10,18 +10,24 @@
 extern std::vector<::Camera> cameras;
 
 template <class VTYPE>
-void  PoissonDistribution(std::vector<VTYPE> corrs, unsigned int n, float radius,  std::vector<VTYPE> &res ) {
-	unsigned int n_tries = 0;
-	while (res.size() < n && n_tries < corrs.size()*n) {
-		unsigned int i = rand() / float(RAND_MAX) * (corrs.size() - 1);
-		int y;
-		for ( y = 0; y < res.size(); ++y)
+void  PoissonDistribution(std::vector<VTYPE> corrs, unsigned int n, float min_radius,  std::vector<VTYPE> &res ) {
+	
+	float radius = cameras[0].dst.rows / 3;
+	do {
+		unsigned int n_tries = 0;
+		res.clear();
+		while (res.size() < n && n_tries < corrs.size() * corrs.size()) {
+			unsigned int i = rand() / float(RAND_MAX) * (corrs.size() - 1);
+			int y;
+			for (y = 0; y < res.size(); ++y)
 				if ((corrs[i].second - res[y].second).Norm() < radius)
 					break;
-		if (y == res.size())
-			res.push_back(corrs[i]);
-		n_tries++;
-	}
+			if (y == res.size())
+				res.push_back(corrs[i]);
+			n_tries++;
+		}
+		radius *= 0.9;
+	} while (radius > min_radius && res.size() < n);
 } 
 
 
@@ -31,7 +37,7 @@ bool  CorrespondencesDetector::region_selection(int lidarID) {
 		case 0:  
 			for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
 				vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
-				if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.5) //   marker size
+				if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.9) //   marker size
 					md.points.push_back(p);
 			}
 			break;
@@ -126,8 +132,8 @@ bool CorrespondencesDetector::lockAll() {
 	return true;
 }
 bool CorrespondencesDetector::unlockAll(){ 
-	lidars[0].lidar.latest_frame_mutex.unlock();
 	lidars[1].lidar.latest_frame_mutex.unlock();
+	lidars[0].lidar.latest_frame_mutex.unlock();
 	
 	for (unsigned int i = 0; i < cameras.size(); ++i)
 		cameras[i].latest_frame_mutex.unlock();
@@ -157,8 +163,7 @@ void CorrespondencesDetector::detect(){
 					if (detect2D(i, p2D[i]))
 						for (int iL = 0; iL < 2; ++iL)
 							if(detected3D[iL])
-								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[0], p2D[i]),iL));
-
+								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[iL], p2D[i]),iL));
 	}
 
 
@@ -182,9 +187,11 @@ bool CorrespondencesDetector::alignCamera(int camID){
 				allcorrs.back().first = lidars[1].transfLidar * allcorrs.back().first;
 			}
 
-	PoissonDistribution(this->correspondences3D2D[camID], n, 150, corr);
+	PoissonDistribution(allcorrs, n, 100, corr);
 	if (corr.size() < n)
 		return false;
+
+	usedCorrs3D2D[camID] = corr;
 
 	cameras[camID].p2i.clear();
 	for (unsigned int i = 0; i < n; ++i)
@@ -197,6 +204,7 @@ bool CorrespondencesDetector::alignCamera(int camID){
 void CorrespondencesDetector::alignCameras() {
 	for (unsigned int i = 0; i < cameras.size(); ++i)
 		alignCamera(i);
+
 }
 
 

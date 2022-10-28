@@ -231,7 +231,8 @@ std::vector<FBO> shadowFBO;
 FBO cameraFBO;
 TwBar* bar, // Pointer to the tweak bar
 * frameBar, 
-* pointsBar;
+* pointsBar,
+*calibrationBar;
 
 // calibration
 bool calibrating;
@@ -239,7 +240,10 @@ CorrespondencesDetector corrDet;
 
 //selection
 vcg::Point2f corners_sel_2D[2];
+vcg::Point2f  point_sel_2D;
 bool selecting = false;
+bool boxpicking = false;
+
 bool escapemode = true;
 
 using namespace vcg;
@@ -803,7 +807,7 @@ void drawScene() {
     /* END DRAW SCENE */
 }
 void TW_CALL detectMarker(void*);
-
+void TW_CALL time_startstop(void*);
 
 void Display() {
     assert(_CrtCheckMemory());
@@ -841,6 +845,10 @@ void Display() {
         boxsel.Add(vcg::Point3f(corners_sel_2D[1][0], corners_sel_2D[1][1], 0));
         boxsel.Offset(vcg::Point3f(0, 0, 0.1));
     }
+    if (boxpicking) {
+        boxsel.Add(vcg::Point3f(point_sel_2D[0] , point_sel_2D[1], 0));
+        boxsel.Offset(vcg::Point3f(10, 10, 0.1));
+    }
 
     if (lidars[currentLidar].lidar.reading)
         updatePC(currentLidar);
@@ -848,6 +856,10 @@ void Display() {
     // calibration
     if (calibrating) {
         corrDet.detect();
+        if (corrDet.trackingState[0]*corrDet.trackingState[1]==0)
+ //       if (corrDet.trackingState[0] == 0)
+            if(time_running)
+                time_startstop(0);
     }
 
     // correspondences debug
@@ -889,7 +901,7 @@ void Display() {
 
         glUseProgram(0);
         glDisable(GL_LIGHTING);
-        if (selecting) {
+        if (selecting || boxpicking) {
             vcg::Point3f p;
             GLdouble mm[16], pm[16];
             GLint view[4];
@@ -899,7 +911,7 @@ void Display() {
             glGetIntegerv(GL_VIEWPORT, view);
 
 
-            if (!escapemode) {
+            if (!escapemode || boxpicking) {
                 selected.clear();
                 glPointSize(3.0);
                 glColor3f(1, 0, 0);
@@ -917,8 +929,13 @@ void Display() {
                         }
                     }
                 }
+                
                 glEnd();
                 glPointSize(1.0);
+
+                if (boxpicking && !selected.empty())
+                    corrDet.currentP3D[currentLidar] = closest_sel;
+                boxpicking = false;
 
                 if (selected.size() > 4) {
                     vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
@@ -1035,7 +1052,7 @@ void Display() {
             vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
 
             glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.02, 10, 10);
+            gluSphere(gluNewQuadric(), 0.1, 10, 10);
             glPopMatrix();
         }
         {
@@ -1257,7 +1274,7 @@ void TW_CALL alignCamera(void*) {
         cameras[currentCamera].calibrated = cameras[currentCamera].SolvePnP(cameras[currentCamera].p3);
 }
 void TW_CALL autoalignCameras(void*) {
-    corrDet.alignCameras();
+    corrDet.alignCamera(currentCamera);
 }
 void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
@@ -1580,13 +1597,19 @@ void   keyPressEvent(unsigned char k, int x, int  y)
 void mousePressEvent(int bt, int state, int x, int y) {
     if (TwEventMouseButtonGLUT(bt, state, x, y))
         return;
+    int modifiers = glutGetModifiers();
+    
 
     if (selecting && !escapemode) {
         if (state == GLUT_DOWN) {
             ::corners_sel_2D[0] = vcg::Point2f(x, height - y);
-
         }
     }
+    else
+        if (modifiers & GLUT_ACTIVE_ALT) {
+            boxpicking = true;
+            ::point_sel_2D = vcg::Point2f(x, height - y);
+        }
     else
     {
         if (state == GLUT_DOWN)
@@ -1895,6 +1918,13 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
 }
 
 
+void TW_CALL startInput(void*) {
+    ::initLidars(0);
+    ::initCameras(0);
+    if (SCENE_REPLAY)
+        time_startstop(0);
+    currentCamera = 0;
+ }
 
 int main(int argc, char* argv[])
 {
@@ -1996,6 +2026,7 @@ int main(int argc, char* argv[])
     glutMouseWheelFunc(wheelEvent);
     TwGLUTModifiersFunc(glutGetModifiers);
     bar = TwNewBar("Controls");
+    TwDefine("Controls iconified=true ");
     TwDefine(" Controls size='240 480' "); // resize bar
 
     TwCopyCDStringToClientFunc(CopyCDStringToClient);
@@ -2104,6 +2135,11 @@ int main(int argc, char* argv[])
     TwAddButton(pointsBar, "savePoints", ::savePoints, 0, " label='savePoints'  help=`save points` ");
     TwAddButton(pointsBar, "loadPoints", ::loadPoints, 0, " label='loadPoints'  help=`load points` ");
     TwDefine("Points iconified=true ");
+
+    calibrationBar = TwNewBar("Calibration");
+    TwAddButton(calibrationBar, "loadLidarAndCameras", ::startInput, 0, " label='start input'  help=`start input` ");
+    TwAddVarRW(calibrationBar, "calibrating", TW_TYPE_BOOL8, &calibrating, " label='detect target'  help=` calibrating` ");
+
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
 

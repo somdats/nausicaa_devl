@@ -14,6 +14,7 @@ class CorrespondencesDetector {
 public:
 	CorrespondencesDetector() :debug_mode(false) {
 		trackingState[0] = trackingState[1] = 0;searchingRadius[0] = searchingRadius[1] = 0.5;
+		
 	}
 
 
@@ -21,7 +22,9 @@ public:
 	std::vector<std::vector< Correspondence3D2D > >  correspondences3D2D;
 	std::vector<  Correspondence3D3D   >  correspondences3D3D;
 
-	void init(unsigned int _nCams) { nCams = _nCams;correspondences3D2D.resize(nCams);}
+	void init(unsigned int _nCams) {
+		nCams = _nCams;correspondences3D2D.resize(nCams);usedCorrs3D2D.resize(nCams);
+	}
 
 	bool region_selection(int lidarID);
 	bool detect3D(int lidarID,vcg::Point3f & p);
@@ -48,7 +51,7 @@ public:
 	bool debug_mode;
 	void save_correspondences(const char*filename);
 	void load_correspondences(const char* filename);
-
+	std::vector<std::vector< Correspondence3D2D > > usedCorrs3D2D;
 
 private:
 	bool lockAll();
