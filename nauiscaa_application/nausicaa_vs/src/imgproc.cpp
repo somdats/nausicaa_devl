@@ -2,7 +2,7 @@
 
 #include"..\headers\imgproc.h"
 
-
+using namespace cv;
 
 void imgprocess::drawImageHistogram(cv::Mat& b_hist, std::string channel, bool eq) {
 
@@ -64,7 +64,7 @@ void imgprocess::drawImageHistogram(cv::Mat& b_hist, std::string channel, bool e
     cv::imshow(cv::String(histoChannel), histImage);
 
 }
-void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha) {
+void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha, bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;
@@ -125,15 +125,17 @@ void imgprocess::AGCWD(const cv::Mat& src, cv::Mat& dst, double alpha) {
         cv::merge(HSV_channels, dst);
         cv::cvtColor(dst, dst, COLOR_HSV2BGR_FULL);
     }
-
-    cv::Mat eqHist;
-    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
-    //drawhistogram
-    drawImageHistogram(eqHist, "eq-Blue", true);
+    if (drawHis)
+    {
+        cv::Mat eqHist;
+        calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+        //drawhistogram
+        drawImageHistogram(eqHist, "eq-Blue", true);
+    }
     return;
 
 }
-void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu ) {
+void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu, bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;
@@ -204,15 +206,18 @@ void imgprocess::WTHE(const cv::Mat& src, cv::Mat& dst, float ru, float vu ) {
         cv::merge(YUV_channels, dst);
         cv::cvtColor(dst, dst, COLOR_YUV2BGR);
     }
-    //histogram after processing
-    cv::Mat eqHist;
-    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
-    //drawhistogram
-    drawImageHistogram(eqHist, "eq-Blue", true);
+    if (drawHis)
+    {
+        //histogram after processing
+        cv::Mat eqHist;
+        calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+        //drawhistogram
+        drawImageHistogram(eqHist, "eq-Blue", true);
+    }
     return;
 
 }
-void imgprocess::JHE(const cv::Mat& src, cv::Mat& dst) {
+void imgprocess::JHE(const cv::Mat& src, cv::Mat& dst, bool drawHis) {
 
     int rows = src.rows;
     int cols = src.cols;
@@ -292,13 +297,16 @@ void imgprocess::JHE(const cv::Mat& src, cv::Mat& dst) {
         cv::merge(YUV_channels, dst);
         cv::cvtColor(dst, dst, COLOR_YUV2BGR);
     }
-    int histsize = 256;
-    float range[] = { 0,256 };
-    const float* histRanges = { range };
-    int bins = 256;
-    cv::Mat eqHist;
-    calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
-    //drawhistogram
-    drawImageHistogram(eqHist, "eq-Blue", true);
+    if (drawHis)
+    {
+        int histsize = 256;
+        float range[] = { 0,256 };
+        const float* histRanges = { range };
+        int bins = 256;
+        cv::Mat eqHist;
+        calcHist(&L, 1, 0, cv::Mat(), eqHist, 1, &histsize, &histRanges, true, false);
+        //drawhistogram
+        drawImageHistogram(eqHist, "eq-Blue", true);
+    }
     return;
 }

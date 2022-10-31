@@ -83,10 +83,12 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
 }
 
-void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza) {
+void Camera::init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza, bool hEq)
+    {
     /////////////Scaramuzza camera parameter read///////////////////
     camID = cameraID;
     inStPort = port;
+    histoEq = hEq;
 if(SAVE_IMG)
     timeCamera1 = std::chrono::system_clock::now();
 //#endif
@@ -393,6 +395,12 @@ void Camera::start_reading() {
             if (!frame.empty())
             {
                 cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+                if (histoEq)
+                {
+                    cv::Mat dstEq;
+                    imgprocess::AGCWD(dst, dstEq, 0.5);
+                    dst = dstEq.clone();
+                }
             }
             else
             {
