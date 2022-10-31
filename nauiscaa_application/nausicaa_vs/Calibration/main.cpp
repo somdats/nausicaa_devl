@@ -159,7 +159,7 @@ bool showCameras = false;
 bool showfromcamera = false;
 bool drawAllLidars = false;
 bool enable_proj = false;
- 
+bool splitScreen = false;
 
 // values to define the boatFrame
 float alphaFrame, betaFrame, gammaFrame;
@@ -243,7 +243,7 @@ vcg::Point2f corners_sel_2D[2];
 vcg::Point2f  point_sel_2D;
 bool selecting = false;
 bool boxpicking = false;
-
+int wnd;
 bool escapemode = true;
 
 using namespace vcg;
@@ -267,6 +267,9 @@ vcg::Trackball track[2];
 
 /// window size
 int width, height;
+
+/// lidar subwindows
+int vpl[2][4];
 
 /// we choosed a subset of the avaible drawing modes
 enum DrawMode { PERPOINTS = 0, SMOOTH, NONE };
@@ -352,7 +355,7 @@ void updatePC(int il) {
 }
 
 vcg::Point3f win2NDC(vcg::Point2f in) {
-    return  vcg::Point3f(-1.f + 2.f * in[0] / float(::width), -1 + 2 * in[1] / float(::height), 0);
+    return  vcg::Point3f(-1.f + 2.f * in[0] / float(vpl[wnd][2]), -1 + 2 * in[1] / float(vpl[wnd][3]), 0);
 }
 
 vcg::Point3f mostOrtho(vcg::Point3f p) {
@@ -810,6 +813,7 @@ void TW_CALL detectMarker(void*);
 void TW_CALL time_startstop(void*);
 
 void Display() {
+
     assert(_CrtCheckMemory());
     static bool init = true;
     if (init) {
@@ -822,7 +826,9 @@ void Display() {
     updateToSteadyFrame();
     updateToGeoFrame();
     assert(_CrtCheckMemory());
-    glViewport(0, 0, width, height);
+
+//    glViewport(0, 0, width, height);
+    glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_PROJECTION);
@@ -850,8 +856,8 @@ void Display() {
         boxsel.Offset(vcg::Point3f(10, 10, 0.1));
     }
 
-    if (lidars[currentLidar].lidar.reading)
-        updatePC(currentLidar);
+  //  if (lidars[currentLidar].lidar.reading)
+  //      updatePC(currentLidar);
 
     // calibration
     if (calibrating) {
@@ -866,177 +872,173 @@ void Display() {
     if (corrDet.debug_mode)
         corrDet.draw_debug();
 
+    for (int iL = 0; iL < 2; ++iL)
+        if(splitScreen || (!splitScreen && iL==currentLidar))
+    {
 
-    if (!mesh.vert.empty()) {
-        vcg::Matrix44f toCurrCamera;
-        GLfloat mm[16], pm[16];
+        currentLidar = iL;
+        updatePC(currentLidar);
+        glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+        if (lidars[currentLidar].lidar.reading && !mesh.vert.empty()) {
+            vcg::Matrix44f toCurrCamera;
+            GLfloat mm[16], pm[16];
 
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        gluPerspective(40, width / (float)height, 0.1, 100);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
-
-
-        track[currentLidar].center = vcg::Point3f(0, 0, 0);
-        track[currentLidar].radius = 1.0;
-        track[currentLidar].GetView();
-        track[currentLidar].Apply();
-
-
-        glPushMatrix();
-
-/*         float d = 1.0f / mesh.bbox.Diag();
-        vcg::glScale(d);
-        glTranslate(-glWrap.m->bbox.Center());
-
-        float d = 1.0f / lidars[currentLidar].bbox.Diag();
-        vcg::glScale(d);
-        glTranslate(-lidars[currentLidar].bbox.Center());
-*/
-        vcg::glScale(0.2);
-
-        draw_frame(boatFrame);
-
-        glUseProgram(0);
-        glDisable(GL_LIGHTING);
-        if (selecting || boxpicking) {
-            vcg::Point3f p;
-            GLdouble mm[16], pm[16];
-            GLint view[4];
-            double x, y, z,zmin = std::numeric_limits<float>::max();
-            glGetDoublev(GL_MODELVIEW_MATRIX, mm);
-            glGetDoublev(GL_PROJECTION_MATRIX, pm);
-            glGetIntegerv(GL_VIEWPORT, view);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(40, vpl[currentLidar][2] / (float)vpl[currentLidar][3], 0.1, 100);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
 
 
-            if (!escapemode || boxpicking) {
-                selected.clear();
-                glPointSize(3.0);
-                glColor3f(1, 0, 0);
-                glBegin(GL_POINTS);
-                for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
-                    p = mesh.vert[i].cP();
-                    p = lidars[currentLidar].transfLidar * p;
-                    gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
-                    if (boxsel.IsIn(vcg::Point3f(x, y, 0))) {
-                        selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
-                        glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
-                        if (z < zmin) {
-                            zmin = z;
-                            closest_sel = p;
+            track[currentLidar].center = vcg::Point3f(0, 0, 0);
+            track[currentLidar].radius = 1.0;
+            track[currentLidar].GetView();
+            track[currentLidar].Apply();
+
+
+            glPushMatrix();
+            vcg::glScale(0.2);
+
+            draw_frame(boatFrame);
+            glUseProgram(0);
+            glDisable(GL_LIGHTING);
+            if ( ( selecting || boxpicking ) && wnd==currentLidar) {
+                vcg::Point3f p;
+                GLdouble mm[16], pm[16];
+                GLint view[4];
+                double x, y, z, zmin = std::numeric_limits<float>::max();
+                glGetDoublev(GL_MODELVIEW_MATRIX, mm);
+                glGetDoublev(GL_PROJECTION_MATRIX, pm);
+                glGetIntegerv(GL_VIEWPORT, view);
+
+
+                if (!escapemode || boxpicking) {
+                    selected.clear();
+                    glPointSize(3.0);
+                    glColor3f(1, 0, 0);
+                    glBegin(GL_POINTS);
+                    for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
+                        p = mesh.vert[i].cP();
+                        p = lidars[currentLidar].transfLidar * p;
+                        gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
+                        if (boxsel.IsIn(vcg::Point3f(x - vpl[currentLidar][0], y - vpl[currentLidar][1], 0))) {
+                            selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
+                            glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
+                            if (z < zmin) {
+                                zmin = z;
+                                closest_sel = p;
+                            }
                         }
                     }
-                }
-                
-                glEnd();
-                glPointSize(1.0);
 
-                if (boxpicking && !selected.empty())
-                    corrDet.currentP3D[currentLidar] = closest_sel;
-                boxpicking = false;
+                    glEnd();
+                    glPointSize(1.0);
 
-                if (selected.size() > 4) {
-                    vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
-                    PlaneC& pl = planes[currentLidar][currentPlane];
+                    if (boxpicking && !selected.empty())
+                        corrDet.currentP3D[currentLidar] = closest_sel;
+                    boxpicking = false;
 
-                    pl.o = selected[0];
-                    for (uint i = 1; i < selected.size(); ++i)
-                        pl.o += selected[i];
-                    pl.o /= selected.size();
-                    pl.o = pl.Projection(pl.o);
-                    pl.valid = true;
+                    if (selected.size() > 4) {
+                        vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
+                        PlaneC& pl = planes[currentLidar][currentPlane];
+
+                        pl.o = selected[0];
+                        for (uint i = 1; i < selected.size(); ++i)
+                            pl.o += selected[i];
+                        pl.o /= selected.size();
+                        pl.o = pl.Projection(pl.o);
+                        pl.valid = true;
+                    }
                 }
             }
-        }
 
-        if (showPlanes)
-            for (int ip = 0; ip < 3; ++ip)
-                if (planes[currentLidar][ip].valid) {
-                    glColor3f(ip == 0, ip == 1, ip == 2);
-                    drawPlane(planes[currentLidar][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
-                }
- 
-        bool virtualCamerasExist = !virtualCameras.empty();
-        GLERR();
+            if (showPlanes)
+                for (int ip = 0; ip < 3; ++ip)
+                    if (planes[currentLidar][ip].valid) {
+                        glColor3f(ip == 0, ip == 1, ip == 2);
+                        drawPlane(planes[currentLidar][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
+                    }
+
+            bool virtualCamerasExist = !virtualCameras.empty();
+            GLERR();
 
 
-        for (int il = 0; il < N_LIDARS; ++il)
-            updatePC(il);
+            for (int il = 0; il < N_LIDARS; ++il)
+                updatePC(il);
 
-        if (enable_proj) {
-            for (int iCam = 0; iCam < NUMCAM;++iCam)
-                if(cameras[iCam].aligned)
-            {
-                // create shadow maps
-                glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
-                glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
-                glClearColor(1.0, 1.0, 1.0, 1.0);
-                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-                glEnable(GL_DEPTH_TEST);
+            if (enable_proj) {
+                for (int iCam = 0; iCam < NUMCAM;++iCam)
+                    if (cameras[iCam].aligned)
+                    {
+                        // create shadow maps
+                        glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
+                        glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
+                        glClearColor(1.0, 1.0, 1.0, 1.0);
+                        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                        glEnable(GL_DEPTH_TEST);
 
-                glUseProgram(shadow_shader.pr);
-                vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
-               
-                for (int il = 0; il < N_LIDARS; ++il) {
+                        glUseProgram(shadow_shader.pr);
+                        vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
 
-                    toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
+                        for (int il = 0; il < N_LIDARS; ++il) {
 
-                    glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
+                            toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
 
-                    GLERR();
-                    glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
-                    glEnableVertexAttribArray(0);
-                    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+                            glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
 
-                    glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
-                    glEnableVertexAttribArray(1);
-                    glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
+                            GLERR();
+                            glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
+                            glEnableVertexAttribArray(0);
+                            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                            glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
+                            glEnableVertexAttribArray(1);
+                            glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
 
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
-                    glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                }
+                            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                glUseProgram(0);
+                            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
+                            glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
+                            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                        }
 
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                //if (iCam == 0) {
-                //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                //   cv::Mat ima(1096,1948,CV_8UC3);
-                //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                //   cv::flip(ima, ima, 0);
-                //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                //}
+                        glUseProgram(0);
+
+                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                        //if (iCam == 0) {
+                        //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                        //   cv::Mat ima(1096,1948,CV_8UC3);
+                        //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                        //   cv::flip(ima, ima, 0);
+                        //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                        //}
+                    }
+
+
             }
 
+            glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+            glClearColor(0.0, 0.0, 0.0, 1.0);
+            // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-        }
+            drawScene();
 
-        glViewport(0, 0, width, height);
-        glClearColor(0.0, 0.0, 0.0, 1.0);      
-       // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-        drawScene();
-
-        if (!showfromcamera && showCameras) {
-            // draw cameras
-            for (int ic = 0; ic < cameras.size(); ++ic) {
-                glColor3f(0, 1, 0);
-                glPushMatrix();
-                vcg::Point3f p = cameras[ic].calibrated.GetViewPoint();
-                glTranslatef(p[0], p[1], p[2]);
-                gluSphere(gluNewQuadric(), 0.2, 10, 10);
-                draw_frame(cameras[ic].calibrated.Extrinsics.Rot());
-                glPopMatrix();
+            if (!showfromcamera && showCameras) {
+                // draw cameras
+                for (int ic = 0; ic < cameras.size(); ++ic) {
+                    glColor3f(0, 1, 0);
+                    glPushMatrix();
+                    vcg::Point3f p = cameras[ic].calibrated.GetViewPoint();
+                    glTranslatef(p[0], p[1], p[2]);
+                    gluSphere(gluNewQuadric(), 0.2, 10, 10);
+                    draw_frame(cameras[ic].calibrated.Extrinsics.Rot());
+                    glPopMatrix();
+                }
             }
-        }
 
-        for (int ip = 0; ip < points.size(); ++ip)
-            if(::usePoint[ip])
+            for (int ip = 0; ip < points.size(); ++ip)
+                if (::usePoint[ip])
                 {
                     glColor3f(0, 0, 1);
                     glPushMatrix();
@@ -1045,128 +1047,129 @@ void Display() {
                     gluSphere(gluNewQuadric(), 0.02, 10, 10);
                     glPopMatrix();
                 }
-        {
-            glColor3f(corrDet.trackingState[currentLidar]==1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2) ;
-            glPushMatrix();
-//            vcg::Point3f p = marker3D;
-            vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
+            {
+                glColor3f(corrDet.trackingState[currentLidar] == 1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2);
+                glPushMatrix();
+                //            vcg::Point3f p = marker3D;
+                vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
 
-            glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.1, 10, 10);
-            glPopMatrix();
-        }
-        {
-            glColor3f(0, 1, 0);
-            glPushMatrix();
-            vcg::Point3f p = closest_sel;
-            glTranslatef(p[0], p[1], p[2]);
-            gluSphere(gluNewQuadric(), 0.02, 10, 10);
-            glPopMatrix();
-        }
-        for (int fi = 0; fi < frames[0].size(); ++fi)
-            if (::idFrame == fi)
-                draw_frame(frames[0][fi]);
+                glTranslatef(p[0], p[1], p[2]);
+                gluSphere(gluNewQuadric(), 0.1, 10, 10);
+                glPopMatrix();
+            }
+            {
+                glColor3f(0, 1, 0);
+                glPushMatrix();
+                vcg::Point3f p = closest_sel;
+                glTranslatef(p[0], p[1], p[2]);
+                gluSphere(gluNewQuadric(), 0.02, 10, 10);
+                glPopMatrix();
+            }
+            for (int fi = 0; fi < frames[0].size(); ++fi)
+                if (::idFrame == fi)
+                    draw_frame(frames[0][fi]);
 
-        if (showfromcamera) {
-            // branch show from one of the currentCamera
-            GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
-            glViewport(width/2, height/2, width/2, height/2);
-            drawScene();
-            GlShot<vcg::Shotf>::UnsetView(); 
-            glViewport(0,0, width, height);
-        }
-        if (streamON && virtualCamerasExist)
-        {
-            //streaming branch that write to framebuffer   
-            glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO.id_fbo);
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-            glClearDepth(1.0);
-            glViewport(0, 0, cameraFBO.w, cameraFBO.h);
+            if (showfromcamera) {
+                // branch show from one of the currentCamera
+                GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
+                glViewport(width / 2, height / 2, width / 2, height / 2);
+                drawScene();
+                GlShot<vcg::Shotf>::UnsetView();
+                glViewport(0, 0, width, height);
+            }
+            if (streamON && virtualCamerasExist)
+            {
+                //streaming branch that write to framebuffer   
+                glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO.id_fbo);
+                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                glEnable(GL_DEPTH_TEST);
+                glClearDepth(1.0);
+                glViewport(0, 0, cameraFBO.w, cameraFBO.h);
 
-            float sx, dx, bt, tp, n;
-            activeCamera_mutex.lock();
-            virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
-            GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
-            activeCamera_mutex.unlock();
+                float sx, dx, bt, tp, n;
+                activeCamera_mutex.lock();
+                virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+                GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
+                activeCamera_mutex.unlock();
 
-            drawScene();
-            if (::pick_point) {
-                double  x3d, y3d, z3d;
-                float z;
-                GLdouble mm[16], pm[16];
-                GLint view[4];
-                glGetDoublev(GL_MODELVIEW_MATRIX, mm);
-                glGetDoublev(GL_PROJECTION_MATRIX, pm);
-                glGetIntegerv(GL_VIEWPORT, view);
+                drawScene();
+                if (::pick_point) {
+                    double  x3d, y3d, z3d;
+                    float z;
+                    GLdouble mm[16], pm[16];
+                    GLint view[4];
+                    glGetDoublev(GL_MODELVIEW_MATRIX, mm);
+                    glGetDoublev(GL_PROJECTION_MATRIX, pm);
+                    glGetIntegerv(GL_VIEWPORT, view);
 
-                glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+                    glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 
-                gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
+                    gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
 
-                picked_point[0] = x3d;
-                picked_point[1] = y3d;
-                picked_point[2] = z3d;
-                vcg::Point4f xyzGeo = toGeoFrame* vcg::Point4f(x3d, y3d, z3d, 1.0);
-                picked_point[3] = xyzGeo[0];
-                picked_point[4] = xyzGeo[1];
-                picked_point[5] = xyzGeo[2];
+                    picked_point[0] = x3d;
+                    picked_point[1] = y3d;
+                    picked_point[2] = z3d;
+                    vcg::Point4f xyzGeo = toGeoFrame * vcg::Point4f(x3d, y3d, z3d, 1.0);
+                    picked_point[3] = xyzGeo[0];
+                    picked_point[4] = xyzGeo[1];
+                    picked_point[5] = xyzGeo[2];
 
-                {
-                    std::lock_guard lk(m);
-                    picked  = true;
-                    ::pick_point = false;
-                    condv.notify_one();
+                    {
+                        std::lock_guard lk(m);
+                        picked = true;
+                        ::pick_point = false;
+                        condv.notify_one();
+                    }
                 }
+
+                GlShot<vcg::Shotf>::UnsetView(); ;
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+
+
+                glMatrixMode(GL_PROJECTION);
+                glPushMatrix();
+                glLoadIdentity();
+                glMatrixMode(GL_MODELVIEW);
+                glPushMatrix();
+                glLoadIdentity();
+
+                glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+                glDisable(GL_DEPTH_TEST);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+                glUseProgram(texture_shader.pr);
+                glUniform1i(texture_shader["uTexture"], 0);
+                glUniformMatrix4fv(texture_shader["mm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
+                glUniformMatrix4fv(texture_shader["pm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
+                glBegin(GL_QUADS);
+                glVertexAttrib2f(1, 0.0, 0.0);
+                glVertex3f(0.0, -1, 0.0);
+                glVertexAttrib2f(1, 1.0, 0.0);
+                glVertex3f(1.0, -1, 0.0);
+                glVertexAttrib2f(1, 1.0, 1.0);
+                glVertex3f(1.0, 0.0, 0.0);
+                glVertexAttrib2f(1, 0.0, 1.0);
+                glVertex3f(0.0, 0.0, 0.0);
+                glEnd();
+                glUseProgram(0);
+                glEnable(GL_DEPTH_TEST);
+
+                glMatrixMode(GL_PROJECTION);
+                glPopMatrix();
+                glMatrixMode(GL_MODELVIEW);
+                glPopMatrix();
+
             }
 
-            GlShot<vcg::Shotf>::UnsetView(); ;
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
-
-            
-            glMatrixMode(GL_PROJECTION);
-            glPushMatrix();
-            glLoadIdentity();
-            glMatrixMode(GL_MODELVIEW);
-            glPushMatrix();
-            glLoadIdentity();
-
-            glViewport(0, 0, width, height);
-            glDisable(GL_DEPTH_TEST);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
-            glUseProgram(texture_shader.pr);
-            glUniform1i(texture_shader["uTexture"], 0);
-            glUniformMatrix4fv(texture_shader["mm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
-            glUniformMatrix4fv(texture_shader["pm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
-            glBegin(GL_QUADS);
-            glVertexAttrib2f(1, 0.0, 0.0);
-            glVertex3f(0.0, -1, 0.0);
-            glVertexAttrib2f(1, 1.0, 0.0);
-            glVertex3f(1.0, -1, 0.0);
-            glVertexAttrib2f(1, 1.0, 1.0);
-            glVertex3f(1.0, 0.0, 0.0);
-            glVertexAttrib2f(1, 0.0, 1.0);
-            glVertex3f(0.0, 0.0, 0.0);
-            glEnd();
-            glUseProgram(0);
-            glEnable(GL_DEPTH_TEST);
-
-            glMatrixMode(GL_PROJECTION);
-            glPopMatrix();
-            glMatrixMode(GL_MODELVIEW);
             glPopMatrix();
 
+
+            track[currentLidar].DrawPostApply();
         }
-
-        glPopMatrix();
-
-          
-          track[currentLidar].DrawPostApply();
     }
 
     glUseProgram(0);
@@ -1200,12 +1203,31 @@ void Display() {
     }
 }
 
+
+void setViewports(int _width, int _height){
+    if (splitScreen) {
+        vpl[0][0] = width / 3;
+        vpl[0][1] = 0;
+        vpl[0][2] = width * 2 / 3;
+        vpl[0][3] = height / 2;
+
+        vpl[1][0] = width / 3;
+        vpl[1][1] = height / 2;
+        vpl[1][2] = width * 2 / 3;
+        vpl[1][3] = height / 2;    }
+    else {
+        vpl[0][0] = vpl[1][0] = 0  ;
+        vpl[0][1] = vpl[1][1] = 0;
+        vpl[0][2] = vpl[1][2] = width;
+        vpl[0][3] = vpl[1][3] = height  ;
+    }
+
+    
+}
 void Reshape(int _width, int _height) {
     width = _width;
     height = _height;
-  
- //  
-
+    setViewports(_width, _height);
     TwWindowSize(width, height);
 }
 
@@ -1594,28 +1616,49 @@ void   keyPressEvent(unsigned char k, int x, int  y)
     TwEventKeyboardGLUT(k, x, y);
 }
 
+
 void mousePressEvent(int bt, int state, int x, int y) {
     if (TwEventMouseButtonGLUT(bt, state, x, y))
         return;
     int modifiers = glutGetModifiers();
+    y = height - y;
+    wnd = -1;
+    int xl, yl;
+    if (splitScreen) {
+        for (int i = 0; i < 2; ++i)
+            if (x > vpl[i][0] && (x < vpl[i][0] + vpl[i][2]) &&
+                y > vpl[i][1] && (y < vpl[i][1] + vpl[i][3])) {
+                xl = x - vpl[i][0];
+                yl = y - vpl[i][1];
+                wnd = i;
+            }
+        if (wnd == -1)
+            return;
+    }
+    else
+        wnd = currentLidar;
     
+    xl = x - vpl[wnd][0];
+    yl = y - vpl[wnd][1];
 
     if (selecting && !escapemode) {
         if (state == GLUT_DOWN) {
-            ::corners_sel_2D[0] = vcg::Point2f(x, height - y);
+            ::corners_sel_2D[0] = vcg::Point2f(xl,  yl);
         }
     }
     else
         if (modifiers & GLUT_ACTIVE_ALT) {
             boxpicking = true;
-            ::point_sel_2D = vcg::Point2f(x, height - y);
+            ::point_sel_2D = vcg::Point2f(xl,  yl);
         }
     else
     {
-        if (state == GLUT_DOWN)
-            track[currentLidar].MouseDown(x, height - y, GLUT2VCG(bt, state));
+        if (state == GLUT_DOWN) {
+            track[wnd].MouseDown(x, y, GLUT2VCG(bt, state));
+            printf("mousedown %d %d \n", x, y);
+        }
         else
-            track[currentLidar].MouseUp(x, height - y, GLUT2VCG(bt, state));
+            track[wnd].MouseUp(x, y, GLUT2VCG(bt, state));
 
     }
 
@@ -1623,13 +1666,18 @@ void mousePressEvent(int bt, int state, int x, int y) {
 
 void mouseMoveEvent(int x, int y)
 {
+    int yl = height - y;
+    int xl = x - vpl[wnd][0];
+    yl = yl - vpl[wnd][1];
     if (selecting && !escapemode) {
         if (::corners_sel_2D[0][0] != -1)
-            ::corners_sel_2D[1] = vcg::Point2f(x, height - y);
+            ::corners_sel_2D[1] = vcg::Point2f(xl,  yl);
     }
     else
-        if (!TwEventMouseMotionGLUT(x, y))
-            track[currentLidar].MouseMove(x, height - y);
+        if (!TwEventMouseMotionGLUT(x, y)) 
+            if(wnd!=-1)
+                track[wnd].MouseMove(x, height-y);
+
 }
 
 
@@ -1879,6 +1927,14 @@ void TW_CALL setMapColor(const void* v,void *) {
 void TW_CALL getMapColor(  void*v, void*) {
     if (!cameras.empty())
         *(bool*)v  = cameras[currentCamera].used ;
+}
+
+void TW_CALL setSplitScreen(const void* v, void*) {
+    splitScreen = *(bool*)v;
+    setViewports(width,height);
+}
+void TW_CALL getSplitScreen(void* v, void*) {
+    *(bool*)v = splitScreen;
 }
 
  
@@ -2139,6 +2195,7 @@ int main(int argc, char* argv[])
     calibrationBar = TwNewBar("Calibration");
     TwAddButton(calibrationBar, "loadLidarAndCameras", ::startInput, 0, " label='start input'  help=`start input` ");
     TwAddVarRW(calibrationBar, "calibrating", TW_TYPE_BOOL8, &calibrating, " label='detect target'  help=` calibrating` ");
+    TwAddVarCB(calibrationBar, "splitscreen", TW_TYPE_BOOL8, setSplitScreen, getSplitScreen, (void*)0, " label='split screen'  help=`map color` ");
 
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
