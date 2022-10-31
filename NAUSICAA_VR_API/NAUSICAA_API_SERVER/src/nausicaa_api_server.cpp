@@ -320,7 +320,7 @@ void call_API_function(std::string message) {
 	{
 		int id = deserialize_int(message);
 		int dirid = deserialize_int(message);
-		int amount = deserialize_int(message);
+		int amount = deserialize_float(message);
 
 		vcg::Matrix44f M = virtualCameras[id].Extrinsics.Rot();
 		vcg::Matrix44f R;
