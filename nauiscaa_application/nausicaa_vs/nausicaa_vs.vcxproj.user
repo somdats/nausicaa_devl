@@ -4,11 +4,11 @@
     <ShowAllFiles>false</ShowAllFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>PATH=..\..\..\3rdParty\opencv-4.5.5\x64\vc17\bin;..\..\..\3rdParty\opencv_source\modules\videoio\misc\plugin_gstreamer\dlls;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\opencv_build\bin;..\..\..\3rdParty\Anttweakbar\lib;..\..\..\3rdParty\glew-2.1.0\bin\Release\x64;..\..\..\3dParty\freeglut\bin\x64;</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>PATH=..\..\..\3rdParty\opencv-4.6.0\x64\vc17\bin;..\..\..\3rdParty\opencv_source\modules\videoio\misc\plugin_gstreamer\dlls;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\opencv_build\bin;..\..\..\3rdParty\Anttweakbar\lib;..\..\..\3rdParty\glew-2.1.0\bin\Release\x64;..\..\..\3dParty\freeglut\bin\x64;</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerEnvironment>PATH=..\..\..\3rdParty\opencv-4.5.5\x64\vc17\bin;..\..\..\3rdParty\opencv_source\modules\videoio\misc\plugin_gstreamer\dlls;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\opencv_build\bin;..\..\..\3rdParty\Anttweakbar\lib;..\..\..\3rdParty\glew-2.1.0\bin\Release\x64;..\..\..\3dParty\freeglut\bin\x64;</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>PATH=..\..\..\3rdParty\opencv-4.6.0\x64\vc17\bin;..\..\..\3rdParty\opencv_source\modules\videoio\misc\plugin_gstreamer\dlls;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\opencv_build\bin;..\..\..\3rdParty\Anttweakbar\lib;..\..\..\3rdParty\glew-2.1.0\bin\Release\x64;..\..\..\3dParty\freeglut\bin\x64;</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

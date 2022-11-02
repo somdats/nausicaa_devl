@@ -1,6 +1,6 @@
 #pragma once
 
-//#define MJPEG_WRITE
+#define MJPEG_WRITE
 #define RECTIFY_FIRST
 
 
