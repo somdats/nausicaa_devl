@@ -81,14 +81,18 @@ MJPEGStreamer streamer;
 bool SCENE_REPLAY;
 bool SAVE_PC;
 bool SAVE_IMG;
-bool histoEq;
+bool histoEq = false;
 unsigned long long start_time;
 unsigned long long end_time;
 unsigned long long restart_time;
 unsigned int partial_time;
 bool time_running = false;
 unsigned int  virtual_time;
- 
+bool h_5000 = false;
+bool h_5001 = false;
+bool h_5002 = false;
+bool h_5003 = false;
+
 
 int CameraCount;
 int NUMCAM;
@@ -137,7 +141,7 @@ size_t format_nchannels = 3;
 
 struct PlaneC : public vcg::Plane3f {
     PlaneC() :valid(false) {};
-    PlaneC(vcg::Plane3f p) { *(vcg::Plane3f*)this = p;valid = true; };
+    PlaneC(vcg::Plane3f p) { *(vcg::Plane3f*)this = p; valid = true; };
     vcg::Point3f o;
     bool valid;
 };
@@ -168,12 +172,12 @@ float xFrame, yFrame, zFrame;
 
 // values to define the boatFrameWS (set by the client)
 
-float  LatDecimalDegrees    = 0.f;
-float  LonDecimalDegrees   = 0.f;
-float  ElevationMeters      = 0.f;
-float  pitchDegrees         = 0.f;
-float  rollDegrees          = 0.f;
-float  bowDirectionDegrees  = 0.f;
+float  LatDecimalDegrees = 0.f;
+float  LonDecimalDegrees = 0.f;
+float  ElevationMeters = 0.f;
+float  pitchDegrees = 0.f;
+float  rollDegrees = 0.f;
+float  bowDirectionDegrees = 0.f;
 
 // picking
 bool pick_point = false;
@@ -185,7 +189,7 @@ float picked_point[6];
 std::vector<vcg::Point3f> selected;
 vcg::Point3f closest_sel;
 PlaneC planes[2][3];
-LineC  axis[2][3]; 
+LineC  axis[2][3];
 std::vector<vcg::Line3f> lines3d;
 std::vector<vcg::Matrix44f> frames[2];
 std::vector<vcg::Point3f>  points;
@@ -199,7 +203,7 @@ int idFrame;
 
 // markers
 // a marker cannot appear smaller than
-float min_size_on_screen = 100.f; 
+float min_size_on_screen = 100.f;
 float max_size_on_screen = 200.f;
 
 
@@ -215,7 +219,7 @@ vcg::Matrix44f toGeoFrame;
 
 
 // local reference frame for the data
-vcg::Matrix44f boatFrame;   
+vcg::Matrix44f boatFrame;
 
 // boatFrame in world space
 vcg::Matrix44f boatFrameWS;
@@ -223,17 +227,17 @@ vcg::Matrix44f boatFrameWS;
 
 std::mutex mesh_mutex;
 float lid_col[2][3] = { {0.2,0.8,0.3},{0.2,0.3,0.8} };
-unsigned int *textures;
+unsigned int* textures;
 unsigned int markersTextureID;
 int markers_pos_x = 0, markers_pos_y = 0;
 
-Shader point_shader, shadow_shader,texture_shader,flat_shader;
+Shader point_shader, shadow_shader, texture_shader, flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
 TwBar* bar, // Pointer to the tweak bar
-* frameBar, 
+* frameBar,
 * pointsBar,
-*calibrationBar;
+* calibrationBar;
 
 // calibration
 bool calibrating;
@@ -253,7 +257,7 @@ using namespace vcg;
 #define N_LIDARS 2
 static std::string camIniFile; // "../calib_results_30062022.txt";
 
-                               
+
 
 LidarRender lidars[2];
 
@@ -309,9 +313,9 @@ void initMesh()
 }
 
 struct VirtualClock {
-    
-    unsigned long long clock() {return (realtime)?::clock():ticks[iTicks];}
-    void advance() { if(!realtime) iTicks=(iTicks+1)% ticks.size(); }
+
+    unsigned long long clock() { return (realtime) ? ::clock() : ticks[iTicks]; }
+    void advance() { if (!realtime) iTicks = (iTicks + 1) % ticks.size(); }
     int iTicks;
     bool realtime;
     std::vector<unsigned long long> ticks;
@@ -332,7 +336,7 @@ void updatePC(int il) {
         return;
     }
 
-    if (first[il])  
+    if (first[il])
         lidars[il].init();
 
 
@@ -347,7 +351,7 @@ void updatePC(int il) {
 
     lidars[il].fillGrid();
 
-    if (first[0]||first[1]) {
+    if (first[0] || first[1]) {
         initMesh();
         lidars[il].bbox = mesh.bbox;
         first[il] = false;
@@ -392,7 +396,7 @@ void draw_frame(vcg::Matrix44f m) {
         glColor3f((i == 0), (i == 1), (i == 2));
         glVertex3f(o[0], o[1], o[2]);
         vcg::Point3f a = m.GetColumn3(i);
-        glVertex3f(o[0]+a[0], o[1] + a[1], o[2] + a[2]);
+        glVertex3f(o[0] + a[0], o[1] + a[1], o[2] + a[2]);
     }
     glEnd();
 }
@@ -401,7 +405,7 @@ void drawLine(vcg::Line3f l) {
     vcg::Point3f p1 = l.Origin() + l.Direction();
     glBegin(GL_LINES);
 
-    glColor3f(1,1,0);
+    glColor3f(1, 1, 0);
     glVertex3f(p0[0], p0[1], p0[2]);
     glVertex3f(p1[0], p1[1], p1[2]);
     glEnd();
@@ -426,10 +430,10 @@ void initializeGLStuff() {
     point_shader.bind("camDepth");
     point_shader.bind("aligned");
     point_shader.bind("used");
-    GLint  texs[6] = { 5,6,7,8,9,10};
-    GLint  dpts[6] = { 11,12,13,14,15,16};
-    glUniform1iv(point_shader["camTex"],6, texs);
-    glUniform1iv(point_shader["camDepth"],6, dpts);
+    GLint  texs[6] = { 5,6,7,8,9,10 };
+    GLint  dpts[6] = { 11,12,13,14,15,16 };
+    glUniform1iv(point_shader["camTex"], 6, texs);
+    glUniform1iv(point_shader["camDepth"], 6, dpts);
     glUseProgram(0);
     GLERR();
     assert(_CrtCheckMemory());
@@ -445,7 +449,7 @@ void initializeGLStuff() {
 
 
     if (texture_shader.SetFromFile("./Calibration/Shaders/texture.vs",
-       0, "./Calibration/Shaders/texture.fs") < 0)
+        0, "./Calibration/Shaders/texture.fs") < 0)
     {
         printf("texture SHADER ERR");
     }
@@ -463,10 +467,10 @@ void initializeGLStuff() {
     }
     flat_shader.Validate();
     GLERR();
-    
+
     flat_shader.bind("mm");
     flat_shader.bind("pm");
-   
+
     GLERR();
     assert(_CrtCheckMemory());
     glGenTextures(1, &markersTextureID);
@@ -487,7 +491,7 @@ void initializeGLStuff() {
         assert(_CrtCheckMemory());
     }
     shadowFBO.resize(NUMCAM);
-    
+
     for (int i = 0; i < NUMCAM; ++i) {
         shadowFBO[i].Create(1948, 1096);
         assert(_CrtCheckMemory());
@@ -505,10 +509,10 @@ void initializeGLStuff() {
 }
 
 void updateBoatFrame() {
-        boatFrame = vcg::Matrix44f().SetRotateDeg(alphaFrame, vcg::Point3f(1, 0, 0))*
-                    vcg::Matrix44f().SetRotateDeg(betaFrame, vcg::Point3f(0, 1, 0))*
-                    vcg::Matrix44f().SetRotateDeg(gammaFrame, vcg::Point3f(0, 0, 1));
-        boatFrame.SetColumn(3, vcg::Point3f(xFrame,yFrame,zFrame));
+    boatFrame = vcg::Matrix44f().SetRotateDeg(alphaFrame, vcg::Point3f(1, 0, 0)) *
+        vcg::Matrix44f().SetRotateDeg(betaFrame, vcg::Point3f(0, 1, 0)) *
+        vcg::Matrix44f().SetRotateDeg(gammaFrame, vcg::Point3f(0, 0, 1));
+    boatFrame.SetColumn(3, vcg::Point3f(xFrame, yFrame, zFrame));
 }
 void updateToSteadyFrame() {
     vcg::Matrix44f rollMat;
@@ -533,13 +537,13 @@ void updateToGeoFrame() {
 
 
 void drawString(vcg::Point3f p, const char* string, int size) {
-    void *  fonts[4] = { GLUT_BITMAP_HELVETICA_10,GLUT_BITMAP_HELVETICA_12,GLUT_BITMAP_HELVETICA_18,GLUT_BITMAP_TIMES_ROMAN_24 };
+    void* fonts[4] = { GLUT_BITMAP_HELVETICA_10,GLUT_BITMAP_HELVETICA_12,GLUT_BITMAP_HELVETICA_18,GLUT_BITMAP_TIMES_ROMAN_24 };
     int sizes[4] = { 10,12,18,24 };
     glRasterPos3f(p[0], p[1], p[2]);
     glColor3f(1, 1, 1);
     int fontsize = size / (1 + std::string(string).length());
-    void  * font = fonts[3];
-    for(int fi = 0; fi < 4; ++fi)
+    void* font = fonts[3];
+    for (int fi = 0; fi < 4; ++fi)
         if (fontsize < sizes[fi])
         {
             font = fonts[fi];
@@ -554,7 +558,7 @@ void drawString(vcg::Point3f p, const char* string, int size) {
 
 void drawScene() {
     vcg::Matrix44f toCamera[6];
-    GLfloat mm[16], pm[16],mm1[16];
+    GLfloat mm[16], pm[16], mm1[16];
     GLint aligned[6];
     GLint used[6];
 
@@ -584,7 +588,7 @@ void drawScene() {
             else
                 aligned[ic] = 0;
         glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
-        glUniform1iv(point_shader["aligned"], NUMCAM, aligned);  
+        glUniform1iv(point_shader["aligned"], NUMCAM, aligned);
         glUniform1iv(point_shader["used"], NUMCAM, used);
 
         glGetFloatv(GL_PROJECTION_MATRIX, pm);
@@ -596,7 +600,7 @@ void drawScene() {
 
     for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
         glPushMatrix();
-       
+
         // draw axis
         for (int il = 0; il < 3; ++il)
             if (axis[currentLidar][il].valid) {
@@ -610,18 +614,18 @@ void drawScene() {
 
         glMultMatrix(lidars[il].transfLidar);
         glMultMatrix(toSteadyFrame);
-        for(int ic=0; ic < NUMCAM; ++ic) toCamera[ic].SetIdentity();
+        for (int ic = 0; ic < NUMCAM; ++ic) toCamera[ic].SetIdentity();
 
         if (enable_proj) {
             drawmode = SMOOTH;
             glUseProgram(point_shader.pr);
 
             GLERR();
- 
+
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
-            vcg::Matrix44f l2w = toSteadyFrame* lidars[il].transfLidar;
+            vcg::Matrix44f l2w = toSteadyFrame * lidars[il].transfLidar;
             glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &l2w[0][0]);
 
             // THIS ONLY NEED TO BE DONE ONCE
@@ -630,18 +634,18 @@ void drawScene() {
                 glBindTexture(GL_TEXTURE_2D, shadowFBO[i].id_tex);
             }
         }
-        else 
+        else
             if (drawmode == SMOOTH)
             {
-            glUseProgram(flat_shader.pr);
-            glGetFloatv(GL_PROJECTION_MATRIX, pm);
-            glUniformMatrix4fv(flat_shader["pm"], 1, GL_FALSE, pm);
+                glUseProgram(flat_shader.pr);
+                glGetFloatv(GL_PROJECTION_MATRIX, pm);
+                glUniformMatrix4fv(flat_shader["pm"], 1, GL_FALSE, pm);
 
-            glGetFloatv(GL_MODELVIEW_MATRIX, mm);
-            glUniformMatrix4fv(flat_shader["mm"], 1, GL_FALSE, mm);
+                glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+                glUniformMatrix4fv(flat_shader["mm"], 1, GL_FALSE, mm);
 
-        }
-       // glColor3f(il == 0, il == 0, il == 1);
+            }
+        // glColor3f(il == 0, il == 0, il == 1);
         glColor3f(1.0, 1.0, il == 1);
 
         GLERR();
@@ -672,12 +676,13 @@ void drawScene() {
         glUseProgram(0);
     }
 
-    
-        if (markers.empty()) {
-            markers_pos_x = 0;
-            markers_pos_y = 0;
-        } else
-         if (!virtualCameras.empty()) {
+
+    if (markers.empty()) {
+        markers_pos_x = 0;
+        markers_pos_y = 0;
+    }
+    else
+        if (!virtualCameras.empty()) {
             glUseProgram(texture_shader.pr);
 
             glActiveTexture(GL_TEXTURE0 + NUMCAM);
@@ -729,7 +734,7 @@ void drawScene() {
             vcg::Point3f z_ax = billboard_frame.GetColumn3(2);
             float sx, dx, bt, tp, n;
             virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
-            float met_2_pixels =  virtualCameras[activeCamera].Intrinsics.ViewportPx[0]/ (dx - sx);
+            float met_2_pixels = virtualCameras[activeCamera].Intrinsics.ViewportPx[0] / (dx - sx);
             activeCamera_mutex.unlock();
 
             std::vector<Marker> sorted_markers;
@@ -742,7 +747,7 @@ void drawScene() {
             std::sort(sorted_markers.begin(), sorted_markers.end());
 
             for (std::vector<Marker> ::iterator im = sorted_markers.begin(); im != sorted_markers.end(); ++im)
-                if ((*im).visible){
+                if ((*im).visible) {
                     // Compute the frame for the billboard
                     billboard_frame.SetColumn(3, (*im).pos);
 
@@ -754,26 +759,27 @@ void drawScene() {
                     vcg::Matrix44f mm_ = vm_ * billboard_frame;
 
                     glUseProgram(texture_shader.pr);
-                    glUniformMatrix4fv(texture_shader["mm"],1,true, &mm_[0][0]);
+                    glUniformMatrix4fv(texture_shader["mm"], 1, true, &mm_[0][0]);
                     glUniformMatrix4fv(texture_shader["pm"], 1, false, pm);
 
                     glEnable(GL_BLEND);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
                     float size_on_viewplane = (*im).width * n / (*im).z;
-                    float size_on_screen = size_on_viewplane  * met_2_pixels;
+                    float size_on_screen = size_on_viewplane * met_2_pixels;
                     float ratio = 1.f;
                     if (size_on_screen < min_size_on_screen) {
                         ratio = min_size_on_screen / size_on_screen;
                         size_on_screen = min_size_on_screen;
-                    }else
+                    }
+                    else
                         if (size_on_screen < max_size_on_screen) {
                             ratio = max_size_on_screen / size_on_screen;
                             size_on_screen = max_size_on_screen;
                         }
 
 
-                    float h_size  = (*im).width* ratio /2.0;
+                    float h_size = (*im).width * ratio / 2.0;
 
 
                     glBegin(GL_TRIANGLES);
@@ -782,13 +788,13 @@ void drawScene() {
                     glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, (*im).tc[1] / 2048.f);
                     glVertex3f(h_size, h_size, 0.0);
                     glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, ((*im).tc[1] + 64) / 2048.f);
-                    glVertex3f(h_size, h_size*2.f, 0.0);
+                    glVertex3f(h_size, h_size * 2.f, 0.0);
 
                     glVertexAttrib2f(1, (*im).tc[0] / 2048.f, (*im).tc[1] / 2048.f);
-                    glVertex3f(-h_size, h_size , 0.0);
+                    glVertex3f(-h_size, h_size, 0.0);
                     glVertexAttrib2f(1, ((*im).tc[0] + 64) / 2048.f, ((*im).tc[1] + 64) / 2048.f);
                     glVertex3f(h_size, h_size * 2.f, 0.0);
-                    glVertexAttrib2f(1,  (*im).tc[0]   / 2048.f, ((*im).tc[1] + 64) / 2048.f);
+                    glVertexAttrib2f(1, (*im).tc[0] / 2048.f, ((*im).tc[1] + 64) / 2048.f);
                     glVertex3f(-h_size, h_size * 2.f, 0.0);
                     glEnd();
                     glUseProgram(0);
@@ -796,18 +802,18 @@ void drawScene() {
                     glDisable(GL_BLEND);
                     drawString((*im).pos, (*im).label.c_str(), size_on_screen);
                 }
-        
-        GLERR();
-    }
 
-    if(showBackground)
-    if (drawmode == SMOOTH && enable_proj) {
-        glUseProgram(point_shader.pr);
-        glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
-        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
-        gluSphere(gluNewQuadric(), 100.0, 10, 10);
-        glUseProgram(0);
-    }
+            GLERR();
+        }
+
+    if (showBackground)
+        if (drawmode == SMOOTH && enable_proj) {
+            glUseProgram(point_shader.pr);
+            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
+            glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
+            gluSphere(gluNewQuadric(), 100.0, 10, 10);
+            glUseProgram(0);
+        }
     /* END DRAW SCENE */
 }
 void TW_CALL detectMarker(void*);
@@ -828,7 +834,7 @@ void Display() {
     updateToGeoFrame();
     assert(_CrtCheckMemory());
 
-//    glViewport(0, 0, width, height);
+    //    glViewport(0, 0, width, height);
     glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -853,19 +859,19 @@ void Display() {
         boxsel.Offset(vcg::Point3f(0, 0, 0.1));
     }
     if (boxpicking) {
-        boxsel.Add(vcg::Point3f(point_sel_2D[0] , point_sel_2D[1], 0));
+        boxsel.Add(vcg::Point3f(point_sel_2D[0], point_sel_2D[1], 0));
         boxsel.Offset(vcg::Point3f(10, 10, 0.1));
     }
 
-  //  if (lidars[currentLidar].lidar.reading)
-  //      updatePC(currentLidar);
+    //  if (lidars[currentLidar].lidar.reading)
+    //      updatePC(currentLidar);
 
-    // calibration
+      // calibration
     if (calibrating) {
         corrDet.detect();
-        if (corrDet.trackingState[0]*corrDet.trackingState[1]==0)
- //       if (corrDet.trackingState[0] == 0)
-            if(time_running)
+        if (corrDet.trackingState[0] * corrDet.trackingState[1] == 0)
+            //       if (corrDet.trackingState[0] == 0)
+            if (time_running)
                 time_startstop(0);
     }
 
@@ -874,304 +880,304 @@ void Display() {
         corrDet.draw_debug();
 
     for (int iL = 0; iL < 2; ++iL)
-        if(splitScreen || (!splitScreen && iL==currentLidar))
-    {
+        if (splitScreen || (!splitScreen && iL == currentLidar))
+        {
 
-        currentLidar = iL;
-        updatePC(currentLidar);
-        glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
-        if (lidars[currentLidar].lidar.reading && !mesh.vert.empty()) {
-            vcg::Matrix44f toCurrCamera;
-            GLfloat mm[16], pm[16];
-
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            gluPerspective(40, vpl[currentLidar][2] / (float)vpl[currentLidar][3], 0.1, 100);
-            glMatrixMode(GL_MODELVIEW);
-            glLoadIdentity();
-            gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
-
-
-            track[currentLidar].center = vcg::Point3f(0, 0, 0);
-            track[currentLidar].radius = 1.0;
-            track[currentLidar].GetView();
-            track[currentLidar].Apply();
-
-
-            glPushMatrix();
-            vcg::glScale(0.2);
-
-            draw_frame(boatFrame);
-            glUseProgram(0);
-            glDisable(GL_LIGHTING);
-            if ( ( selecting || boxpicking ) && wnd==currentLidar) {
-                vcg::Point3f p;
-                GLdouble mm[16], pm[16];
-                GLint view[4];
-                double x, y, z, zmin = std::numeric_limits<float>::max();
-                glGetDoublev(GL_MODELVIEW_MATRIX, mm);
-                glGetDoublev(GL_PROJECTION_MATRIX, pm);
-                glGetIntegerv(GL_VIEWPORT, view);
-
-
-                if (!escapemode || boxpicking) {
-                    selected.clear();
-                    glPointSize(3.0);
-                    glColor3f(1, 0, 0);
-                    glBegin(GL_POINTS);
-                    for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
-                        p = mesh.vert[i].cP();
-                        p = lidars[currentLidar].transfLidar * p;
-                        gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
-                        if (boxsel.IsIn(vcg::Point3f(x - vpl[currentLidar][0], y - vpl[currentLidar][1], 0))) {
-                            selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
-                            glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
-                            if (z < zmin) {
-                                zmin = z;
-                                closest_sel = p;
-                            }
-                        }
-                    }
-
-                    glEnd();
-                    glPointSize(1.0);
-
-                    if (boxpicking && !selected.empty())
-                        corrDet.currentP3D[currentLidar] = closest_sel;
-                    boxpicking = false;
-
-                    if (selected.size() > 4) {
-                        vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
-                        PlaneC& pl = planes[currentLidar][currentPlane];
-
-                        pl.o = selected[0];
-                        for (uint i = 1; i < selected.size(); ++i)
-                            pl.o += selected[i];
-                        pl.o /= selected.size();
-                        pl.o = pl.Projection(pl.o);
-                        pl.valid = true;
-                    }
-                }
-            }
-
-            if (showPlanes)
-                for (int ip = 0; ip < 3; ++ip)
-                    if (planes[currentLidar][ip].valid) {
-                        glColor3f(ip == 0, ip == 1, ip == 2);
-                        drawPlane(planes[currentLidar][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
-                    }
-
-            bool virtualCamerasExist = !virtualCameras.empty();
-            GLERR();
-
-
-            for (int il = 0; il < N_LIDARS; ++il)
-                updatePC(il);
-
-            if (enable_proj) {
-                for (int iCam = 0; iCam < NUMCAM;++iCam)
-                    if (cameras[iCam].aligned)
-                    {
-                        // create shadow maps
-                        glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
-                        glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
-                        glClearColor(1.0, 1.0, 1.0, 1.0);
-                        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-                        glEnable(GL_DEPTH_TEST);
-
-                        glUseProgram(shadow_shader.pr);
-                        vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
-
-                        for (int il = 0; il < N_LIDARS; ++il) {
-
-                            toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
-
-                            glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
-
-                            GLERR();
-                            glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
-                            glEnableVertexAttribArray(0);
-                            glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-
-                            glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
-                            glEnableVertexAttribArray(1);
-                            glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
-
-                            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
-                            glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
-                            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                        }
-
-                        glUseProgram(0);
-
-                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                        //if (iCam == 0) {
-                        //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                        //   cv::Mat ima(1096,1948,CV_8UC3);
-                        //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                        //   cv::flip(ima, ima, 0);
-                        //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                        //}
-                    }
-
-
-            }
-
+            currentLidar = iL;
+            updatePC(currentLidar);
             glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
-            glClearColor(0.0, 0.0, 0.0, 1.0);
-            // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            if (lidars[currentLidar].lidar.reading && !mesh.vert.empty()) {
+                vcg::Matrix44f toCurrCamera;
+                GLfloat mm[16], pm[16];
 
-            drawScene();
+                glMatrixMode(GL_PROJECTION);
+                glLoadIdentity();
+                gluPerspective(40, vpl[currentLidar][2] / (float)vpl[currentLidar][3], 0.1, 100);
+                glMatrixMode(GL_MODELVIEW);
+                glLoadIdentity();
+                gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
 
-            if (!showfromcamera && showCameras) {
-                // draw cameras
-                for (int ic = 0; ic < cameras.size(); ++ic) {
-                    glColor3f(0, 1, 0);
-                    glPushMatrix();
-                    vcg::Point3f p = cameras[ic].calibrated.GetViewPoint();
-                    glTranslatef(p[0], p[1], p[2]);
-                    gluSphere(gluNewQuadric(), 0.2, 10, 10);
-                    draw_frame(cameras[ic].calibrated.Extrinsics.Rot());
-                    glPopMatrix();
-                }
-            }
 
-            for (int ip = 0; ip < points.size(); ++ip)
-                if (::usePoint[ip])
-                {
-                    glColor3f(0, 0, 1);
-                    glPushMatrix();
-                    vcg::Point3f p = points[ip];
-                    glTranslatef(p[0], p[1], p[2]);
-                    gluSphere(gluNewQuadric(), 0.02, 10, 10);
-                    glPopMatrix();
-                }
-            {
-                glColor3f(corrDet.trackingState[currentLidar] == 1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2);
+                track[currentLidar].center = vcg::Point3f(0, 0, 0);
+                track[currentLidar].radius = 1.0;
+                track[currentLidar].GetView();
+                track[currentLidar].Apply();
+
+
                 glPushMatrix();
-                //            vcg::Point3f p = marker3D;
-                vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
+                vcg::glScale(0.2);
 
-                glTranslatef(p[0], p[1], p[2]);
-                gluSphere(gluNewQuadric(), 0.1, 10, 10);
-                glPopMatrix();
-            }
-            {
-                glColor3f(0, 1, 0);
-                glPushMatrix();
-                vcg::Point3f p = closest_sel;
-                glTranslatef(p[0], p[1], p[2]);
-                gluSphere(gluNewQuadric(), 0.02, 10, 10);
-                glPopMatrix();
-            }
-            for (int fi = 0; fi < frames[0].size(); ++fi)
-                if (::idFrame == fi)
-                    draw_frame(frames[0][fi]);
-
-            if (showfromcamera) {
-                // branch show from one of the currentCamera
-                GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
-                glViewport(width / 2, height / 2, width / 2, height / 2);
-                drawScene();
-                GlShot<vcg::Shotf>::UnsetView();
-                glViewport(0, 0, width, height);
-            }
-            if (streamON && virtualCamerasExist)
-            {
-                //streaming branch that write to framebuffer   
-                glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO.id_fbo);
-                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-                glEnable(GL_DEPTH_TEST);
-                glClearDepth(1.0);
-                glViewport(0, 0, cameraFBO.w, cameraFBO.h);
-
-                float sx, dx, bt, tp, n;
-                activeCamera_mutex.lock();
-                virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
-                GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
-                activeCamera_mutex.unlock();
-
-                drawScene();
-                if (::pick_point) {
-                    double  x3d, y3d, z3d;
-                    float z;
+                draw_frame(boatFrame);
+                glUseProgram(0);
+                glDisable(GL_LIGHTING);
+                if ((selecting || boxpicking) && wnd == currentLidar) {
+                    vcg::Point3f p;
                     GLdouble mm[16], pm[16];
                     GLint view[4];
+                    double x, y, z, zmin = std::numeric_limits<float>::max();
                     glGetDoublev(GL_MODELVIEW_MATRIX, mm);
                     glGetDoublev(GL_PROJECTION_MATRIX, pm);
                     glGetIntegerv(GL_VIEWPORT, view);
 
-                    glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 
-                    gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
+                    if (!escapemode || boxpicking) {
+                        selected.clear();
+                        glPointSize(3.0);
+                        glColor3f(1, 0, 0);
+                        glBegin(GL_POINTS);
+                        for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
+                            p = mesh.vert[i].cP();
+                            p = lidars[currentLidar].transfLidar * p;
+                            gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
+                            if (boxsel.IsIn(vcg::Point3f(x - vpl[currentLidar][0], y - vpl[currentLidar][1], 0))) {
+                                selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
+                                glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
+                                if (z < zmin) {
+                                    zmin = z;
+                                    closest_sel = p;
+                                }
+                            }
+                        }
 
-                    picked_point[0] = x3d;
-                    picked_point[1] = y3d;
-                    picked_point[2] = z3d;
-                    vcg::Point4f xyzGeo = toGeoFrame * vcg::Point4f(x3d, y3d, z3d, 1.0);
-                    picked_point[3] = xyzGeo[0];
-                    picked_point[4] = xyzGeo[1];
-                    picked_point[5] = xyzGeo[2];
+                        glEnd();
+                        glPointSize(1.0);
 
-                    {
-                        std::lock_guard lk(m);
-                        picked = true;
-                        ::pick_point = false;
-                        condv.notify_one();
+                        if (boxpicking && !selected.empty())
+                            corrDet.currentP3D[currentLidar] = closest_sel;
+                        boxpicking = false;
+
+                        if (selected.size() > 4) {
+                            vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
+                            PlaneC& pl = planes[currentLidar][currentPlane];
+
+                            pl.o = selected[0];
+                            for (uint i = 1; i < selected.size(); ++i)
+                                pl.o += selected[i];
+                            pl.o /= selected.size();
+                            pl.o = pl.Projection(pl.o);
+                            pl.valid = true;
+                        }
                     }
                 }
 
-                GlShot<vcg::Shotf>::UnsetView(); ;
+                if (showPlanes)
+                    for (int ip = 0; ip < 3; ++ip)
+                        if (planes[currentLidar][ip].valid) {
+                            glColor3f(ip == 0, ip == 1, ip == 2);
+                            drawPlane(planes[currentLidar][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
+                        }
 
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
-                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+                bool virtualCamerasExist = !virtualCameras.empty();
+                GLERR();
 
 
-                glMatrixMode(GL_PROJECTION);
-                glPushMatrix();
-                glLoadIdentity();
-                glMatrixMode(GL_MODELVIEW);
-                glPushMatrix();
-                glLoadIdentity();
+                for (int il = 0; il < N_LIDARS; ++il)
+                    updatePC(il);
+
+                if (enable_proj) {
+                    for (int iCam = 0; iCam < NUMCAM; ++iCam)
+                        if (cameras[iCam].aligned)
+                        {
+                            // create shadow maps
+                            glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
+                            glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
+                            glClearColor(1.0, 1.0, 1.0, 1.0);
+                            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                            glEnable(GL_DEPTH_TEST);
+
+                            glUseProgram(shadow_shader.pr);
+                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
+
+                            for (int il = 0; il < N_LIDARS; ++il) {
+
+                                toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
+
+                                glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
+
+                                GLERR();
+                                glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
+                                glEnableVertexAttribArray(0);
+                                glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+                                glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
+                                glEnableVertexAttribArray(1);
+                                glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
+
+                                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
+                                glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
+                                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                            }
+
+                            glUseProgram(0);
+
+                            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                            //if (iCam == 0) {
+                            //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                            //   cv::Mat ima(1096,1948,CV_8UC3);
+                            //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                            //   cv::flip(ima, ima, 0);
+                            //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                            //}
+                        }
+
+
+                }
 
                 glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
-                glDisable(GL_DEPTH_TEST);
+                glClearColor(0.0, 0.0, 0.0, 1.0);
+                // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
-                glUseProgram(texture_shader.pr);
-                glUniform1i(texture_shader["uTexture"], 0);
-                glUniformMatrix4fv(texture_shader["mm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
-                glUniformMatrix4fv(texture_shader["pm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
-                glBegin(GL_QUADS);
-                glVertexAttrib2f(1, 0.0, 0.0);
-                glVertex3f(0.0, -1, 0.0);
-                glVertexAttrib2f(1, 1.0, 0.0);
-                glVertex3f(1.0, -1, 0.0);
-                glVertexAttrib2f(1, 1.0, 1.0);
-                glVertex3f(1.0, 0.0, 0.0);
-                glVertexAttrib2f(1, 0.0, 1.0);
-                glVertex3f(0.0, 0.0, 0.0);
-                glEnd();
-                glUseProgram(0);
-                glEnable(GL_DEPTH_TEST);
+                drawScene();
 
-                glMatrixMode(GL_PROJECTION);
+                if (!showfromcamera && showCameras) {
+                    // draw cameras
+                    for (int ic = 0; ic < cameras.size(); ++ic) {
+                        glColor3f(0, 1, 0);
+                        glPushMatrix();
+                        vcg::Point3f p = cameras[ic].calibrated.GetViewPoint();
+                        glTranslatef(p[0], p[1], p[2]);
+                        gluSphere(gluNewQuadric(), 0.2, 10, 10);
+                        draw_frame(cameras[ic].calibrated.Extrinsics.Rot());
+                        glPopMatrix();
+                    }
+                }
+
+                for (int ip = 0; ip < points.size(); ++ip)
+                    if (::usePoint[ip])
+                    {
+                        glColor3f(0, 0, 1);
+                        glPushMatrix();
+                        vcg::Point3f p = points[ip];
+                        glTranslatef(p[0], p[1], p[2]);
+                        gluSphere(gluNewQuadric(), 0.02, 10, 10);
+                        glPopMatrix();
+                    }
+                {
+                    glColor3f(corrDet.trackingState[currentLidar] == 1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2);
+                    glPushMatrix();
+                    //            vcg::Point3f p = marker3D;
+                    vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
+
+                    glTranslatef(p[0], p[1], p[2]);
+                    gluSphere(gluNewQuadric(), 0.1, 10, 10);
+                    glPopMatrix();
+                }
+                {
+                    glColor3f(0, 1, 0);
+                    glPushMatrix();
+                    vcg::Point3f p = closest_sel;
+                    glTranslatef(p[0], p[1], p[2]);
+                    gluSphere(gluNewQuadric(), 0.02, 10, 10);
+                    glPopMatrix();
+                }
+                for (int fi = 0; fi < frames[0].size(); ++fi)
+                    if (::idFrame == fi)
+                        draw_frame(frames[0][fi]);
+
+                if (showfromcamera) {
+                    // branch show from one of the currentCamera
+                    GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
+                    glViewport(width / 2, height / 2, width / 2, height / 2);
+                    drawScene();
+                    GlShot<vcg::Shotf>::UnsetView();
+                    glViewport(0, 0, width, height);
+                }
+                if (streamON && virtualCamerasExist)
+                {
+                    //streaming branch that write to framebuffer   
+                    glBindFramebuffer(GL_FRAMEBUFFER, cameraFBO.id_fbo);
+                    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                    glEnable(GL_DEPTH_TEST);
+                    glClearDepth(1.0);
+                    glViewport(0, 0, cameraFBO.w, cameraFBO.h);
+
+                    float sx, dx, bt, tp, n;
+                    activeCamera_mutex.lock();
+                    virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+                    GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
+                    activeCamera_mutex.unlock();
+
+                    drawScene();
+                    if (::pick_point) {
+                        double  x3d, y3d, z3d;
+                        float z;
+                        GLdouble mm[16], pm[16];
+                        GLint view[4];
+                        glGetDoublev(GL_MODELVIEW_MATRIX, mm);
+                        glGetDoublev(GL_PROJECTION_MATRIX, pm);
+                        glGetIntegerv(GL_VIEWPORT, view);
+
+                        glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+
+                        gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
+
+                        picked_point[0] = x3d;
+                        picked_point[1] = y3d;
+                        picked_point[2] = z3d;
+                        vcg::Point4f xyzGeo = toGeoFrame * vcg::Point4f(x3d, y3d, z3d, 1.0);
+                        picked_point[3] = xyzGeo[0];
+                        picked_point[4] = xyzGeo[1];
+                        picked_point[5] = xyzGeo[2];
+
+                        {
+                            std::lock_guard lk(m);
+                            picked = true;
+                            ::pick_point = false;
+                            condv.notify_one();
+                        }
+                    }
+
+                    GlShot<vcg::Shotf>::UnsetView(); ;
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+
+
+                    glMatrixMode(GL_PROJECTION);
+                    glPushMatrix();
+                    glLoadIdentity();
+                    glMatrixMode(GL_MODELVIEW);
+                    glPushMatrix();
+                    glLoadIdentity();
+
+                    glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+                    glDisable(GL_DEPTH_TEST);
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
+                    glUseProgram(texture_shader.pr);
+                    glUniform1i(texture_shader["uTexture"], 0);
+                    glUniformMatrix4fv(texture_shader["mm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
+                    glUniformMatrix4fv(texture_shader["pm"], 1, false, &vcg::Matrix44f::Identity()[0][0]);
+                    glBegin(GL_QUADS);
+                    glVertexAttrib2f(1, 0.0, 0.0);
+                    glVertex3f(0.0, -1, 0.0);
+                    glVertexAttrib2f(1, 1.0, 0.0);
+                    glVertex3f(1.0, -1, 0.0);
+                    glVertexAttrib2f(1, 1.0, 1.0);
+                    glVertex3f(1.0, 0.0, 0.0);
+                    glVertexAttrib2f(1, 0.0, 1.0);
+                    glVertex3f(0.0, 0.0, 0.0);
+                    glEnd();
+                    glUseProgram(0);
+                    glEnable(GL_DEPTH_TEST);
+
+                    glMatrixMode(GL_PROJECTION);
+                    glPopMatrix();
+                    glMatrixMode(GL_MODELVIEW);
+                    glPopMatrix();
+
+                }
+
                 glPopMatrix();
-                glMatrixMode(GL_MODELVIEW);
-                glPopMatrix();
 
+
+                track[currentLidar].DrawPostApply();
             }
-
-            glPopMatrix();
-
-
-            track[currentLidar].DrawPostApply();
         }
-    }
 
     glUseProgram(0);
 
@@ -1179,7 +1185,7 @@ void Display() {
     TwRefreshBar(bar);
     TwDraw();
     ///////////////// send streaming data
-;
+    ;
 
     /////////////////////////////
 
@@ -1188,7 +1194,7 @@ void Display() {
 
     // Recall Display at next frame
     glutPostRedisplay();
-    
+
 
 
     if (SCENE_REPLAY) {
@@ -1205,7 +1211,7 @@ void Display() {
 }
 
 
-void setViewports(int _width, int _height){
+void setViewports(int _width, int _height) {
     if (splitScreen) {
         vpl[0][0] = width / 3;
         vpl[0][1] = 0;
@@ -1215,15 +1221,16 @@ void setViewports(int _width, int _height){
         vpl[1][0] = width / 3;
         vpl[1][1] = height / 2;
         vpl[1][2] = width * 2 / 3;
-        vpl[1][3] = height / 2;    }
+        vpl[1][3] = height / 2;
+    }
     else {
-        vpl[0][0] = vpl[1][0] = 0  ;
+        vpl[0][0] = vpl[1][0] = 0;
         vpl[0][1] = vpl[1][1] = 0;
         vpl[0][2] = vpl[1][2] = width;
-        vpl[0][3] = vpl[1][3] = height  ;
+        vpl[0][3] = vpl[1][3] = height;
     }
 
-    
+
 }
 void Reshape(int _width, int _height) {
     width = _width;
@@ -1232,22 +1239,22 @@ void Reshape(int _width, int _height) {
     TwWindowSize(width, height);
 }
 
-void TW_CALL rotateAxis(void*a) {
+void TW_CALL rotateAxis(void* a) {
     int ax = *(int*)a;
     vcg::Matrix44f R;
     R.SetRotateDeg(90, axis[currentLidar][ax].Direction());
-    axis[currentLidar][(ax+1)%3].SetDirection(R * axis[currentLidar][(ax + 1) % 3].Direction());
-    axis[currentLidar][(ax+2)%3].SetDirection(R * axis[currentLidar][(ax + 2) % 3].Direction());
+    axis[currentLidar][(ax + 1) % 3].SetDirection(R * axis[currentLidar][(ax + 1) % 3].Direction());
+    axis[currentLidar][(ax + 2) % 3].SetDirection(R * axis[currentLidar][(ax + 2) % 3].Direction());
 }
 
-void addPointToGUI(vcg::Point3f p,int i) {
+void addPointToGUI(vcg::Point3f p, int i) {
     std::string pn = std::to_string(p.X()) + "," + std::to_string(p.Y()) + "," + std::to_string(p.Z());
     std::string n = pn;
 
     TwAddVarRW(pointsBar, n.c_str(), TW_TYPE_BOOL8, &usePoint[i], "");
 }
 void TW_CALL addPoint(void*) {
-    vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord); 
+    vcg::Point3f newPoint = frames[currentLidar][idFrame] * vcg::Point3f(xCoord, yCoord, zCoord);
     addPointToGUI(newPoint, points.size());
     points.push_back(newPoint);
 }
@@ -1258,7 +1265,7 @@ void TW_CALL setMarker(void*) {
 }
 
 std::vector<TwEnumVal> frame_item_dd;
-vcg::Matrix44f  axis2frame() {   
+vcg::Matrix44f  axis2frame() {
     vcg::Matrix44f F;
     F.SetIdentity();
     F.SetColumn(0, axis[currentLidar][0].Direction());
@@ -1272,9 +1279,9 @@ vcg::Matrix44f  axis2frame() {
     return F;
 }
 
- 
+
 TwEnumVal listframes[20] = { {0,"0"},{1,"1"},{2,"2"},{3,"3"},{4,"4"},{5,"5"},{6,"6"},{7,"7"},{8,"8"},{9,"9"},
-                             {10,"10"},{11,"11"},{12,"12"},{13,"13"},{14,"14"},{15,"15"},{16,"16"},{17,"17"},{18,"18"},{19,"19"}};
+                             {10,"10"},{11,"11"},{12,"12"},{13,"13"},{14,"14"},{15,"15"},{16,"16"},{17,"17"},{18,"18"},{19,"19"} };
 
 void addFrameToGUI() {
     TwType frames_dd = TwDefineEnum("frames", listframes, frames[currentLidar].size());
@@ -1288,8 +1295,8 @@ void TW_CALL addFrame(void*) {
 }
 
 void   alignCamera(int ic) {
-        if(cameras[ic].p3.size() == cameras[ic].p2i.size() && cameras[ic].p3.size()>3)
-            cameras[ic].calibrated = cameras[ic].SolvePnP(cameras[ic].p3);
+    if (cameras[ic].p3.size() == cameras[ic].p2i.size() && cameras[ic].p3.size() > 3)
+        cameras[ic].calibrated = cameras[ic].SolvePnP(cameras[ic].p3);
 }
 
 void TW_CALL alignCamera(void*) {
@@ -1303,11 +1310,11 @@ void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
 }
 void TW_CALL assignPointsToCamera(void*) {
-//    cameras[currentCamera].p3.clear();
-    for (int ip = 0; ip < points.size();++ip)
+    //    cameras[currentCamera].p3.clear();
+    for (int ip = 0; ip < points.size(); ++ip)
         if (usePoint[ip])
             cameras[currentCamera].p3.push_back(points[ip]);
-//    cameras[currentCamera].p2i.resize(cameras[currentCamera].p3.size());
+    //    cameras[currentCamera].p2i.resize(cameras[currentCamera].p3.size());
 }
 
 void TW_CALL computeTranformation(void*) {
@@ -1335,24 +1342,24 @@ void TW_CALL addMarkerToPoints(void*) {
 }
 void TW_CALL computeFrame(void*);
 void TW_CALL detectMarker(void*) {
-    
- /*   lidars[currentLidar].lidar.latest_frame_mutex.lock();
-   
-    md.points.clear();
-    for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
-        vcg::Point3f p = lidars[currentLidar].transfLidar*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
-        if (vcg::Distance<float>(p, marker3D) < 0.4)
-            md.points.push_back(p);
-    }
 
-    lidars[currentLidar].lidar.latest_frame_mutex.unlock();
-   
-    vcg::Point3f res;
-    vcg::Plane3f p0, p1, p2;
-    if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
-        computeFrame((void*) 0);
-        tracker.currect_marker3D = marker3D;
-    }*/
+    /*   lidars[currentLidar].lidar.latest_frame_mutex.lock();
+
+       md.points.clear();
+       for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
+           vcg::Point3f p = lidars[currentLidar].transfLidar*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
+           if (vcg::Distance<float>(p, marker3D) < 0.4)
+               md.points.push_back(p);
+       }
+
+       lidars[currentLidar].lidar.latest_frame_mutex.unlock();
+
+       vcg::Point3f res;
+       vcg::Plane3f p0, p1, p2;
+       if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
+           computeFrame((void*) 0);
+           tracker.currect_marker3D = marker3D;
+       }*/
 
 }
 
@@ -1361,11 +1368,11 @@ void TW_CALL computeLine(void*) {
     for (int ip = 0; ip < 2; ++ip)
         if (!planes[currentLidar][ip].valid)
             return;
-    vcg::Line3f l; 
+    vcg::Line3f l;
     vcg::IntersectionPlanePlane(planes[currentLidar][0], planes[currentLidar][1], l);
     float pr0 = l.Projection(planes[currentLidar][0].o);
     float pr1 = l.Projection(planes[currentLidar][1].o);
-    l.SetOrigin(l.Origin() + l.Direction()* (pr0 + pr1) * 0.5);
+    l.SetOrigin(l.Origin() + l.Direction() * (pr0 + pr1) * 0.5);
     lines3d.push_back(l);
 }
 void TW_CALL  setClosMarker(void*) {
@@ -1401,22 +1408,22 @@ void TW_CALL computeFrame(void*) {
 
 void TW_CALL saveFrames(void*) {
     std::string  file = std::string("frames.bin");
-    
-    if( SCENE_REPLAY)
-     file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
 
-    FILE* fo = fopen( file.c_str(), "wb");
+    if (SCENE_REPLAY)
+        file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+
+    FILE* fo = fopen(file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
         for (int fi = 0; fi < frames[il].size(); fi++) {
             printf("write frame \n");
-            fwrite(&(frames[il][fi][0][0]),  sizeof(vcg::Matrix44f),1, fo);
+            fwrite(&(frames[il][fi][0][0]), sizeof(vcg::Matrix44f), 1, fo);
         }
     fclose(fo);
 }
 void TW_CALL loadFrames(void*) {
     std::string  file = std::string("frames.bin");
-    if(SCENE_REPLAY)
-    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+    if (SCENE_REPLAY)
+        file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
 
     frames[0].clear();
     FILE* fo = fopen(file.c_str(), "rb");
@@ -1427,7 +1434,7 @@ void TW_CALL loadFrames(void*) {
     {
         size_t nr = 0;
         frames[0].push_back(vcg::Matrix44f());
-        nr = fread(& (frames[0].back()[0][0]),  sizeof(vcg::Matrix44f),1, fo);
+        nr = fread(&(frames[0].back()[0][0]), sizeof(vcg::Matrix44f), 1, fo);
         addFrameToGUI();
     }
     fclose(fo);
@@ -1435,9 +1442,9 @@ void TW_CALL loadFrames(void*) {
 
 void TW_CALL savePoints(void*) {
     std::string  file = std::string("points.bin");
-    if(SCENE_REPLAY)
-    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
- 
+    if (SCENE_REPLAY)
+        file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+
     FILE* fo = fopen(file.c_str(), "wb");
     fwrite(&(points[0][0]), sizeof(vcg::Point3f), points.size(), fo);
     fclose(fo);
@@ -1445,8 +1452,8 @@ void TW_CALL savePoints(void*) {
 void TW_CALL loadPoints(void*) {
     std::string  file = std::string("points.bin");
 
-    if(SCENE_REPLAY)
-    file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
+    if (SCENE_REPLAY)
+        file = DUMP_FOLDER_PATH + "\\PointClouds\\" + file;
 
     FILE* fo = fopen(file.c_str(), "rb");
     fseek(fo, 0, SEEK_END);
@@ -1456,16 +1463,16 @@ void TW_CALL loadPoints(void*) {
     fread(&(points[0][0]), sizeof(vcg::Point3f), points.size(), fo);
     fclose(fo);
     for (int i = 0; i < points.size(); ++i)
-        addPointToGUI(points[i],i);
+        addPointToGUI(points[i], i);
 }
 
 
 void TW_CALL saveAxis(void*) {
-    if(MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidaf calibration", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
+    if (MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidaf calibration", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
         return;
     std::string calibration_file = std::string("Calib.bin");
-    if(SCENE_REPLAY)
-    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+    if (SCENE_REPLAY)
+        calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
@@ -1478,12 +1485,12 @@ void TW_CALL saveAlignment(void*) {
         return;
     std::string calibration_file = std::string("Aln.bin");
 
-    if(SCENE_REPLAY)
-    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+    if (SCENE_REPLAY)
+        calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "wb");
     for (int il = 0; il < 2; il++)
-            fwrite(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
+        fwrite(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
     fclose(fo);
 }
 
@@ -1497,15 +1504,15 @@ void TW_CALL saveImPoints(void*) {
     }
     std::string correspondences_file = std::to_string(cameras[currentCamera].camID) + "_correspondences.txt";
 
-    if(SCENE_REPLAY)
-    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
+    if (SCENE_REPLAY)
+        correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + correspondences_file;
 
     FILE* fo = fopen(correspondences_file.c_str(), "w");
     if (fo) {
         char trash[1000];
-        fprintf(fo,"#correspondences x3d y3d z3d x2d y2d (x2d == y2s == -1 means not defined yet)\n");
+        fprintf(fo, "#correspondences x3d y3d z3d x2d y2d (x2d == y2s == -1 means not defined yet)\n");
 
-        for( int i = 0; i < cameras[currentCamera].p3.size(); ++i)
+        for (int i = 0; i < cameras[currentCamera].p3.size(); ++i)
         {
             fprintf(fo, "%f %f %f %f %f\n", cameras[currentCamera].p3[i].X(),
                 cameras[currentCamera].p3[i].Y(), cameras[currentCamera].p3[i].Z(),
@@ -1526,8 +1533,8 @@ void TW_CALL setFrame(void*) {
 void   loadImPoints(int iCam) {
     std::string correspondences_file = std::to_string(cameras[iCam].camID) + "_correspondences.txt";
 
-    if(SCENE_REPLAY)
-    correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iCam].camID) + "\\" + correspondences_file;
+    if (SCENE_REPLAY)
+        correspondences_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iCam].camID) + "\\" + correspondences_file;
 
     FILE* fo = fopen(correspondences_file.c_str(), "r");
     if (fo) {
@@ -1536,7 +1543,7 @@ void   loadImPoints(int iCam) {
 
         char trash[1000];
         fgets(trash, 1000, fo);
- 
+
         int i = 0;
         float x, y, z, u, v;
 
@@ -1559,8 +1566,8 @@ void TW_CALL loadImPoints(void*) {
 void TW_CALL loadAxis(void*) {
     std::string calibration_file = std::string("Calib.bin");
 
-    if(SCENE_REPLAY)
-    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+    if (SCENE_REPLAY)
+        calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
@@ -1572,12 +1579,12 @@ void TW_CALL loadAxis(void*) {
 void TW_CALL loadAlignment(void*) {
     std::string calibration_file = std::string("aln.bin");
 
-    if(SCENE_REPLAY)
-    calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
+    if (SCENE_REPLAY)
+        calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "rb");
     for (int il = 0; il < 2; il++)
-            fread(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
+        fread(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
     fclose(fo);
 }
 
@@ -1638,30 +1645,30 @@ void mousePressEvent(int bt, int state, int x, int y) {
     }
     else
         wnd = currentLidar;
-    
+
     xl = x - vpl[wnd][0];
     yl = y - vpl[wnd][1];
 
     if (selecting && !escapemode) {
         if (state == GLUT_DOWN) {
-            ::corners_sel_2D[0] = vcg::Point2f(xl,  yl);
+            ::corners_sel_2D[0] = vcg::Point2f(xl, yl);
         }
     }
     else
         if (modifiers & GLUT_ACTIVE_ALT) {
             boxpicking = true;
-            ::point_sel_2D = vcg::Point2f(xl,  yl);
-        }
-    else
-    {
-        if (state == GLUT_DOWN) {
-            track[wnd].MouseDown(x, y, GLUT2VCG(bt, state));
-            printf("mousedown %d %d \n", x, y);
+            ::point_sel_2D = vcg::Point2f(xl, yl);
         }
         else
-            track[wnd].MouseUp(x, y, GLUT2VCG(bt, state));
+        {
+            if (state == GLUT_DOWN) {
+                track[wnd].MouseDown(x, y, GLUT2VCG(bt, state));
+                printf("mousedown %d %d \n", x, y);
+            }
+            else
+                track[wnd].MouseUp(x, y, GLUT2VCG(bt, state));
 
-    }
+        }
 
 };
 
@@ -1672,12 +1679,12 @@ void mouseMoveEvent(int x, int y)
     yl = yl - vpl[wnd][1];
     if (selecting && !escapemode) {
         if (::corners_sel_2D[0][0] != -1)
-            ::corners_sel_2D[1] = vcg::Point2f(xl,  yl);
+            ::corners_sel_2D[1] = vcg::Point2f(xl, yl);
     }
     else
-        if (!TwEventMouseMotionGLUT(x, y)) 
-            if(wnd!=-1)
-                track[wnd].MouseMove(x, height-y);
+        if (!TwEventMouseMotionGLUT(x, y))
+            if (wnd != -1)
+                track[wnd].MouseMove(x, height - y);
 
 }
 
@@ -1705,7 +1712,7 @@ void TW_CALL CopyCDStringToClient(char** destPtr, const char* src)
     (*destPtr)[srcLen] = '\0'; // null-terminated string
 }
 std::thread  tComm, tStream, tacc, taccSt;
-std::thread tLidars[2],tCameras[6];
+std::thread tLidars[2], tCameras[6];
 
 void start_lidar(int iL) {
     lidars[iL].lidar.start_reading();
@@ -1749,7 +1756,7 @@ void start_Streaming_thread() {
     std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90 };
 #endif // MJPEG_WRITE
 
-    while (!serverStream.stop_signal/* && streamer.isRunning()*/)  
+    while (!serverStream.stop_signal/* && streamer.isRunning()*/)
         if (streamON)
         {
             buff_mutex.lock();
@@ -1757,28 +1764,28 @@ void start_Streaming_thread() {
             cv::Mat frame = cv::Mat(cameraFBO.h, cameraFBO.w, CV_8UC3);
             cv::Mat dstFrame;
             frame.data = pixelData;
-            cv::flip(frame, dstFrame, 0);  
-        
-         //   cv::imwrite("streamed.jpg", dstFrame);
-        
+            cv::flip(frame, dstFrame, 0);
+
+            //   cv::imwrite("streamed.jpg", dstFrame);
+
             std::vector<uchar>buf;
             cv::imencode(".jpg", dstFrame, buf);
             size_t szbuf = buf.size();
             //serverStream.send(reinterpret_cast<char*>(buf.data()));
 //#define JPEGS_WRITE
-    #ifdef JPEGS_WRITE          
+#ifdef JPEGS_WRITE          
             serverStream.send(reinterpret_cast<char*>(buf.data()), buf.size());
-    #endif  
-    #ifdef MJPEG_WRITE
+#endif  
+#ifdef MJPEG_WRITE
             streamer.publish("/bgr", std::string(buf.begin(), buf.end()));
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    #endif // MJPEG_WRITE
+#endif // MJPEG_WRITE
 
-    #if  VIDEO_STREAM
+#if  VIDEO_STREAM
             outStream.createStream(fmProcessor, *cdcCntx, dstFrame);
-    #endif //  VIDEO_STREAM
+#endif //  VIDEO_STREAM
 
-  
+
             buff_mutex.unlock();
             cv::waitKey(10);
             /* }*/
@@ -1811,16 +1818,16 @@ void TW_CALL initLidars(void*) {
 
     lidars[1].lidar.init(2369, "./Calibration/16db.xml");
 
-    tLidars[0] = std::thread(&start_lidar,0);
-    tLidars[1] = std::thread(&start_lidar,1);
+    tLidars[0] = std::thread(&start_lidar, 0);
+    tLidars[1] = std::thread(&start_lidar, 1);
     cv::waitKey(1000);
     //start_server();
 }
 
 void TW_CALL initCameras(void*) {
-//#if SAVE_IMG
-//     timeCamera1 = std::chrono::system_clock::now();
-//#endif
+    //#if SAVE_IMG
+    //     timeCamera1 = std::chrono::system_clock::now();
+    //#endif
     cameras.resize(NUMCAM);
     for (int i = 0; i < NUMCAM; ++i)
     {
@@ -1829,7 +1836,7 @@ void TW_CALL initCameras(void*) {
     }
     // disable the condition when all the camera functions
 
-    for(int i = 0 ; i < CameraCount;++i)
+    for (int i = 0; i < CameraCount; ++i)
         tCameras[i] = std::thread(&start_camera, i);
 
     //#if SAVE_IMG
@@ -1858,20 +1865,20 @@ void TW_CALL time_startstop(void*) {
 
 void TW_CALL runTest(void*) {
     ::initLidars(0);
-    if(SCENE_REPLAY)
-    time_startstop(0);
+    if (SCENE_REPLAY)
+        time_startstop(0);
 
     //::loadAxis(0);
     //::computeTranformation(0);
     loadAlignment(0);
 
     ::initCameras(0);
-    
-    for (int i = 0; i < NUMCAM;++i) {
+
+    for (int i = 0; i < NUMCAM; ++i) {
         ::loadImPoints(i);
         ::alignCamera(i);
     }
-     
+
     currentCamera = 0;
     ::enable_proj = true;
 }
@@ -1883,7 +1890,7 @@ void TW_CALL startVideoStreaming(void*) {
 
 
 void Terminate() {
-    if(saveState)
+    if (saveState)
     {
         State::save_state();
     }
@@ -1896,12 +1903,12 @@ void Terminate() {
     if (lidars[0].lidar.reading)  lidars[0].lidar.stop_reading();
     if (lidars[1].lidar.reading)  lidars[1].lidar.stop_reading();
 
-    for(int i = 0; i < NUMCAM; ++i)
+    for (int i = 0; i < NUMCAM; ++i)
         if (cameras[i].reading) cameras[i].stop_reading();
 
-    for(int i = 0; i < 2;++i)
-       if (tLidars[i].joinable())tLidars[i].join();
-   
+    for (int i = 0; i < 2; ++i)
+        if (tLidars[i].joinable())tLidars[i].join();
+
     //  for (int i = 0; i < CameraCount;++i)
     //          if (tCameras[i].joinable()) 
     //              tCameras[i].join();
@@ -1912,33 +1919,33 @@ void Terminate() {
     if (tStream.joinable())tStream.join();
 
     //free(pixelData);
-   
+
 }
 
 void TW_CALL stop(void*) {
     if (lidars[0].lidar.reading) { lidars[0].lidar.stop_reading(); }
     if (lidars[1].lidar.reading) { lidars[1].lidar.stop_reading(); }
-    for(int i = 0; i < CameraCount; ++i)  
-       if (cameras[i].reading) { cameras[i].stop_reading(); }
+    for (int i = 0; i < CameraCount; ++i)
+        if (cameras[i].reading) { cameras[i].stop_reading(); }
 }
-void TW_CALL setMapColor(const void* v,void *) {
-    if(!cameras.empty())
+void TW_CALL setMapColor(const void* v, void*) {
+    if (!cameras.empty())
         cameras[currentCamera].used = *(bool*)v;
 }
-void TW_CALL getMapColor(  void*v, void*) {
+void TW_CALL getMapColor(void* v, void*) {
     if (!cameras.empty())
-        *(bool*)v  = cameras[currentCamera].used ;
+        *(bool*)v = cameras[currentCamera].used;
 }
 
 void TW_CALL setSplitScreen(const void* v, void*) {
     splitScreen = *(bool*)v;
-    setViewports(width,height);
+    setViewports(width, height);
 }
 void TW_CALL getSplitScreen(void* v, void*) {
     *(bool*)v = splitScreen;
 }
 
- 
+
 void TW_CALL setVirtualTime(const void* v, void*) {
     virtual_time = partial_time = *(int*)v;
 }
@@ -1954,8 +1961,8 @@ void TW_CALL corrDet_load_correspondences(void*) {
 
 }
 
-void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsigned long long&l) {
-    std::string timestamps = DUMP_FOLDER_PATH + "\\"+ path;
+void read_first_and_last_timestamp(std::string path, unsigned long long& f, unsigned long long& l) {
+    std::string timestamps = DUMP_FOLDER_PATH + "\\" + path;
     FILE* ft = fopen(timestamps.c_str(), "r");
     char time_alfanumeric[20];
     unsigned long long first = -1;
@@ -1964,13 +1971,13 @@ void read_first_and_last_timestamp(std::string path, unsigned long long &f, unsi
     while (!feof(ft)) {
         fscanf(ft, "%s", time_alfanumeric);
         ta = std::string(time_alfanumeric);
-        
+
         if (first == -1) {
             first = std::stoull(ta.c_str());
             f = std::max(first, f);
         }
     }
-    l   = std::min(std::stoull(ta.c_str()),l);
+    l = std::min(std::stoull(ta.c_str()), l);
     fclose(ft);
 }
 
@@ -1981,27 +1988,62 @@ void TW_CALL startInput(void*) {
     if (SCENE_REPLAY)
         time_startstop(0);
     currentCamera = 0;
- }
+}
+
+void HistogramEqualize(void*)
+{
+    if (!histoEq)
+    {
+        histoEq = true;
+    }
+    else
+        histoEq = false;
+    for (int i = 0; i < NUMCAM; i++)
+    {
+        cameras[i].setHistogramEqualize(histoEq);
+        /*  if (cameras[i].camID == 5000 && h_5000)
+          {
+              cameras[i].setHistogramEqualize(histoEq);
+              break;
+          }
+          else if (cameras[i].camID == 5001 && h_5001)
+          {
+              cameras[i].setHistogramEqualize(histoEq);
+              break;
+          }
+          else if (cameras[i].camID == 5002 && h_5002)
+          {
+              cameras[i].setHistogramEqualize(histoEq);
+              break;
+          }
+          else if (cameras[i].camID == 5003 && h_5003)
+          {
+              cameras[i].setHistogramEqualize(histoEq);
+              break;
+          }*/
+
+    }
+}
 
 int main(int argc, char* argv[])
 {
     assert(_CrtCheckMemory());
-    
+
     std::string inFile = "config.txt";
     vecPair configData = logger::readConfigFile(inFile);
     NUMCAM = stoi(configData[0].second);
     DUMP_FOLDER_PATH = configData[1].second; // "D:/CamImages/CamData";  //C:\\Users\\Fabio Ganovelli\\Documents\\GitHub\\nausicaa_devl\\data
-    camIniFile = configData[2].second; 
+    camIniFile = configData[2].second;
     meiConverterFile = configData[3].second;
     autoLaunch = stoi(configData[4].second);
-    int sr =  stoi(configData[5].second);
+    int sr = stoi(configData[5].second);
     SCENE_REPLAY = (sr > 0);
     vclock.realtime = (sr == 2);
 
     SAVE_PC = stoi(configData[6].second);
     saveState = stoi(configData[7].second);
     SAVE_IMG = stoi(configData[8].second);
-    histoEq = static_cast<bool>(stoi(configData[9].second));
+    //histoEq = static_cast<bool>(stoi(configData[9].second));
 
     if (saveState)
     {
@@ -2011,7 +2053,7 @@ int main(int argc, char* argv[])
     corrDet.init(NUMCAM);
 
     /*PacketDecoder::HDLFrame lidarFrame2;
-  
+
     logger::LoadPointCloudBinary("D:\\Personal\\PointClouds\\2369\\1654782937525.bin", lidarFrame2);
     logger::savePointCloudASCII("D:/CamImages", lidarFrame2);*/
 #if VIDEO_STREAM
@@ -2038,7 +2080,7 @@ int main(int argc, char* argv[])
 #endif
 
     //activeCamera = -1;
-   
+
 
     // Initialize AntTweakBar
     // (note that AntTweakBar could also be intialized after GLUT, no matter)
@@ -2066,8 +2108,8 @@ int main(int argc, char* argv[])
     atexit(Terminate);  // Called after glutMainLoop ends
     glutCloseFunc(Terminate);
 
-        // Set GLUT event callbacks
-    // - Directly redirect GLUT mouse button events to AntTweakBar
+    // Set GLUT event callbacks
+// - Directly redirect GLUT mouse button events to AntTweakBar
     glutMouseFunc((GLUTmousebuttonfun)mousePressEvent);
     // - Directly redirect GLUT mouse motion events to AntTweakBar
     glutMotionFunc((GLUTmousemotionfun)mouseMoveEvent);
@@ -2123,7 +2165,7 @@ int main(int argc, char* argv[])
 
     TwAddVarRW(bar, "Debug Cor", TW_TYPE_BOOL8, &corrDet.debug_mode, " label='debug coors' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "align cameras", ::autoalignCameras, 0, " label='Align All Cameras' group=`Align Cameras` help=`Align` ");
-    TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" +std::to_string(NUMCAM)).c_str());
+    TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" + std::to_string(NUMCAM)).c_str());
     TwAddVarCB(bar, "Map Color", TW_TYPE_BOOL8, setMapColor, getMapColor, (void*)0, " label='map color' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "assign points", ::assignPointsToCamera, 0, " label='assign 3D points' group=`Align Cameras` help=`copy points` ");
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
@@ -2132,8 +2174,9 @@ int main(int argc, char* argv[])
 
 
 
+
     TwAddButton(bar, "setFrame", ::setFrame, 0, " label='setFrame' group=`Change Reference Frame` help=` ` ");
-    TwAddSeparator(bar, NULL,"group=`Change Reference Frame` ");
+    TwAddSeparator(bar, NULL, "group=`Change Reference Frame` ");
     TwAddVarRW(bar, "alpha", TW_TYPE_FLOAT, &alphaFrame, " value = 0 label='alpha' group='Change Reference Frame' help=` alpha angle` ");
     TwAddVarRW(bar, "beta", TW_TYPE_FLOAT, &betaFrame, " value = 0  label='beta' group='Change Reference Frame' help=` beta angle` ");
     TwAddVarRW(bar, "gamma", TW_TYPE_FLOAT, &gammaFrame, " value = 0  label='gamma' group='Change Reference Frame' help=` gamma angle` ");
@@ -2142,19 +2185,26 @@ int main(int argc, char* argv[])
     TwAddVarRW(bar, "y", TW_TYPE_FLOAT, &yFrame, " value = 0 step = 0.01  label='y' group='Change Reference Frame' help=` select` ");
     TwAddVarRW(bar, "z", TW_TYPE_FLOAT, &zFrame, "value = 0  step = 0.01  label='z' group='Change Reference Frame' help=` select` ");
 
+
     TwAddVarRW(bar, "showcameras", TW_TYPE_BOOL8, &showCameras, " label='showcameras' group=Rendering help=` select` ");
     TwAddVarRW(bar, "showfromcamera", TW_TYPE_BOOL8, &showfromcamera, " label='showfromcamera' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "mapcolor", TW_TYPE_BOOL8, &enable_proj, " label='map color' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
     TwAddVarRW(bar, "drawbackground", TW_TYPE_BOOL8, &showBackground, " label='draw background' group=`Rendering` help=` draw all` ");
-    
+
 
     TwAddButton(bar, "test", ::runTest, 0, " label='RUNTEST' group='Test' help=`test` ");
     TwAddButton(bar, "Stream", ::startVideoStreaming, 0, "label='VIDEOSTREAM' group='Streaming' help=`streaming` ");
     TwAddButton(bar, "Server", ::start_server, 0, "label='Start Server' group='Streaming' help=`streaming` ");
+    TwAddButton(bar, "histo", ::HistogramEqualize, 0, "label='HistogramEQ' group='ImageTools' help=`ImageTools` ");
+    /*TwAddVarRW(bar, "cam5000", TW_TYPE_BOOL8, &h_5000, " label='Camera_5000' group='ImageTools' help=` Camera_5000` ");
+    TwAddVarRW(bar, "cam5001", TW_TYPE_BOOL8, &h_5001, " label='Camera_5001' group='ImageTools' help=` Camera_5001` ");
+    TwAddVarRW(bar, "cam5002", TW_TYPE_BOOL8, &h_5002, " label='Camera_5002' group='ImageTools' help=` Camera_5002` ");
+    TwAddVarRW(bar, "cam5003", TW_TYPE_BOOL8, &h_5003, " label='Camera_5003' group='ImageTools' help=` Camera_5003` ");*/
+
 
     // ShapeEV associates Shape enum values with labels that will be displayed instead of enum values
-    TwEnumVal drawmodes[3] = { {SMOOTH, "Smooth"}, {PERPOINTS, "Per Points"}, {NONE, "none"}};
+    TwEnumVal drawmodes[3] = { {SMOOTH, "Smooth"}, {PERPOINTS, "Per Points"}, {NONE, "none"} };
     // Create a type for the enum shapeEV
     TwType drawMode = TwDefineEnum("DrawMode", drawmodes, 3);
     // add 'g_CurrentShape' to 'bar': this is a variable of type ShapeType. Its key shortcuts are [<] and [>].
@@ -2167,14 +2217,14 @@ int main(int argc, char* argv[])
         read_first_and_last_timestamp(std::string("PointClouds") + "\\2368\\timestamps.txt", start_time, end_time);
         read_first_and_last_timestamp(std::string("PointClouds") + "\\2369\\timestamps.txt", start_time, end_time);
 
-        for(unsigned int i= 0; i < NUMCAM; ++i)
-            read_first_and_last_timestamp(std::string("Images") + "\\500"+std::to_string(i) + "\\timestamps.txt", start_time, end_time);
+        for (unsigned int i = 0; i < NUMCAM; ++i)
+            read_first_and_last_timestamp(std::string("Images") + "\\500" + std::to_string(i) + "\\timestamps.txt", start_time, end_time);
 
         TwAddButton(bar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Streaming` help=`Align` ");
         //    TwAddVarRW(bar, "virtualtime", TW_TYPE_UINT32, &virtual_time, " keyIncr='<' keyDecr='>' group=`Streaming` help='Change draw mode.' ");
         TwAddVarCB(bar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Streaming` help=`virtual` ");
     }
-    
+
     frameBar = TwNewBar("Frames");
     TwAddVarRW(frameBar, "xCoord", TW_TYPE_FLOAT, &xCoord, " value = 0.0 label='x'   help=` x coord` ");
     TwAddVarRW(frameBar, "yCoord", TW_TYPE_FLOAT, &yCoord, " value = 0.0 label='y'   help=` y coord` ");
@@ -2185,7 +2235,7 @@ int main(int argc, char* argv[])
     TwAddButton(frameBar, "loadFrames", ::loadFrames, 0, " label='loadFrames'  help=`load frames` ");
     TwDefine("Frames iconified=true ");
 
-    vcg::Matrix44f I;I.SetIdentity();
+    vcg::Matrix44f I; I.SetIdentity();
     frames[currentLidar].push_back(I);
     addFrameToGUI();
 
