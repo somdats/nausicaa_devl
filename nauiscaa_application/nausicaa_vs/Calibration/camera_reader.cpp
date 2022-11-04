@@ -795,5 +795,4 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
     this->used = true;
     return shot;
 
-    return vcg::Shotf();
 }

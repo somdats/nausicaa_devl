@@ -228,7 +228,7 @@ this->_debk = k*ks;
 
     bool reading;
 
-    std::vector < cv::Point2f> p2i;             // 2D point correspondences
+    std::vector < cv::Point2f> p2i;  // 2D point correspondences
     std::vector<vcg::Point3f> p3;   // 3D point correspondences
 
     void init(uint port, std::string camera_intrinsics_file, int cameraID, bool scaramuzza = true, bool hEq = false);

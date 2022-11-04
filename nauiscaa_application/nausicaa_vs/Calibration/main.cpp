@@ -800,14 +800,15 @@ void drawScene() {
         GLERR();
     }
 
-    if(showBackground)
-    if (drawmode == SMOOTH && enable_proj) {
-        glUseProgram(point_shader.pr);
-        glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
-        glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
-        gluSphere(gluNewQuadric(), 100.0, 10, 10);
-        glUseProgram(0);
-    }
+    if(showBackground )
+        if (drawmode == SMOOTH && enable_proj) {
+     
+            glUseProgram(point_shader.pr);
+            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
+            glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
+            gluSphere(gluNewQuadric(), 100.0, 10, 10);
+            glUseProgram(0);
+        }
     /* END DRAW SCENE */
 }
 void TW_CALL detectMarker(void*);
@@ -1474,7 +1475,7 @@ void TW_CALL saveAxis(void*) {
     fclose(fo);
 }
 void TW_CALL saveAlignment(void*) {
-    if (MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidaf calibration", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
+    if (MessageBoxW(NULL, (LPCWSTR)L"Are you sure? This will ovrewrite the lidar-lidar alignment", (LPCWSTR)L"message", MB_ICONEXCLAMATION | MB_YESNO) != IDYES)
         return;
     std::string calibration_file = std::string("Aln.bin");
 
@@ -1514,7 +1515,50 @@ void TW_CALL saveImPoints(void*) {
         fclose(fo);
     }
 }
+void  TW_CALL saveCalibratedCamera(void * _iC) {
+    int iC = *(int*)_iC;
+    std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
 
+    if (SCENE_REPLAY)
+        extrinsics_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iC].camID) + "\\" + extrinsics_file;
+
+    FILE* fo = fopen(extrinsics_file.c_str(), "wb");
+    if (fo) {
+        fwrite(&cameras[iC].calibrated, 1, sizeof(vcg::Shotf), fo);
+        fwrite(&cameras[iC].extrinsics, 1, sizeof(vcg::Matrix44f), fo);
+        fclose(fo);
+    }
+} 
+void  TW_CALL saveCalibratedCameras(void *) {
+    for (unsigned int i = 0; i < NUMCAM;++i)
+        saveCalibratedCamera(&i);
+}
+
+
+//void TW_CALL saveCalibratedCamera(void*) {
+//    std::string extrinsics_file = std::to_string(cameras[currentCamera].camID) + "_camera_parameters.txt";
+//
+//    if (SCENE_REPLAY)
+//        extrinsics_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[currentCamera].camID) + "\\" + extrinsics_file;
+//
+//    FILE* fo = fopen(extrinsics_file.c_str(), "wb");
+//    if (fo) {
+//        fwrite(&cameras[currentCamera].calibrated, 1, sizeof(vcg::Shotf), fo);
+//        fclose(fo);
+//    }
+//}
+void TW_CALL loadAlignment(void*);
+void TW_CALL saveCalibration(void*) {
+        saveAlignment(0);
+        for (unsigned int i = 0; i < NUMCAM;++i)
+            saveCalibratedCamera(&i);
+}
+void  TW_CALL loadCalibratedCamera(void* _iC);
+void TW_CALL loadCalibration(void*) {
+    loadAlignment(0);
+    for (unsigned int i = 0; i < NUMCAM;++i)
+        loadCalibratedCamera(&i);
+}
 
 void TW_CALL setFrame(void*) {
     for (int i = 0; i < N_LIDARS; ++i)
@@ -1554,6 +1598,22 @@ void   loadImPoints(int iCam) {
 
 void TW_CALL loadImPoints(void*) {
     loadImPoints(currentCamera);
+}
+
+void  TW_CALL loadCalibratedCamera(void * _iC) {
+    int iC = *(int*)_iC;
+    std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
+
+    if (SCENE_REPLAY)
+        extrinsics_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iC].camID) + "\\" + extrinsics_file;
+
+    FILE* fo = fopen(extrinsics_file.c_str(), "rb");
+    if (fo) {
+        fread(&cameras[iC].calibrated, 1, sizeof(vcg::Shotf), fo);
+        fread(&cameras[iC].extrinsics, 1, sizeof(vcg::Matrix44f), fo);
+        fclose(fo);
+        cameras[iC].aligned = cameras[iC].used = true;
+    }
 }
 
 void TW_CALL loadAxis(void*) {
@@ -2199,6 +2259,11 @@ int main(int argc, char* argv[])
     TwAddButton(calibrationBar, "loadLidarAndCameras", ::startInput, 0, " label='start input'  help=`start input` ");
     TwAddVarRW(calibrationBar, "calibrating", TW_TYPE_BOOL8, &calibrating, " label='detect target'  help=` calibrating` ");
     TwAddVarCB(calibrationBar, "splitscreen", TW_TYPE_BOOL8, setSplitScreen, getSplitScreen, (void*)0, " label='split screen'  help=`map color` ");
+  //  TwAddButton(calibrationBar, "load calibrated cameras", ::loadCalibratedCamera, &currentCamera, " label='load camera'  help=`start input` ");
+  //  TwAddButton(calibrationBar, "save calibrated cameras", ::saveCalibratedCamera, &currentCamera, " label='save camera'  help=`start input` ");
+    TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` ");
+    TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` ");
+
 
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;
@@ -2206,6 +2271,7 @@ int main(int argc, char* argv[])
     int maxi;
     glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxi);
 
+    std::cout << "init glew " <<  std::endl;
     glewInit();
     assert(_CrtCheckMemory());
 
@@ -2215,5 +2281,6 @@ int main(int argc, char* argv[])
         start_server(0);
     }
 
+    std::cout << "glutMainLoop " << std::endl;
     glutMainLoop();
 }
