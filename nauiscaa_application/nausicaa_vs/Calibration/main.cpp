@@ -411,6 +411,8 @@ void drawLine(vcg::Line3f l) {
     glEnd();
 }
 
+BoxRender box_render;
+
 void initializeGLStuff() {
 
     if (point_shader.SetFromFile("./Calibration/Shaders/points.vs", "./Calibration/Shaders/triangles.gs"/* "points.gs" */,
@@ -419,7 +421,7 @@ void initializeGLStuff() {
         printf("SHADER ERR");
     }
     point_shader.Validate();
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
     glUseProgram(point_shader.pr);
     point_shader.bind("mm");
@@ -435,7 +437,7 @@ void initializeGLStuff() {
     glUniform1iv(point_shader["camTex"], 6, texs);
     glUniform1iv(point_shader["camDepth"], 6, dpts);
     glUseProgram(0);
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
     if (shadow_shader.SetFromFile("./Calibration/Shaders/shadow_map.vs",
         "./Calibration/Shaders/shadow_map.gs", "./Calibration/Shaders/shadow_map.fs") < 0)
@@ -443,7 +445,7 @@ void initializeGLStuff() {
         printf("shadow SHADER ERR");
     }
     shadow_shader.Validate();
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     shadow_shader.bind("toCam");
     assert(_CrtCheckMemory());
 
@@ -454,11 +456,11 @@ void initializeGLStuff() {
         printf("texture SHADER ERR");
     }
     texture_shader.Validate();
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     texture_shader.bind("uTexture");
     texture_shader.bind("mm");
     texture_shader.bind("pm");
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
     if (flat_shader.SetFromFile("./Calibration/Shaders/flat.vs",
         "./Calibration/Shaders/flat.gs", "./Calibration/Shaders/flat.fs") < 0)
@@ -466,12 +468,12 @@ void initializeGLStuff() {
         printf("flat SHADER ERR");
     }
     flat_shader.Validate();
-    GLERR();
+    GLERR(__LINE__,__FILE__);
 
     flat_shader.bind("mm");
     flat_shader.bind("pm");
 
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
     glGenTextures(1, &markersTextureID);
     textures = new unsigned int[NUMCAM];
@@ -487,7 +489,7 @@ void initializeGLStuff() {
 
         glColor3f(1, 1, 1);
         glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-        GLERR();
+        GLERR(__LINE__,__FILE__);
         assert(_CrtCheckMemory());
     }
     shadowFBO.resize(NUMCAM);
@@ -497,7 +499,7 @@ void initializeGLStuff() {
         assert(_CrtCheckMemory());
     }
     cameraFBO.Create(1280, 720);
-    GLERR();
+    GLERR(__LINE__,__FILE__);
     glActiveTexture(GL_TEXTURE5 + NUMCAM);
     glBindTexture(GL_TEXTURE_2D, markersTextureID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -505,7 +507,9 @@ void initializeGLStuff() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2048, 2048, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    GLERR();
+    GLERR(__LINE__,__FILE__);
+    box_render.init(10);
+    
 }
 
 void updateBoatFrame() {
@@ -565,6 +569,7 @@ void drawScene() {
     glGetFloatv(GL_MODELVIEW_MATRIX, mm1);
     glGetFloatv(GL_MODELVIEW_MATRIX, mm);
     glGetFloatv(GL_PROJECTION_MATRIX, pm);
+    GLERR(__LINE__, __FILE__);
 
     if (enable_proj) {
         drawmode = SMOOTH;
@@ -581,7 +586,7 @@ void drawScene() {
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
                 toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.1, 150) * cameras[ic].opengl_extrinsics();
                 //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
-                GLERR();
+                GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
                 used[ic] = cameras[ic].used;
             }
@@ -610,7 +615,7 @@ void drawScene() {
                 glVertex(axis[currentLidar][il].Origin() + axis[currentLidar][il].Direction());
                 glEnd();
             }
-        GLERR();
+        GLERR(__LINE__,__FILE__);
 
         glMultMatrix(lidars[il].transfLidar);
         glMultMatrix(toSteadyFrame);
@@ -619,9 +624,6 @@ void drawScene() {
         if (enable_proj) {
             drawmode = SMOOTH;
             glUseProgram(point_shader.pr);
-
-            GLERR();
-
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
 
@@ -637,25 +639,28 @@ void drawScene() {
         else
             if (drawmode == SMOOTH)
             {
+                GLERR(__LINE__, __FILE__);
+
                 glUseProgram(flat_shader.pr);
                 glGetFloatv(GL_PROJECTION_MATRIX, pm);
                 glUniformMatrix4fv(flat_shader["pm"], 1, GL_FALSE, pm);
 
                 glGetFloatv(GL_MODELVIEW_MATRIX, mm);
                 glUniformMatrix4fv(flat_shader["mm"], 1, GL_FALSE, mm);
+                GLERR(__LINE__, __FILE__);
 
             }
         // glColor3f(il == 0, il == 0, il == 1);
         glColor3f(1.0, 1.0, il == 1);
 
-        GLERR();
+        GLERR(__LINE__,__FILE__);
         glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[2]);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 1, GL_FLOAT, false, 0, 0);
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
 
 
         if (drawmode == PERPOINTS)
@@ -667,7 +672,7 @@ void drawScene() {
 
         }
 
-        GLERR();
+        GLERR(__LINE__,__FILE__);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -694,7 +699,7 @@ void drawScene() {
                 if ((*im).second.visible)
                 {
                     if ((*im).second.png_data != 0) {
-                        GLERR();
+                        GLERR(__LINE__,__FILE__);
                         (*im).second.tc[0] = markers_pos_x;
                         (*im).second.tc[1] = markers_pos_y;
 
@@ -710,7 +715,7 @@ void drawScene() {
                         //cv::Mat FT(2048, 2048, CV_8UC4, _data);
                         //cv::imwrite("texture.png", FT);
 
-                        GLERR();
+                        GLERR(__LINE__,__FILE__);
                         delete[](*im).second.png_data;
                         (*im).second.png_data = 0;
 
@@ -759,8 +764,8 @@ void drawScene() {
                     vcg::Matrix44f mm_ = vm_ * billboard_frame;
 
                     glUseProgram(texture_shader.pr);
-                    glUniformMatrix4fv(texture_shader["mm"], 1, true, &mm_[0][0]);
-                    glUniformMatrix4fv(texture_shader["pm"], 1, false, pm);
+                    glUniformMatrix4fv(texture_shader["mm"], 1, GL_TRUE, &mm_[0][0]);
+                    glUniformMatrix4fv(texture_shader["pm"], 1, GL_FALSE, pm);
 
                     glEnable(GL_BLEND);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -798,27 +803,47 @@ void drawScene() {
                     glVertex3f(-h_size, h_size * 2.f, 0.0);
                     glEnd();
                     glUseProgram(0);
-                    GLERR();
+                    GLERR(__LINE__,__FILE__);
                     glDisable(GL_BLEND);
                     drawString((*im).pos, (*im).label.c_str(), size_on_screen);
                 }
-            GLERR();
+            GLERR(__LINE__,__FILE__);
         }
 
     if (showBackground)
         if (drawmode == SMOOTH && enable_proj) {
             glUseProgram(point_shader.pr);
-            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f::Identity()[0][0]);
+            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f().Identity()[0][0]);
             glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
-            gluSphere(gluNewQuadric(), 100.0, 10, 10);
-            glUseProgram(0);
+            
+            glBindBuffer(GL_ARRAY_BUFFER, box_render.buffers[0]);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+            glBindBuffer(GL_ARRAY_BUFFER, box_render.buffers[2]);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, box_render.buffers[1]);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+//            gluSphere(gluNewQuadric(), 100.0, 10, 10);
+   
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+           glUseProgram(0);
         }
+    GLERR(__LINE__, __FILE__);
     /* END DRAW SCENE */
 }
 void TW_CALL detectMarker(void*);
 void TW_CALL time_startstop(void*);
 
 void Display() {
+    GLERR(__LINE__, __FILE__);
 
     assert(_CrtCheckMemory());
     static bool init = true;
@@ -967,7 +992,7 @@ void Display() {
                         }
 
                 bool virtualCamerasExist = !virtualCameras.empty();
-                GLERR();
+                GLERR(__LINE__,__FILE__);
 
 
                 for (int il = 0; il < N_LIDARS; ++il)
@@ -993,7 +1018,7 @@ void Display() {
 
                                 glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
 
-                                GLERR();
+                                GLERR(__LINE__,__FILE__);
                                 glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
                                 glEnableVertexAttribArray(0);
                                 glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
@@ -1027,8 +1052,9 @@ void Display() {
                 glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
                 glClearColor(0.0, 0.0, 0.0, 1.0);
                 // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
+                GLERR(__LINE__, __FILE__);
                 drawScene();
+                GLERR(__LINE__, __FILE__);
 
                 if (!showfromcamera && showCameras) {
                     // draw cameras
@@ -1179,9 +1205,10 @@ void Display() {
         }
 
     glUseProgram(0);
-
+    GLERR(__LINE__, __FILE__);
     glActiveTexture(GL_TEXTURE0);
     TwRefreshBar(bar);
+    GLERR(__LINE__, __FILE__);
     TwDraw();
     ///////////////// send streaming data
     ;
@@ -1190,10 +1217,10 @@ void Display() {
 
     // Present frame buffer
     glutSwapBuffers();
-
+    GLERR(__LINE__, __FILE__);
     // Recall Display at next frame
     glutPostRedisplay();
-
+    GLERR(__LINE__, __FILE__);
 
 
     if (SCENE_REPLAY) {
@@ -2326,6 +2353,7 @@ int main(int argc, char* argv[])
     if (autoLaunch)
     {
         runTest(0);
+        drawAllLidars = true;
         start_server(0);
     }
 

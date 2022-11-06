@@ -18,7 +18,7 @@ unsigned int activeCamera;
 bool streamON;
 bool lidarOn[2];
 bool camerasOn[6];
-bool showBackground;
+bool showBackground = false;
 
 std::mutex m, activeCamera_mutex;
 std::condition_variable condv;

@@ -107,3 +107,48 @@ struct LidarRender {
     }
 
 };
+
+struct BoxRender {
+    GLuint buffers[3];
+
+    void init(float size) {
+        GLfloat corners[24] = {
+          -size, -size, size,
+            size, -size, size,
+            -size, size, size,
+            size, size, size,
+            -size, -size, -size,
+            size, -size, -size,
+            -size, size, -size,
+            size, size, -size
+        };
+
+        GLfloat dis[8] = { 10,10,10,10,10,10,10,10 };
+
+        GLuint tris[36] = {
+                0, 1, 2, 2, 1, 3,  // front
+                5, 4, 7, 7, 4, 6,  // back
+                4, 0, 6, 6, 0, 2,  // left
+                1, 5, 3, 3, 5, 7,  // right
+                2, 3, 6, 6, 3, 7,  // top
+                4, 5, 0, 0, 5, 1   // bottom
+        };
+
+       
+        glCreateBuffers(3, buffers);
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+        glBufferData(GL_ARRAY_BUFFER, 8 * 3 * sizeof(float), corners, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+        glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float), dis, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 366 * sizeof(int), tris, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    }
+
+};

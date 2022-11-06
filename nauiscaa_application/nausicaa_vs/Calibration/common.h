@@ -25,11 +25,14 @@ struct LidarRender;
 extern LidarRender lidars[2];
 
 struct GLERR {
-    GLERR() {
+    GLERR(int line, const char * file) {
         int err = glGetError();
         if (err) {
-            printf((const char*)gluErrorString(err));
+            printf("%s at line %d in file %s\n",(const char*)gluErrorString(err),line,file);
             exit(0);
         }
+    }
+    GLERR() {
+        GLERR(-1, ".");
     }
 };

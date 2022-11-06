@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\shaders">
+      <UniqueIdentifier>{3ea8dbef-64d8-4740-ab82-5c6a766390d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Calibration\camera_reader.cpp">
@@ -91,7 +94,41 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Calibration\Shaders\texture.fs" />
-    <None Include="Calibration\Shaders\texture.vs" />
+    <None Include="Calibration\Shaders\flat.fs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\flat.gs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\flat.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\points.fs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\points.gs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\points.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\shadow_map.fs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\shadow_map.gs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\shadow_map.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\triangles.gs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\texture.fs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="Calibration\Shaders\texture.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
