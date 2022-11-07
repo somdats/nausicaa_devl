@@ -36,14 +36,14 @@ bool  CorrespondencesDetector::region_selection(int lidarID) {
 		switch (0 /* trackingState[lidarID] */ ) {
 		case 0:  
 			for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
-				vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+				vcg::Point3f p = /*lidars[lidarID].transfLidar **/ vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
 				if (vcg::Distance<float>(p, currentP3D[lidarID]) < 0.9) //   marker size
 					md.points.push_back(p);
 			}
 			break;
 		case 1:  
 			for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
-				vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+				vcg::Point3f p = /*lidars[lidarID].transfLidar **/ vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
 				float planedist = fabs((p - currentP3D[lidarID]) * currentN3D[lidarID]);
 				if ((vcg::Distance<float>(p, currentP3D[lidarID]) < 0.7) && (planedist < 0.1))
 					md.points.push_back(p);
@@ -63,7 +63,7 @@ bool  CorrespondencesDetector::region_selection(int lidarID) {
 			if (b.Diag() > 0.1) {
 				vcg::FitPlaneToPointSet(toFit, searchPlane);
 				for (unsigned int i = 0; i < lidars[lidarID].lidar.latest_frame.x.size();++i) {
-					vcg::Point3f p = lidars[lidarID].transfLidar * vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
+					vcg::Point3f p = /*lidars[lidarID].transfLidar **/ vcg::Point3f(lidars[lidarID].lidar.latest_frame.x[i], lidars[lidarID].lidar.latest_frame.y[i], lidars[lidarID].lidar.latest_frame.z[i]);
 					float planedist = fabs(vcg::SignedDistancePointPlane(p, searchPlane));
 					if ((vcg::Distance<float>(p, currentP3D[lidarID]) < 1.7) && (planedist < 0.2))
 						md.points.push_back(p);
@@ -254,10 +254,12 @@ void CorrespondencesDetector::load_correspondences(const char* filename) {
 	fread(&* correspondences3D3D.begin(), sizeof(Correspondence3D3D), correspondences3D3D.size(), fo);
 	fread(&n, 4, 1, fo);
 	correspondences3D2D.resize(n);
-	
+	correspondences3D3D_size  = correspondences3D3D.size();
+
 	for (unsigned int i = 0; i < correspondences3D2D.size(); ++i) {
 		fread(&n, 4, 1, fo);
 		correspondences3D2D[i].resize(n);
+		correspondences3D2D_size[i] = correspondences3D2D[i].size();
 		fread(&*correspondences3D2D[i].begin(), sizeof(Correspondence3D2D), correspondences3D2D[i].size(), fo);
 	}
 	fclose(fo);

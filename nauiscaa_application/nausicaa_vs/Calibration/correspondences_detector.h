@@ -39,7 +39,7 @@ public:
 	bool alignCamera(int camID);
 	void alignCameras();
 	bool alignLidars();
-	vcg::Point3f currentP3D[2];
+	vcg::Point3f currentP3D[2]; // current traker point (in local lidar frame)
 	vcg::Point3f currentN3D[2];
 
 	int trackingState[2]; // 0: no tracking, 1: tracking, 2: searching
