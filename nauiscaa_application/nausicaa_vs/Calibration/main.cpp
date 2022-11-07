@@ -238,6 +238,7 @@ TwBar* bar, // Pointer to the tweak bar
 * frameBar,
 * pointsBar,
 * calibrationBar;
+std::vector <TwBar*> cameraBars;
 
 // calibration
 bool calibrating;
@@ -1332,6 +1333,11 @@ void TW_CALL alignCamera(void*) {
 void TW_CALL autoalignCameras(void*) {
     corrDet.alignCamera(currentCamera);
 }
+
+void TW_CALL autoalignCamera(void*ic) {
+    corrDet.alignCamera((int)ic);
+}
+
 void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
 }
@@ -1946,6 +1952,7 @@ void TW_CALL time_startstop(void*) {
     else
         partial_time += vclock.clock() - restart_time;
     TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
+    TwSetParam(calibrationBar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
 
 void TW_CALL runTest(void*) {
@@ -2336,9 +2343,24 @@ int main(int argc, char* argv[])
     TwAddVarCB(calibrationBar, "splitscreen", TW_TYPE_BOOL8, setSplitScreen, getSplitScreen, (void*)0, " label='split screen'  help=`map color` ");
   //  TwAddButton(calibrationBar, "load calibrated cameras", ::loadCalibratedCamera, &currentCamera, " label='load camera'  help=`start input` ");
   //  TwAddButton(calibrationBar, "save calibrated cameras", ::saveCalibratedCamera, &currentCamera, " label='save camera'  help=`start input` ");
-    TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` ");
-    TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` ");
+    TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` group=`save/load`");
+    TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` group=`save/load`");
+    if (SCENE_REPLAY) {
+        TwAddButton(calibrationBar, "save corrs", corrDet_save_correspondences, 0, " label='save correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+        TwAddButton(calibrationBar, "load corrs", corrDet_load_correspondences, 0, " label='load correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+    }
+    TwAddVarRO(calibrationBar,  "correspondencesLL", TW_TYPE_INT32, &corrDet.correspondences3D3D_size,  "label='correspondences Lidar-Lidar'  help=\` calibrating` group ='Lidar-Lidar'");
 
+    for (unsigned int i = 0; i < NUMCAM; ++i) {
+        std::string grp =  (std::string("group ='camera ") + std::to_string(5000 + i)+"'");
+        TwAddVarRO(calibrationBar, (std::string("correspondences")+std::to_string(i)).c_str(), TW_TYPE_INT32, &corrDet.correspondences3D2D_size[i], (std::string("label='correspondences'  help=\` calibrating` ") + grp).c_str());
+        TwAddButton(calibrationBar, (std::string("try align") + std::to_string(i)).c_str(), ::autoalignCamera, (void*)i, (std::string(" label='try to align'  help=`start input` ") + grp).c_str());
+    }
+    if (SCENE_REPLAY) {
+
+        TwAddButton(calibrationBar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Time` help=`Align` ");
+        TwAddVarCB(calibrationBar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Time` help=`virtual` ");
+    }
 
 
     std::cout << "OpenGL version supported by this platform (%s): " << glGetString(GL_VERSION) << std::endl;

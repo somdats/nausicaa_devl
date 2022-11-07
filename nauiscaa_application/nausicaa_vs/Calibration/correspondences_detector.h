@@ -20,10 +20,12 @@ public:
 
 	//correspondence for each camera (0..NUMCAM)
 	std::vector<std::vector< Correspondence3D2D > >  correspondences3D2D;
+	std::vector < int> correspondences3D2D_size;
 	std::vector<  Correspondence3D3D   >  correspondences3D3D;
+	int correspondences3D3D_size;
 
 	void init(unsigned int _nCams) {
-		nCams = _nCams;correspondences3D2D.resize(nCams);usedCorrs3D2D.resize(nCams);
+		nCams = _nCams;correspondences3D2D.resize(nCams);usedCorrs3D2D.resize(nCams);correspondences3D2D_size.resize(nCams);
 	}
 
 	bool region_selection(int lidarID);
