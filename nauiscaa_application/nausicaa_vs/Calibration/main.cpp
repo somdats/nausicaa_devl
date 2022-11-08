@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
  * VCGLib                                                            o o     *
  * Visual and Computer Graphics Library                            o     o   *
  *                                                                _   O  _   *
@@ -231,13 +231,14 @@ unsigned int* textures;
 unsigned int markersTextureID;
 int markers_pos_x = 0, markers_pos_y = 0;
 
-Shader point_shader, shadow_shader, texture_shader, flat_shader;
+Shader triangle_shader, shadow_shader, texture_shader, flat_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
 TwBar* bar, // Pointer to the tweak bar
 * frameBar,
 * pointsBar,
 * calibrationBar;
+std::vector <TwBar*> cameraBars;
 
 // calibration
 bool calibrating;
@@ -415,27 +416,27 @@ BoxRender box_render;
 
 void initializeGLStuff() {
 
-    if (point_shader.SetFromFile("./Calibration/Shaders/points.vs", "./Calibration/Shaders/triangles.gs"/* "points.gs" */,
+    if (triangle_shader.SetFromFile("./Calibration/Shaders/points.vs", "./Calibration/Shaders/triangles.gs"/* "points.gs" */,
         "./Calibration/Shaders/points.fs") < 0)
     {
         printf("SHADER ERR");
     }
-    point_shader.Validate();
+    triangle_shader.Validate();
     GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
-    glUseProgram(point_shader.pr);
-    point_shader.bind("mm");
-    point_shader.bind("lidarToWorld");
-    point_shader.bind("pm");
-    point_shader.bind("toCam");
-    point_shader.bind("camTex");
-    point_shader.bind("camDepth");
-    point_shader.bind("aligned");
-    point_shader.bind("used");
+    glUseProgram(triangle_shader.pr);
+    triangle_shader.bind("mm");
+    triangle_shader.bind("lidarToWorld");
+    triangle_shader.bind("pm");
+    triangle_shader.bind("toCam");
+    triangle_shader.bind("camTex");
+    triangle_shader.bind("camDepth");
+    triangle_shader.bind("aligned");
+    triangle_shader.bind("used");
     GLint  texs[6] = { 5,6,7,8,9,10 };
     GLint  dpts[6] = { 11,12,13,14,15,16 };
-    glUniform1iv(point_shader["camTex"], 6, texs);
-    glUniform1iv(point_shader["camDepth"], 6, dpts);
+    glUniform1iv(triangle_shader["camTex"], 6, texs);
+    glUniform1iv(triangle_shader["camDepth"], 6, dpts);
     glUseProgram(0);
     GLERR(__LINE__,__FILE__);
     assert(_CrtCheckMemory());
@@ -508,7 +509,7 @@ void initializeGLStuff() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2048, 2048, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     GLERR(__LINE__,__FILE__);
-    box_render.init(10);
+    box_render.init(300);
     
 }
 
@@ -573,7 +574,7 @@ void drawScene() {
 
     if (enable_proj) {
         drawmode = SMOOTH;
-        glUseProgram(point_shader.pr);
+        glUseProgram(triangle_shader.pr);
         for (int ic = 0; ic < NUMCAM; ++ic)
             if (cameras[ic].aligned) {
                 glActiveTexture(GL_TEXTURE5 + ic);
@@ -585,19 +586,19 @@ void drawScene() {
 
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
                 toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.1, 150) * cameras[ic].opengl_extrinsics();
-                //glUniformMatrix4fv(point_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
+                //glUniformMatrix4fv(triangle_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
                 used[ic] = cameras[ic].used;
             }
             else
                 aligned[ic] = 0;
-        glUniformMatrix4fv(point_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
-        glUniform1iv(point_shader["aligned"], NUMCAM, aligned);
-        glUniform1iv(point_shader["used"], NUMCAM, used);
+        glUniformMatrix4fv(triangle_shader["toCam"], NUMCAM, GL_TRUE, &toCamera[0][0][0]);
+        glUniform1iv(triangle_shader["aligned"], NUMCAM, aligned);
+        glUniform1iv(triangle_shader["used"], NUMCAM, used);
 
         glGetFloatv(GL_PROJECTION_MATRIX, pm);
-        glUniformMatrix4fv(point_shader["pm"], 1, GL_FALSE, pm);
+        glUniformMatrix4fv(triangle_shader["pm"], 1, GL_FALSE, pm);
         glUseProgram(0);
     }
     for (int il = 0; il < lines3d.size(); ++il)
@@ -623,12 +624,12 @@ void drawScene() {
 
         if (enable_proj) {
             drawmode = SMOOTH;
-            glUseProgram(point_shader.pr);
+            glUseProgram(triangle_shader.pr);
             glGetFloatv(GL_MODELVIEW_MATRIX, mm);
-            glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm);
+            glUniformMatrix4fv(triangle_shader["mm"], 1, GL_FALSE, mm);
 
             vcg::Matrix44f l2w = toSteadyFrame * lidars[il].transfLidar;
-            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &l2w[0][0]);
+            glUniformMatrix4fv(triangle_shader["lidarToWorld"], 1, GL_TRUE, &l2w[0][0]);
 
             // THIS ONLY NEED TO BE DONE ONCE
             for (int i = 0; i < NUMCAM; ++i) {
@@ -669,7 +670,6 @@ void drawScene() {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lidars[il].buffers[1]);
             glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
         }
 
         GLERR(__LINE__,__FILE__);
@@ -812,9 +812,9 @@ void drawScene() {
 
     if (showBackground)
         if (drawmode == SMOOTH && enable_proj) {
-            glUseProgram(point_shader.pr);
-            glUniformMatrix4fv(point_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f().Identity()[0][0]);
-            glUniformMatrix4fv(point_shader["mm"], 1, GL_FALSE, mm1);
+            glUseProgram(triangle_shader.pr);
+            glUniformMatrix4fv(triangle_shader["lidarToWorld"], 1, GL_TRUE, &vcg::Matrix44f().Identity()[0][0]);
+            glUniformMatrix4fv(triangle_shader["mm"], 1, GL_FALSE, mm1);
             
             glBindBuffer(GL_ARRAY_BUFFER, box_render.buffers[0]);
             glEnableVertexAttribArray(0);
@@ -967,7 +967,7 @@ void Display() {
                         glPointSize(1.0);
 
                         if (boxpicking && !selected.empty())
-                            corrDet.currentP3D[currentLidar] = closest_sel;
+                            corrDet.currentP3D[currentLidar] = vcg::Inverse(lidars[currentLidar].transfLidar)* closest_sel;
                         boxpicking = false;
 
                         if (selected.size() > 4) {
@@ -1083,7 +1083,7 @@ void Display() {
                     glColor3f(corrDet.trackingState[currentLidar] == 1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2);
                     glPushMatrix();
                     //            vcg::Point3f p = marker3D;
-                    vcg::Point3f p = ::corrDet.currentP3D[currentLidar];
+                    vcg::Point3f p = lidars[currentLidar].transfLidar * ::corrDet.currentP3D[currentLidar];
 
                     glTranslatef(p[0], p[1], p[2]);
                     gluSphere(gluNewQuadric(), 0.1, 10, 10);
@@ -1332,6 +1332,11 @@ void TW_CALL alignCamera(void*) {
 void TW_CALL autoalignCameras(void*) {
     corrDet.alignCamera(currentCamera);
 }
+
+void TW_CALL autoalignCamera(void*ic) {
+    corrDet.alignCamera((int)ic);
+}
+
 void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
 }
@@ -1368,25 +1373,6 @@ void TW_CALL addMarkerToPoints(void*) {
 }
 void TW_CALL computeFrame(void*);
 void TW_CALL detectMarker(void*) {
-
-    /*   lidars[currentLidar].lidar.latest_frame_mutex.lock();
-
-       md.points.clear();
-       for (unsigned int i = 0; i < lidars[currentLidar].lidar.latest_frame.x.size();++i) {
-           vcg::Point3f p = lidars[currentLidar].transfLidar*vcg::Point3f(lidars[currentLidar].lidar.latest_frame.x[i], lidars[currentLidar].lidar.latest_frame.y[i], lidars[currentLidar].lidar.latest_frame.z[i]);
-           if (vcg::Distance<float>(p, marker3D) < 0.4)
-               md.points.push_back(p);
-       }
-
-       lidars[currentLidar].lidar.latest_frame_mutex.unlock();
-
-       vcg::Point3f res;
-       vcg::Plane3f p0, p1, p2;
-       if (md.detect_corner(marker3D, planes[currentLidar][0], planes[currentLidar][1], planes[currentLidar][2]) ){
-           computeFrame((void*) 0);
-           tracker.currect_marker3D = marker3D;
-       }*/
-
 }
 
 
@@ -1595,6 +1581,15 @@ void TW_CALL loadCalibration(void*) {
 void TW_CALL setFrame(void*) {
     for (int i = 0; i < N_LIDARS; ++i)
         lidars[i].transfLidar = vcg::Inverse(boatFrame) * lidars[i].transfLidar;
+
+    for (int i = 0; i < NUMCAM;++i) {
+        vcg::Matrix44f  R = cameras[i].calibrated.Extrinsics.Rot();
+        vcg::Point3f tra = cameras[i].calibrated.Extrinsics.Tra();
+        cameras[i].calibrated.Extrinsics.SetRot(vcg::Inverse(boatFrame) * R);
+        cameras[i].calibrated.Extrinsics.SetTra(vcg::Inverse(boatFrame) * tra);
+        cameras[i].extrinsics = cameras[i].extrinsics* boatFrame ;
+    }
+
     alphaFrame = betaFrame = gammaFrame = xFrame = yFrame = zFrame = 0.0;
     boatFrame.SetIdentity();
 }
@@ -1668,9 +1663,11 @@ void TW_CALL loadAlignment(void*) {
         calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "rb");
-    for (int il = 0; il < 2; il++)
-        fread(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
-    fclose(fo);
+    if (fo) {
+        for (int il = 0; il < 2; il++)
+            fread(&lidars[il].transfLidar, 1, sizeof(vcg::Matrix44f), fo);
+        fclose(fo);
+    }
 }
 
 
@@ -1746,10 +1743,8 @@ void mousePressEvent(int bt, int state, int x, int y) {
         }
         else
         {
-            if (state == GLUT_DOWN) {
+            if (state == GLUT_DOWN) 
                 track[wnd].MouseDown(x, y, GLUT2VCG(bt, state));
-                printf("mousedown %d %d \n", x, y);
-            }
             else
                 track[wnd].MouseUp(x, y, GLUT2VCG(bt, state));
 
@@ -1946,6 +1941,7 @@ void TW_CALL time_startstop(void*) {
     else
         partial_time += vclock.clock() - restart_time;
     TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
+    TwSetParam(calibrationBar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
 
 void TW_CALL runTest(void*) {
@@ -2022,6 +2018,15 @@ void TW_CALL getMapColor(void* v, void*) {
         *(bool*)v = cameras[currentCamera].used;
 }
 
+void TW_CALL setMapColorCalib(const void* v, void*iCam) {
+    if (!cameras.empty())
+        cameras[(int)iCam].used = *(bool*)v;
+}
+void TW_CALL getMapColorCalib(void* v, void*iCam) {
+    if (!cameras.empty())
+        *(bool*)v = cameras[(int)iCam].used;
+}
+
 void TW_CALL setSplitScreen(const void* v, void*) {
     splitScreen = *(bool*)v;
     setViewports(width, height);
@@ -2043,7 +2048,6 @@ void TW_CALL corrDet_save_correspondences(void*) {
 }
 void TW_CALL corrDet_load_correspondences(void*) {
     corrDet.load_correspondences("corrs.bin");
-
 }
 
 void read_first_and_last_timestamp(std::string path, unsigned long long& f, unsigned long long& l) {
@@ -2075,7 +2079,6 @@ void TW_CALL startInput(void*) {
     currentCamera = 0;
 }
 
-// execute histogram eq.
 void HistogramEqualize(void*)
 {
     if (!histoEq)
@@ -2337,8 +2340,31 @@ int main(int argc, char* argv[])
     TwAddVarCB(calibrationBar, "splitscreen", TW_TYPE_BOOL8, setSplitScreen, getSplitScreen, (void*)0, " label='split screen'  help=`map color` ");
   //  TwAddButton(calibrationBar, "load calibrated cameras", ::loadCalibratedCamera, &currentCamera, " label='load camera'  help=`start input` ");
   //  TwAddButton(calibrationBar, "save calibrated cameras", ::saveCalibratedCamera, &currentCamera, " label='save camera'  help=`start input` ");
-    TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` ");
-    TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` ");
+    TwAddVarRO(calibrationBar,  "correspondencesLL", TW_TYPE_INT32, &corrDet.correspondences3D3D_size,  "label='correspondences Lidar-Lidar'  help=\` calibrating` group ='Lidar-Lidar'");
+    TwAddButton(calibrationBar,  "try align lidars" , ::autoalignLidars, 0, " label='try to align'  help=`start input` group ='Lidar-Lidar'");
+
+    for (unsigned int i = 0; i < NUMCAM; ++i) {
+        std::string grp =  (std::string("group ='camera ") + std::to_string(5000 + i)+"'");
+        TwAddVarRO(calibrationBar, (std::string("correspondences")+std::to_string(i)).c_str(), TW_TYPE_INT32, &corrDet.correspondences3D2D_size[i], (std::string("label='correspondences'  help=\` calibrating` ") + grp).c_str());
+        TwAddButton(calibrationBar, (std::string("try align") + std::to_string(i)).c_str(), ::autoalignCamera, (void*)i, (std::string(" label='try to align'  help=`start input` ") + grp).c_str());
+        TwAddVarCB(calibrationBar, (std::string("Map Color")+std::to_string(i)).c_str(), TW_TYPE_BOOL8, setMapColorCalib, getMapColorCalib, (void*)i, (std::string(" label='Map Image' group=`Align Cameras` help=`map color` ") + grp).c_str());
+    }
+    if (SCENE_REPLAY) {
+
+        TwAddButton(calibrationBar, "start_stop", ::time_startstop, 0, " label='startstop' group=`Time` help=`Align` ");
+        TwAddVarCB(calibrationBar, "virtualtime", TW_TYPE_UINT32, setVirtualTime, getVirtualTime, (void*)0, " label='virtual time' group=`Time` help=`virtual` ");
+    }
+
+    TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` group=`save/load`");
+    TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` group=`save/load`");
+    if (SCENE_REPLAY) {
+        TwAddButton(calibrationBar, "save corrs", corrDet_save_correspondences, 0, " label='save correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+        TwAddButton(calibrationBar, "load corrs", corrDet_load_correspondences, 0, " label='load correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+    }
+
+    TwAddVarRW(calibrationBar, "mapcolor", TW_TYPE_BOOL8, &enable_proj, " label='map color' group=`Rendering` help=` draw all` ");
+    TwAddVarRW(calibrationBar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
+    TwAddVarRW(calibrationBar, "drawbackground", TW_TYPE_BOOL8, &showBackground, " label='draw background' group=`Rendering` help=` draw all` ");
 
 
 
