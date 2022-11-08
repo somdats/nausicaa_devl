@@ -72,7 +72,6 @@ void Lidar::start_reading() {
 
     reading = true;
 
-
     if (SAVE_PC){
         if (logger::isExistDirectory(DUMP_FOLDER_PATH))
         {
@@ -115,7 +114,6 @@ void Lidar::start_reading() {
                     if (ii != i)
                     {
                         i = ii;
-                        std::this_thread::sleep_for(10ms);
                         latest_frame_mutex.lock();
                         logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
                         latest_frame_mutex.unlock();
@@ -138,7 +136,9 @@ void Lidar::start_reading() {
             bool stat = logger::getTimeStamp(timeLidar, l1Cam);
             if (stat)
             {
+                latest_frame_mutex.lock();
                 logger::savePointCloudBinary(lidarPort, l1Cam, DUMP_FOLDER_PATH, latest_frame);
+                latest_frame_mutex.unlock();
                 if (lidarPort == 2368)
                     fprintf(flid1, "%s\n", l1Cam.c_str());
                 if (lidarPort == 2369)
