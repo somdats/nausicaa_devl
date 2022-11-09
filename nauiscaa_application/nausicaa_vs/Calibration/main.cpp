@@ -340,7 +340,7 @@ void updatePC(int il) {
     if (first[il])
         lidars[il].init();
 
-
+  
     glWrap.m = &mesh;
     vcg::tri::Allocator<CMesh>::AddVertices(*glWrap.m, lidars[il].lidar.latest_frame.x.size());
 
@@ -671,7 +671,7 @@ void drawScene() {
             glDrawElements(GL_TRIANGLES, lidars[il].iTriangles.size(), GL_UNSIGNED_INT, 0);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
-
+        glFinish();
         GLERR(__LINE__,__FILE__);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisableVertexAttribArray(0);
@@ -995,8 +995,8 @@ void Display() {
                 GLERR(__LINE__,__FILE__);
 
 
-                for (int il = 0; il < N_LIDARS; ++il)
-                    updatePC(il);
+         //       for (int il = 0; il < N_LIDARS; ++il)
+         //           updatePC(il);
 
                 if (enable_proj) {
                     for (int iCam = 0; iCam < NUMCAM; ++iCam)
@@ -1205,6 +1205,7 @@ void Display() {
         }
 
     glUseProgram(0);
+  
     GLERR(__LINE__, __FILE__);
     glActiveTexture(GL_TEXTURE0);
     TwRefreshBar(bar);
@@ -2357,11 +2358,9 @@ int main(int argc, char* argv[])
 
     TwAddButton(calibrationBar, "save calibration", ::saveCalibration, 0, " label='save calibration'  help=`start input` group=`save/load`");
     TwAddButton(calibrationBar, "load calibration", ::loadCalibration, 0, " label='load calibration'  help=`start input` group=`save/load`");
-    if (SCENE_REPLAY) {
-        TwAddButton(calibrationBar, "save corrs", corrDet_save_correspondences, 0, " label='save correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
-        TwAddButton(calibrationBar, "load corrs", corrDet_load_correspondences, 0, " label='load correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
-    }
-
+    TwAddButton(calibrationBar, "save corrs", corrDet_save_correspondences, 0, " label='save correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+    TwAddButton(calibrationBar, "load corrs", corrDet_load_correspondences, 0, " label='load correspondences' group=`Register Lidars` help=`compute line` group=`save/load` ");
+  
     TwAddVarRW(calibrationBar, "mapcolor", TW_TYPE_BOOL8, &enable_proj, " label='map color' group=`Rendering` help=` draw all` ");
     TwAddVarRW(calibrationBar, "drawall", TW_TYPE_BOOL8, &drawAllLidars, " label='draw All' group=`Rendering` help=` draw all` ");
     TwAddVarRW(calibrationBar, "drawbackground", TW_TYPE_BOOL8, &showBackground, " label='draw background' group=`Rendering` help=` draw all` ");
