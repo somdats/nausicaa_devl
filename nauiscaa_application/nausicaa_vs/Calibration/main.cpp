@@ -238,6 +238,7 @@ TwBar* bar, // Pointer to the tweak bar
 * frameBar,
 * pointsBar,
 * calibrationBar;
+std::vector <TwBar*> cameraBars;
 
 // calibration
 bool calibrating;
@@ -966,7 +967,7 @@ void Display() {
                         glPointSize(1.0);
 
                         if (boxpicking && !selected.empty())
-                            corrDet.currentP3D[currentLidar] = closest_sel;
+                            corrDet.currentP3D[currentLidar] = vcg::Inverse(lidars[currentLidar].transfLidar)* closest_sel;
                         boxpicking = false;
 
                         if (selected.size() > 4) {
@@ -1331,6 +1332,11 @@ void TW_CALL alignCamera(void*) {
 void TW_CALL autoalignCameras(void*) {
     corrDet.alignCamera(currentCamera);
 }
+
+void TW_CALL autoalignCamera(void*ic) {
+    corrDet.alignCamera((int)ic);
+}
+
 void TW_CALL autoalignLidars(void*) {
     corrDet.alignLidars();
 }
@@ -1935,6 +1941,7 @@ void TW_CALL time_startstop(void*) {
     else
         partial_time += vclock.clock() - restart_time;
     TwSetParam(bar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
+    TwSetParam(calibrationBar, "start_stop", "label", TW_PARAM_CSTRING, 1, (time_running) ? "stop" : "play");
 }
 
 void TW_CALL runTest(void*) {
@@ -1948,7 +1955,13 @@ void TW_CALL runTest(void*) {
 
     ::initCameras(0);
 
+    
     for (int i = 0; i < NUMCAM; ++i) {
+        
+        // load the extrinsics parameters of the camera (NEW approach, loads the aln.bin file if present)
+        ::loadCalibratedCamera((void*)i);
+
+        // load the correspondence points and align (OLD approach, load the correspondences.txt if present and then solvepnp)
         ::loadImPoints(i);
         ::alignCamera(i);
     }
@@ -2041,7 +2054,6 @@ void TW_CALL corrDet_save_correspondences(void*) {
 }
 void TW_CALL corrDet_load_correspondences(void*) {
     corrDet.load_correspondences("corrs.bin");
-
 }
 
 void read_first_and_last_timestamp(std::string path, unsigned long long& f, unsigned long long& l) {
@@ -2073,7 +2085,6 @@ void TW_CALL startInput(void*) {
     currentCamera = 0;
 }
 
-// execute histogram eq.
 void HistogramEqualize(void*)
 {
     if (!histoEq)
@@ -2342,6 +2353,7 @@ int main(int argc, char* argv[])
         std::string grp =  (std::string("group ='camera ") + std::to_string(5000 + i)+"'");
         TwAddVarRO(calibrationBar, (std::string("correspondences")+std::to_string(i)).c_str(), TW_TYPE_INT32, &corrDet.correspondences3D2D_size[i], (std::string("label='correspondences'  help=\` calibrating` ") + grp).c_str());
         TwAddButton(calibrationBar, (std::string("try align") + std::to_string(i)).c_str(), ::autoalignCamera, (void*)i, (std::string(" label='try to align'  help=`start input` ") + grp).c_str());
+        TwAddVarCB(calibrationBar, (std::string("Map Color")+std::to_string(i)).c_str(), TW_TYPE_BOOL8, setMapColorCalib, getMapColorCalib, (void*)i, (std::string(" label='Map Image' group=`Align Cameras` help=`map color` ") + grp).c_str());
     }
     if (SCENE_REPLAY) {
 
