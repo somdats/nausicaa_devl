@@ -1629,7 +1629,7 @@ void TW_CALL loadImPoints(void*) {
 }
 
 void  TW_CALL loadCalibratedCamera(void * _iC) {
-    int iC = *(int*)_iC;
+    int iC =  (int)_iC;
     std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
 
     if (SCENE_REPLAY)
