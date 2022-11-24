@@ -25,6 +25,7 @@ struct Lidar{
 
     bool reading;
     int lidarPort;
+    std::uint64_t epochtime;
 
     void init(uint port, std::string path_correction_file);
 

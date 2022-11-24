@@ -208,8 +208,8 @@ void logger:: LoadPointCloudBinary(std::string fileName, PacketDecoder::HDLFrame
 
 bool logger::getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::string& time, bool pc)
 {
-	auto currTime = std::chrono::system_clock::now();
-	auto UTC = std::chrono::duration_cast<std::chrono::milliseconds>(currTime.time_since_epoch()).count();
+	 auto currTime = std::chrono::system_clock::now();
+	//auto UTC = std::chrono::duration_cast<std::chrono::milliseconds>(currTime.time_since_epoch()).count();
 	// OR
 	//auto in_time_t = std::chrono::system_clock::to_time_t(now);
 	//std::stringstream datetime;
@@ -224,7 +224,7 @@ bool logger::getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::
 		if (extime >= EPSILON_DIFF_PC)
 		{
 			timePrev = currTime;
-			time = std::to_string(UTC);
+			//time = std::to_string(UTC);
 			return true;
 		}
 	}
@@ -233,11 +233,11 @@ bool logger::getTimeStamp(std::chrono::system_clock::time_point& timePrev, std::
 		if (extime >= EPSILON_DIFF_IMG)
 		{
 			timePrev = currTime;
-			time = std::to_string(UTC);
+			//time = std::to_string(UTC);
 			return true;
 		}
 	}
-	time = "";
+	//time = "";
 	return false;
 }
 
