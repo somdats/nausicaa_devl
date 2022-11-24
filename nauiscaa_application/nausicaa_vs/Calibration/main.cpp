@@ -60,6 +60,7 @@
 #include "detect_3d_marker.h"
 #include "correspondences_detector.h"
 #include "lidar_render.h"
+#include <opencv2/stitching.hpp>
 #include <opencv2/imgproc.hpp>
 
 ///server header
@@ -180,10 +181,12 @@ float  rollDegrees = 0.f;
 float  bowDirectionDegrees = 0.f;
 
 // picking
+bool sel_points = false;
+
 bool pick_point = false;
 int pick_x, pick_y;
 float picked_point[6];
-
+std::vector<vcg::Point3f> points_to_send;
 
 
 std::vector<vcg::Point3f> selected;
@@ -348,6 +351,12 @@ void updatePC(int il) {
         mesh.vert[i].P()[0] = lidars[il].lidar.latest_frame.x[i];
         mesh.vert[i].P()[1] = lidars[il].lidar.latest_frame.y[i];
         mesh.vert[i].P()[2] = lidars[il].lidar.latest_frame.z[i];
+
+        if (sel_points) {
+            vcg::Point3f p = lidars[il].transfLidar * mesh.vert[i].P();
+            if (p.Y() > bottom_sel && p.Y() < top_sel && p.Norm() > inner_sel && p.Norm() < outer_sel)
+                points_to_send.push_back(p);
+        }
     }
 
     lidars[il].fillGrid();
@@ -358,6 +367,14 @@ void updatePC(int il) {
         first[il] = false;
     }
     lidars[il].lidar.latest_frame_mutex.unlock();
+    if (sel_points && il == 1) {
+        std::lock_guard lk(m_sel);
+        selected_points = true;
+        sel_points = false;
+        cond_sel.notify_one();
+       
+    }
+
 }
 
 vcg::Point3f win2NDC(vcg::Point2f in) {
@@ -585,7 +602,7 @@ void drawScene() {
                 cameras[ic].latest_frame_mutex.unlock();
 
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
-                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.1, 150) * cameras[ic].opengl_extrinsics();
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 2.0, 150.0) * cameras[ic].opengl_extrinsics();
                 //glUniformMatrix4fv(triangle_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
@@ -904,7 +921,7 @@ void Display() {
         corrDet.draw_debug();
 
     for (int iL = 0; iL < 2; ++iL)
-        if (splitScreen || (!splitScreen && iL == currentLidar))
+        if (splitScreen || drawAllLidars || (!splitScreen && iL == currentLidar))
         {
 
             currentLidar = iL;
@@ -1010,7 +1027,7 @@ void Display() {
                             glEnable(GL_DEPTH_TEST);
 
                             glUseProgram(shadow_shader.pr);
-                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
+                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 2.0, 150.0);
 
                             for (int il = 0; il < N_LIDARS; ++il) {
 
@@ -1037,7 +1054,7 @@ void Display() {
                             glUseProgram(0);
 
                             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                            //if (iCam == 0) {
+                            //if (true || iCam == 0) {
                             //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
                             //   cv::Mat ima(1096,1948,CV_8UC3);
                             //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
@@ -1535,7 +1552,7 @@ void TW_CALL saveImPoints(void*) {
     }
 }
 void  TW_CALL saveCalibratedCamera(void * _iC) {
-    int iC = *(int*)_iC;
+    int iC = (int)_iC;
     std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
 
     if (SCENE_REPLAY)
@@ -1570,13 +1587,13 @@ void TW_CALL loadAlignment(void*);
 void TW_CALL saveCalibration(void*) {
         saveAlignment(0);
         for (unsigned int i = 0; i < NUMCAM;++i)
-            saveCalibratedCamera(&i);
+            saveCalibratedCamera((void*)i);
 }
 void  TW_CALL loadCalibratedCamera(void* _iC);
 void TW_CALL loadCalibration(void*) {
     loadAlignment(0);
     for (unsigned int i = 0; i < NUMCAM;++i)
-        loadCalibratedCamera(&i);
+        loadCalibratedCamera((void*)i);
 }
 
 void TW_CALL setFrame(void*) {

@@ -20,9 +20,11 @@ bool lidarOn[2];
 bool camerasOn[6];
 bool showBackground = false;
 
-std::mutex m, activeCamera_mutex;
-std::condition_variable condv;
-bool picked = false;
+float bottom_sel,top_sel,inner_sel,outer_sel;
+
+std::mutex m, activeCamera_mutex, m_sel;
+std::condition_variable condv,cond_sel;
+bool picked = false, selected_points = false;
 
 
 extern float  LatDecimalDegrees, LonDecimalDegrees, ElevationMeters;
@@ -123,6 +125,19 @@ void call_API_function(std::string message) {
 
 		lk.unlock();
 
+	}
+	else
+	if (fname == std::string("getPointCloud")) {
+		bottom_sel	= deserialize_float(message);
+		top_sel		= deserialize_float(message);
+		inner_sel	= deserialize_float(message);
+		outer_sel	= deserialize_float(message);
+
+		std::unique_lock lk(m_sel);
+		sel_points = true;
+		cond_sel.wait(lk, [] {return selected_points;});
+		selected_points = false;
+		serverComm.send((char*)&points_to_send[0], points_to_send.size() *3* sizeof(float));
 	}
 	else
 	if (fname == std::string("enableLidar"))

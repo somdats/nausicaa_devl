@@ -91,6 +91,16 @@ extern "C" {
 		//! read frame
 		image_buffer  NAUSICAA_VR_API readFrame(int* byteCount);
 
+		//! return a selection of the point clouds
+		/*!
+		  \param number of returned bytes
+		  \param only points with y coordinates greater than this value
+		  \param only points with y coordinates smaller than this value
+		  \param only points farther than this values from the origing
+		  \param only points closer than this values to the origing
+		*/
+		image_buffer getPointCloud(int* byteCount, float bottom, float top, float innerRadius, float outerRadius);
+
 		//! stop streaming
 		void NAUSICAA_VR_API stopStreaming();
 

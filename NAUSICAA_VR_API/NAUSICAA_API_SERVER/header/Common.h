@@ -18,13 +18,16 @@ extern bool streamON;
 extern bool lidarOn[2];
 extern bool camerasOn[6];
 extern bool showBackground;
+extern float bottom_sel, top_sel, inner_sel, outer_sel;
 
-extern std::mutex m,activeCamera_mutex;
-extern std::condition_variable condv;
+extern std::mutex m,activeCamera_mutex,m_sel;
+extern std::condition_variable condv,cond_sel;
 extern bool picked;
 extern bool pick_point;
+extern bool sel_points,selected_points;
 extern int pick_x, pick_y;
 extern float picked_point[6];
+extern std::vector<vcg::Point3f> points_to_send;
 
 void sampleGeometry(float xi, float yi, float& x, float& y, float& z);
 

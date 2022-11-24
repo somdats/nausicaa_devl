@@ -47,6 +47,14 @@ image_buffer VRSubsystem::readFrame(int* byteCount) {
 	return clientStream.receive_image(byteCount);
 }
 
+image_buffer VRSubsystem::getPointCloud(int* n_points,float bottom, float top, float innerRadius, float outerRadius) {
+	clientComm.send_message(message()[std::string("getPointCloud")][bottom][top][innerRadius][outerRadius].msg);
+	int byteCount;
+	char * dat =  clientComm.receive_image(&byteCount);
+	(*n_points) = byteCount / (4 * 3);
+	return dat;
+}
+
 void VRSubsystem::stopStreaming() {
 	clientComm.send_message(message()[std::string("stopStreaming")].msg);
 }
