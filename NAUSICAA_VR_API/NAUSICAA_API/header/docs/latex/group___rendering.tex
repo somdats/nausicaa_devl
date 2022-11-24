@@ -1,0 +1,245 @@
+\hypertarget{group___rendering}{}\doxysection{Rendering}
+\label{group___rendering}\index{Rendering@{Rendering}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gacd6eef4add5f23d07faa91b650f43dd1}{VRSubsystem\+::add\+Virtual\+Camera}} ()
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}{Virtual\+Camera\+IDs}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga0682487a055f5851952c439af1183ad4}{VRSubsystem\+::get\+Virtual\+Camera\+List}} (int $\ast$n\+\_\+cameras)
+\begin{DoxyCompactList}\small\item\em get list of virtual cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga380396b9c0ed8bdac2fed752cf3dd8eb}{VRSubsystem\+::render\+From\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em set a virtual camera as the one to use for rendering \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga7094f9c47c6c627c3a63e9cc93fe7645}{VRSubsystem\+::select\+Quality}} (float val)
+\begin{DoxyCompactList}\small\item\em Rendering quality \mbox{[}NOT YET IMPLEMENTED\mbox{]}. \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga761fc585af7ec39d22acd010ab38e84b}{VRSubsystem\+::sample\+Geometry}} (int xi, int yi, float $\ast$x\+Loc, float $\ast$y\+Loc, float $\ast$z\+Loc, float $\ast$longitude, float $\ast$latitude, float $\ast$height)
+\begin{DoxyCompactList}\small\item\em Sample geometry. \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gaa7b6a853161284c80d7ed4f95a1dc617}{VRSubsystem\+::enable\+Lidar}} (\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}} id)
+\begin{DoxyCompactList}\small\item\em include lidar\+ID in the reconstruction process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga116255c88fa39c7f59b8422a93856732}{VRSubsystem\+::enable\+All\+Lidars}} ()
+\begin{DoxyCompactList}\small\item\em enable all lidars in the reconstruction process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gaf9fe6200b4a3720d18fdb95460bdfab7}{VRSubsystem\+::disable\+Lidar}} (\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}} id)
+\begin{DoxyCompactList}\small\item\em exclude lidar\+ID from the rendering process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga3eae027f1f04b796d27424f768c56746}{VRSubsystem\+::disable\+All\+Lidars}} ()
+\begin{DoxyCompactList}\small\item\em exclude lidar\+ID from the rendering process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gaa48fb3bd446a2a84509b653925f5f26e}{VRSubsystem\+::enable\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em include camera\+ID \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gabfef573983530203f493a4074727b243}{VRSubsystem\+::enable\+All\+Cameras}} ()
+\begin{DoxyCompactList}\small\item\em enable all cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga9af2c85a0bd21a1557dfbfa581799f9b}{VRSubsystem\+::disable\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em exclude camera\+ID \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga5cab785d8cf5acb83dc85ef08252132b}{VRSubsystem\+::disable\+All\+Cameras}} ()
+\begin{DoxyCompactList}\small\item\em exclude all cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_ga19983c0c3c6e240c9b9601eeec8081c3}{VRSubsystem\+::disable\+Background}} ()
+\begin{DoxyCompactList}\small\item\em exclude background from the scene \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___rendering_gaa966c7e44252413f5410ca7779173c1b}{VRSubsystem\+::enable\+Background}} ()
+\begin{DoxyCompactList}\small\item\em include background in the scene \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Definition and manipulation of virtual cameras 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{group___rendering_gacd6eef4add5f23d07faa91b650f43dd1}\label{group___rendering_gacd6eef4add5f23d07faa91b650f43dd1}} 
+\index{Rendering@{Rendering}!addVirtualCamera@{addVirtualCamera}}
+\index{addVirtualCamera@{addVirtualCamera}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{addVirtualCamera()}{addVirtualCamera()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::add\+Virtual\+Camera (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Add a virtual camera
+
+\begin{DoxyReturn}{Returns}
+camera unique identifier 
+\end{DoxyReturn}
+\mbox{\Hypertarget{group___rendering_ga5cab785d8cf5acb83dc85ef08252132b}\label{group___rendering_ga5cab785d8cf5acb83dc85ef08252132b}} 
+\index{Rendering@{Rendering}!disableAllCameras@{disableAllCameras}}
+\index{disableAllCameras@{disableAllCameras}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{disableAllCameras()}{disableAllCameras()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::disable\+All\+Cameras (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+exclude all cameras 
+
+\mbox{\Hypertarget{group___rendering_ga3eae027f1f04b796d27424f768c56746}\label{group___rendering_ga3eae027f1f04b796d27424f768c56746}} 
+\index{Rendering@{Rendering}!disableAllLidars@{disableAllLidars}}
+\index{disableAllLidars@{disableAllLidars}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{disableAllLidars()}{disableAllLidars()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::disable\+All\+Lidars (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+exclude lidar\+ID from the rendering process 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the lidar to be excluded \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_ga19983c0c3c6e240c9b9601eeec8081c3}\label{group___rendering_ga19983c0c3c6e240c9b9601eeec8081c3}} 
+\index{Rendering@{Rendering}!disableBackground@{disableBackground}}
+\index{disableBackground@{disableBackground}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{disableBackground()}{disableBackground()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::disable\+Background (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+exclude background from the scene 
+
+\mbox{\Hypertarget{group___rendering_ga9af2c85a0bd21a1557dfbfa581799f9b}\label{group___rendering_ga9af2c85a0bd21a1557dfbfa581799f9b}} 
+\index{Rendering@{Rendering}!disableCamera@{disableCamera}}
+\index{disableCamera@{disableCamera}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{disableCamera()}{disableCamera()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::disable\+Camera (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}}}]{id }\end{DoxyParamCaption})}
+
+
+
+exclude camera\+ID 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the camera to be excluded from the rendering \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_gaf9fe6200b4a3720d18fdb95460bdfab7}\label{group___rendering_gaf9fe6200b4a3720d18fdb95460bdfab7}} 
+\index{Rendering@{Rendering}!disableLidar@{disableLidar}}
+\index{disableLidar@{disableLidar}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{disableLidar()}{disableLidar()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::disable\+Lidar (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}}}]{id }\end{DoxyParamCaption})}
+
+
+
+exclude lidar\+ID from the rendering process 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the lidar to be excluded \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_gabfef573983530203f493a4074727b243}\label{group___rendering_gabfef573983530203f493a4074727b243}} 
+\index{Rendering@{Rendering}!enableAllCameras@{enableAllCameras}}
+\index{enableAllCameras@{enableAllCameras}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{enableAllCameras()}{enableAllCameras()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::enable\+All\+Cameras (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+enable all cameras 
+
+\mbox{\Hypertarget{group___rendering_ga116255c88fa39c7f59b8422a93856732}\label{group___rendering_ga116255c88fa39c7f59b8422a93856732}} 
+\index{Rendering@{Rendering}!enableAllLidars@{enableAllLidars}}
+\index{enableAllLidars@{enableAllLidars}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{enableAllLidars()}{enableAllLidars()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::enable\+All\+Lidars (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+enable all lidars in the reconstruction process 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the lidar to be included \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_gaa966c7e44252413f5410ca7779173c1b}\label{group___rendering_gaa966c7e44252413f5410ca7779173c1b}} 
+\index{Rendering@{Rendering}!enableBackground@{enableBackground}}
+\index{enableBackground@{enableBackground}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{enableBackground()}{enableBackground()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::enable\+Background (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+include background in the scene 
+
+\mbox{\Hypertarget{group___rendering_gaa48fb3bd446a2a84509b653925f5f26e}\label{group___rendering_gaa48fb3bd446a2a84509b653925f5f26e}} 
+\index{Rendering@{Rendering}!enableCamera@{enableCamera}}
+\index{enableCamera@{enableCamera}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{enableCamera()}{enableCamera()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::enable\+Camera (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}}}]{id }\end{DoxyParamCaption})}
+
+
+
+include camera\+ID 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the camera to used in the rendering \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_gaa7b6a853161284c80d7ed4f95a1dc617}\label{group___rendering_gaa7b6a853161284c80d7ed4f95a1dc617}} 
+\index{Rendering@{Rendering}!enableLidar@{enableLidar}}
+\index{enableLidar@{enableLidar}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{enableLidar()}{enableLidar()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::enable\+Lidar (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}}}]{id }\end{DoxyParamCaption})}
+
+
+
+include lidar\+ID in the reconstruction process 
+
+
+\begin{DoxyParams}{Parameters}
+{\em unique} & identifier of the lidar to be included \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_ga0682487a055f5851952c439af1183ad4}\label{group___rendering_ga0682487a055f5851952c439af1183ad4}} 
+\index{Rendering@{Rendering}!getVirtualCameraList@{getVirtualCameraList}}
+\index{getVirtualCameraList@{getVirtualCameraList}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{getVirtualCameraList()}{getVirtualCameraList()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}{Virtual\+Camera\+IDs}} NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::get\+Virtual\+Camera\+List (\begin{DoxyParamCaption}\item[{int $\ast$}]{n\+\_\+cameras }\end{DoxyParamCaption})}
+
+
+
+get list of virtual cameras 
+
+\mbox{\Hypertarget{group___rendering_ga380396b9c0ed8bdac2fed752cf3dd8eb}\label{group___rendering_ga380396b9c0ed8bdac2fed752cf3dd8eb}} 
+\index{Rendering@{Rendering}!renderFromCamera@{renderFromCamera}}
+\index{renderFromCamera@{renderFromCamera}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{renderFromCamera()}{renderFromCamera()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::render\+From\+Camera (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}}}]{id }\end{DoxyParamCaption})}
+
+
+
+set a virtual camera as the one to use for rendering 
+
+
+\begin{DoxyParams}{Parameters}
+{\em virtual} & camera unique identifier \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_ga761fc585af7ec39d22acd010ab38e84b}\label{group___rendering_ga761fc585af7ec39d22acd010ab38e84b}} 
+\index{Rendering@{Rendering}!sampleGeometry@{sampleGeometry}}
+\index{sampleGeometry@{sampleGeometry}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{sampleGeometry()}{sampleGeometry()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::sample\+Geometry (\begin{DoxyParamCaption}\item[{int}]{xi,  }\item[{int}]{yi,  }\item[{float $\ast$}]{x\+Loc,  }\item[{float $\ast$}]{y\+Loc,  }\item[{float $\ast$}]{z\+Loc,  }\item[{float $\ast$}]{longitude,  }\item[{float $\ast$}]{latitude,  }\item[{float $\ast$}]{height }\end{DoxyParamCaption})}
+
+
+
+Sample geometry. 
+
+! Sample geometry $\ast$!
+
+
+\begin{DoxyParams}{Parameters}
+{\em pixel} & coordinates (xi) \\
+\hline
+{\em pixel} & coordinates (yi) \\
+\hline
+{\em longitude} & \\
+\hline
+{\em latitude} & \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___rendering_ga7094f9c47c6c627c3a63e9cc93fe7645}\label{group___rendering_ga7094f9c47c6c627c3a63e9cc93fe7645}} 
+\index{Rendering@{Rendering}!selectQuality@{selectQuality}}
+\index{selectQuality@{selectQuality}!Rendering@{Rendering}}
+\doxysubsubsection{\texorpdfstring{selectQuality()}{selectQuality()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::select\+Quality (\begin{DoxyParamCaption}\item[{float}]{val }\end{DoxyParamCaption})}
+
+
+
+Rendering quality \mbox{[}NOT YET IMPLEMENTED\mbox{]}. 
+
+Lowest qualiy corresponds to an output-\/sensitive rendering which guarantees a constant frame rate of 25-\/30 frames per sencond. With higher quality you can have more accurate reconstructions with a less fluid rendering. 
+\begin{DoxyParams}{Parameters}
+{\em valore} & between 0.\+0 e 1.\+0 \\
+\hline
+\end{DoxyParams}

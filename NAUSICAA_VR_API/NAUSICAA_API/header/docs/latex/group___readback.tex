@@ -1,0 +1,48 @@
+\hypertarget{group___readback}{}\doxysection{from the server}
+\label{group___readback}\index{from the server@{from the server}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___readback_ga7147a78f905418f4872ab84864deb8b0}{VRSubsystem\+::read\+Frame}} (int $\ast$byte\+Count)
+\begin{DoxyCompactList}\small\item\em read one frame (discontinued, frames are streamed) \end{DoxyCompactList}\item 
+\mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} \mbox{\hyperlink{group___readback_ga4cb811052e4a55b9fafc8b7c3ce58941}{VRSubsystem\+::get\+Point\+Cloud}} (int $\ast$n\+\_\+points, float bottom, float top, float inner\+Radius, float outer\+Radius)
+\begin{DoxyCompactList}\small\item\em return a selection of the point clouds \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+functions that read data from the server 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{group___readback_ga4cb811052e4a55b9fafc8b7c3ce58941}\label{group___readback_ga4cb811052e4a55b9fafc8b7c3ce58941}} 
+\index{from the server@{from the server}!getPointCloud@{getPointCloud}}
+\index{getPointCloud@{getPointCloud}!from the server@{from the server}}
+\doxysubsubsection{\texorpdfstring{getPointCloud()}{getPointCloud()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} VRSubsystem\+::get\+Point\+Cloud (\begin{DoxyParamCaption}\item[{int $\ast$}]{n\+\_\+points,  }\item[{float}]{bottom,  }\item[{float}]{top,  }\item[{float}]{inner\+Radius,  }\item[{float}]{outer\+Radius }\end{DoxyParamCaption})}
+
+
+
+return a selection of the point clouds 
+
+
+\begin{DoxyParams}{Parameters}
+{\em number} & of points returned \\
+\hline
+{\em only} & points with y coordinates greater than this value \\
+\hline
+{\em only} & points with y coordinates smaller than this value \\
+\hline
+{\em only} & points farther than this values from the origing \\
+\hline
+{\em only} & points closer than this values to the origing \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___readback_ga7147a78f905418f4872ab84864deb8b0}\label{group___readback_ga7147a78f905418f4872ab84864deb8b0}} 
+\index{from the server@{from the server}!readFrame@{readFrame}}
+\index{readFrame@{readFrame}!from the server@{from the server}}
+\doxysubsubsection{\texorpdfstring{readFrame()}{readFrame()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::read\+Frame (\begin{DoxyParamCaption}\item[{int $\ast$}]{byte\+Count }\end{DoxyParamCaption})}
+
+
+
+read one frame (discontinued, frames are streamed) 
+

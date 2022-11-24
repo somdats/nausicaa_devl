@@ -1,0 +1,52 @@
+\hypertarget{struct_client}{}\doxysection{Client Struct Reference}
+\label{struct_client}\index{Client@{Client}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{struct_client_a47a1cfc741fca52eba2e569c885d7f7b}\label{struct_client_a47a1cfc741fca52eba2e569c885d7f7b}} 
+int {\bfseries connect} (std\+::string addr, int port)
+\item 
+\mbox{\Hypertarget{struct_client_aac4aa928109d6226ce5b0fdaf6baf48b}\label{struct_client_aac4aa928109d6226ce5b0fdaf6baf48b}} 
+int {\bfseries send\+\_\+message} (std\+::string \mbox{\hyperlink{structmessage}{message}}, char $\ast$blob=NULL, int blob\+\_\+size=0)
+\item 
+\mbox{\Hypertarget{struct_client_aff4f23781952aac9207aa100684b68c7}\label{struct_client_aff4f23781952aac9207aa100684b68c7}} 
+int {\bfseries receive\+\_\+int} ()
+\item 
+\mbox{\Hypertarget{struct_client_ae06485f6f7e2b8345156f6133f237ea1}\label{struct_client_ae06485f6f7e2b8345156f6133f237ea1}} 
+int {\bfseries disconnect} ()
+\item 
+\mbox{\Hypertarget{struct_client_a31fee2154f49cae758e75f8864957c48}\label{struct_client_a31fee2154f49cae758e75f8864957c48}} 
+int {\bfseries receive} (std\+::string \&\mbox{\hyperlink{structmessage}{message}})
+\item 
+\mbox{\Hypertarget{struct_client_aad8bcea7f2651a2d980d666c45041ef2}\label{struct_client_aad8bcea7f2651a2d980d666c45041ef2}} 
+char $\ast$ {\bfseries receive\+\_\+image} (int $\ast$byte\+Count)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{struct_client_a73b053d251a19afcf46ebe72ce2f13d1}\label{struct_client_a73b053d251a19afcf46ebe72ce2f13d1}} 
+WSADATA {\bfseries wsa}
+\item 
+\mbox{\Hypertarget{struct_client_a23d3e2735cfe27a1f6b4c08e46d363d5}\label{struct_client_a23d3e2735cfe27a1f6b4c08e46d363d5}} 
+SOCKET {\bfseries s}
+\item 
+\mbox{\Hypertarget{struct_client_a5a642940108c175ea6ce84fa121a0a09}\label{struct_client_a5a642940108c175ea6ce84fa121a0a09}} 
+struct sockaddr\+\_\+in {\bfseries server}
+\item 
+\mbox{\Hypertarget{struct_client_aaf78e239cb2c75e7ee5768b5f743147f}\label{struct_client_aaf78e239cb2c75e7ee5768b5f743147f}} 
+char {\bfseries message} \mbox{[}10485760\mbox{]}
+\item 
+\mbox{\Hypertarget{struct_client_a3ab4fd218005f89b8618809ffad64b79}\label{struct_client_a3ab4fd218005f89b8618809ffad64b79}} 
+char {\bfseries server\+\_\+reply} \mbox{[}3000000\mbox{]}
+\item 
+\mbox{\Hypertarget{struct_client_a61b5feaf1dcb97b861da30e20aff5b72}\label{struct_client_a61b5feaf1dcb97b861da30e20aff5b72}} 
+int {\bfseries recv\+\_\+size}
+\item 
+\mbox{\Hypertarget{struct_client_aad8864d1362eae7c50e53c0d131b7442}\label{struct_client_aad8864d1362eae7c50e53c0d131b7442}} 
+int {\bfseries port}
+\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+client.\+h\end{DoxyCompactItemize}

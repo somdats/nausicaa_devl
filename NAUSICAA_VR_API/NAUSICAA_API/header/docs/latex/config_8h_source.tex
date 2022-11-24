@@ -1,0 +1,12 @@
+\hypertarget{config_8h_source}{}\doxysection{config.\+h}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{2 \textcolor{preprocessor}{\#ifdef NAUSICAA\_VR\_API\_EXPORTS}}
+\DoxyCodeLine{3 \textcolor{preprocessor}{\#define NAUSICAA\_VR\_API \_\_declspec(dllexport)}}
+\DoxyCodeLine{4 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{5 \textcolor{preprocessor}{\#define NAUSICAA\_VR\_API \_\_declspec(dllimport)}}
+\DoxyCodeLine{6 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{7 }
+
+\end{DoxyCode}

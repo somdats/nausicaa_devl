@@ -1,0 +1,69 @@
+\hypertarget{group___set}{}\doxysection{the reference systems}
+\label{group___set}\index{the reference systems@{the reference systems}}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___set_ga190ca9a9585cf0efd67ee4d2f97f8c0a}{VRSubsystem\+::update\+Position\+WGS84}} (float Lat\+Decimal\+Degrees, float Long\+Decimal\+Degrees, float Elevation\+Meters)
+\begin{DoxyCompactList}\small\item\em update position WGS84 plus elevation \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___set_ga453497e50ecb5731504cfb976300c503}{VRSubsystem\+::update\+Pitch\+Roll}} (float pitch\+Degrees, float roll\+Degrees)
+\begin{DoxyCompactList}\small\item\em update pitch and roll \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{group___set_gad32cc21a878ac172fcbbf341f825b81f}{VRSubsystem\+::update\+Bow\+Direction}} (float angle\+Degrees)
+\begin{DoxyCompactList}\small\item\em update compass \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+function to specify the reference systems  
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{group___set_gad32cc21a878ac172fcbbf341f825b81f}\label{group___set_gad32cc21a878ac172fcbbf341f825b81f}} 
+\index{the reference systems@{the reference systems}!updateBowDirection@{updateBowDirection}}
+\index{updateBowDirection@{updateBowDirection}!the reference systems@{the reference systems}}
+\doxysubsubsection{\texorpdfstring{updateBowDirection()}{updateBowDirection()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::update\+Bow\+Direction (\begin{DoxyParamCaption}\item[{float}]{angle\+Degrees }\end{DoxyParamCaption})}
+
+
+
+update compass 
+
+
+\begin{DoxyParams}{Parameters}
+{\em angle\+Degrees} & value between 0 and 360 (north) running clockwise (90-\/est, 180-\/south..). How the boat is oriented \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___set_ga453497e50ecb5731504cfb976300c503}\label{group___set_ga453497e50ecb5731504cfb976300c503}} 
+\index{the reference systems@{the reference systems}!updatePitchRoll@{updatePitchRoll}}
+\index{updatePitchRoll@{updatePitchRoll}!the reference systems@{the reference systems}}
+\doxysubsubsection{\texorpdfstring{updatePitchRoll()}{updatePitchRoll()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::update\+Pitch\+Roll (\begin{DoxyParamCaption}\item[{float}]{pitch\+Degrees,  }\item[{float}]{roll\+Degrees }\end{DoxyParamCaption})}
+
+
+
+update pitch and roll 
+
+
+\begin{DoxyParams}{Parameters}
+{\em pitch\+Degrees} & pitch is the rotation angle around the axis crossing the sides of the boat, from left to right. Positive angle means to bow is higher \\
+\hline
+{\em roll\+Degrees} & roll is the rotation angle around the axis crossing the boat from the bow to the stern. Positive angle means the boat leans on its left ~\newline
+ \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{group___set_ga190ca9a9585cf0efd67ee4d2f97f8c0a}\label{group___set_ga190ca9a9585cf0efd67ee4d2f97f8c0a}} 
+\index{the reference systems@{the reference systems}!updatePositionWGS84@{updatePositionWGS84}}
+\index{updatePositionWGS84@{updatePositionWGS84}!the reference systems@{the reference systems}}
+\doxysubsubsection{\texorpdfstring{updatePositionWGS84()}{updatePositionWGS84()}}
+{\footnotesize\ttfamily void NAUSICAA\+\_\+\+VR\+\_\+\+API VRSubsystem\+::update\+Position\+WGS84 (\begin{DoxyParamCaption}\item[{float}]{Lat\+Decimal\+Degrees,  }\item[{float}]{Long\+Decimal\+Degrees,  }\item[{float}]{Elevation\+Meters }\end{DoxyParamCaption})}
+
+
+
+update position WGS84 plus elevation 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Lat\+Decimal\+Degrees} & \\
+\hline
+{\em Long\+Decimal\+Degrees} & \\
+\hline
+{\em Elevation\+Meters} & \\
+\hline
+\end{DoxyParams}

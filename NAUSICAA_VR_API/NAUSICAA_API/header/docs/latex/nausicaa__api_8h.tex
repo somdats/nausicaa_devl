@@ -1,0 +1,277 @@
+\hypertarget{nausicaa__api_8h}{}\doxysection{nausicaa\+\_\+api.\+h File Reference}
+\label{nausicaa__api_8h}\index{nausicaa\_api.h@{nausicaa\_api.h}}
+{\ttfamily \#include \char`\"{}config.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$algorithm$>$}\newline
+{\ttfamily \#include $<$array$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+\doxysubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+namespace \mbox{\hyperlink{namespace_v_r_subsystem}{VRSubsystem}}
+\item 
+namespace \mbox{\hyperlink{namespace_virtual_camera}{Virtual\+Camera}}
+\begin{DoxyCompactList}\small\item\em Virtual Camera. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef int \mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}}
+\begin{DoxyCompactList}\small\item\em unique identifier of a camera \end{DoxyCompactList}\item 
+typedef int \mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}}
+\begin{DoxyCompactList}\small\item\em unique identifier of a lidar sensor \end{DoxyCompactList}\item 
+typedef int \mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}}
+\begin{DoxyCompactList}\small\item\em unique identifier of a virtual camera \end{DoxyCompactList}\item 
+typedef int $\ast$ \mbox{\hyperlink{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}{Virtual\+Camera\+IDs}}
+\begin{DoxyCompactList}\small\item\em unique identifier of a virtual camera \end{DoxyCompactList}\item 
+typedef int \mbox{\hyperlink{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}{marker\+ID}}
+\begin{DoxyCompactList}\small\item\em unique identifier of a type of gliph \end{DoxyCompactList}\item 
+typedef char $\ast$ \mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}}
+\begin{DoxyCompactList}\small\item\em image buffer \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a8b1900a94993264f0839704210c0439d}{Virtual\+Camera\+::set\+Perspective}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float Angle\+Deg, float Aspect\+Ratio, float Focal, int viewportX, int viewportY)
+\begin{DoxyCompactList}\small\item\em specify the intrinsics parameters of the virtual camera \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_aafccbd826e5bac1594e1c63341004d7c}{Virtual\+Camera\+::set\+Viewport}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, int new\+\_\+viewportX, int new\+\_\+viewportY)
+\begin{DoxyCompactList}\small\item\em update (change) viewport \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_ad252a3c88b34b8b87cec9141567c0363}{Virtual\+Camera\+::set\+Focal\+Length}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float new\+Focal\+Length)
+\begin{DoxyCompactList}\small\item\em update (change) focal length \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_ab519b60982395b3c29ad07b37aeab212}{Virtual\+Camera\+::set\+Angle}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float new\+Angle)
+\begin{DoxyCompactList}\small\item\em update (change) angle \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_aecc0fc7a07e3e8aaa39baf534ef499be}{Virtual\+Camera\+::set\+Aspectratio}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float new\+Aspect\+Ratio)
+\begin{DoxyCompactList}\small\item\em update (change) aspect ratio \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a698182631b28ff2fbe8c0d12b144669c}{Virtual\+Camera\+::look\+Towards}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ, float upX, float upY, float upZ)
+\begin{DoxyCompactList}\small\item\em specify the extrinsics parameters of the camera \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a3758a73089e6ede817c006de9a2b3b91}{Virtual\+Camera\+::set\+Position}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float eyeX, float eyeY, float eyeZ)
+\begin{DoxyCompactList}\small\item\em update (change) camera position \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a60c242831112d8630dbfb8b90b73ab34}{Virtual\+Camera\+::set\+View\+Direction}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float eyeX, float eyeY, float eyeZ)
+\begin{DoxyCompactList}\small\item\em update (change) view direction \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_afc0b3faafeebde191a0271a54ad8e21b}{Virtual\+Camera\+::move}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, \mbox{\hyperlink{nausicaa__api_8h_a174670a17d321cee99650cca58ebbe11}{change\+Dir}} xyz, float amount)
+\begin{DoxyCompactList}\small\item\em move camera along the specified axis (0\+:x, 1\+:y, 2\+:z) by the specified amount (in meters) \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_afaf0917fff9eaf498c4cb491e088e896}{Virtual\+Camera\+::rotate}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, \mbox{\hyperlink{nausicaa__api_8h_a27a698ce943e341f8814ffe5b5a86ddc}{angle\+Dir}} yaw\+\_\+pitch\+\_\+roll, float amount)
+\begin{DoxyCompactList}\small\item\em rotate camera along the specified angles (0\+:yaw, 1\+:pitch, 2\+:rool ) by the specified amount (in degrees) \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a20767432905e208281563037ab1ffda7}{Virtual\+Camera\+::set\+Camera\+Frustrum}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float sx, float dx, float bt, float tp, float focal\+Length, int View\+PortX, int view\+PortY)
+\begin{DoxyCompactList}\small\item\em reset camera to original position \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_a826afac8b7fc383ea14a3fb20757d0f6}{Virtual\+Camera\+::get\+Frustum}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float $\ast$sx, float $\ast$dx, float $\ast$bt, float $\ast$tp, float $\ast$nr)
+\begin{DoxyCompactList}\small\item\em get the camera frustum \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_virtual_camera_adec361284f4d41f4be41caee85b46fd7}{Virtual\+Camera\+::get\+Position\+And\+Direction}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} c\+Id, float $\ast$eyeX, float $\ast$eyeY, float $\ast$eyeZ, float $\ast$dirX, float $\ast$dirY, float $\ast$dirZ, float $\ast$upX, float $\ast$upY, float $\ast$upZ)
+\begin{DoxyCompactList}\small\item\em get the camera position and view frame \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{Indent}\textbf{ Setup}\par
+{\em functions to set up the system and get the stream going }\begin{DoxyCompactItemize}
+\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a7fe180dacc9df67ad1d3f60a99e30160}{VRSubsystem\+::set\+Callback}} (void($\ast$func)(const char $\ast$))
+\begin{DoxyCompactList}\small\item\em read the configuration file (not necessary, discontinued) \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_acdfef058eb2c3b20fca205226951db33}{VRSubsystem\+::read\+Config\+File}} (const char $\ast$path)
+\begin{DoxyCompactList}\small\item\em read the configuration file (not necessary, discontinued) \end{DoxyCompactList}\item 
+int NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a26f42c93fd31a2fda8ea3af3383cf259}{VRSubsystem\+::connect\+To\+VRServer}} (const char $\ast$ip\+\_\+addr)
+\begin{DoxyCompactList}\small\item\em connect to the VR server \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a8f5c5ad3f12923c786f60cce60e2ebd8}{VRSubsystem\+::disconnect\+To\+VRServer}} ()
+\begin{DoxyCompactList}\small\item\em disconnect to the VR server \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a5f3c9edf0c32d6b04d280e95aa255dff}{VRSubsystem\+::start\+Streaming}} ()
+\begin{DoxyCompactList}\small\item\em start streaming \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_af27d5ee9a41cd3233df482908a76db27}{VRSubsystem\+::stop\+Streaming}} ()
+\begin{DoxyCompactList}\small\item\em stop streaming \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{Indent}
+\begin{Indent}\textbf{ Readback from the server}\par
+{\em functions that read data from the server }\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a7147a78f905418f4872ab84864deb8b0}{VRSubsystem\+::read\+Frame}} (int $\ast$byte\+Count)
+\begin{DoxyCompactList}\small\item\em read one frame (discontinued, frames are streamed) \end{DoxyCompactList}\item 
+\mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}} \mbox{\hyperlink{namespace_v_r_subsystem_a4cb811052e4a55b9fafc8b7c3ce58941}{VRSubsystem\+::get\+Point\+Cloud}} (int $\ast$n\+\_\+points, float bottom, float top, float inner\+Radius, float outer\+Radius)
+\begin{DoxyCompactList}\small\item\em return a selection of the point clouds \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{Indent}
+\begin{Indent}\textbf{ Set the reference systems}\par
+{\em function to specify the reference systems. Nausicaa\+VR uses three reference system\+: Boat Frame, Steady Frame (shown in the figure below) and World Frame  The Boat Frame is fixed with the boat, its Y axis orthogonal to the boat floor, its Z axis pointing towards the stern and its X axis pointing towards the right of the boat\textquotesingle{}s starboard. The origin of the Boat Frame (to be determined in the system calibration phase) is somewhere in the middle of the boat. The point clouds are originally expressed in the Boat Frame. This means that if the boat rolls clockwise, the point cloud of an object fixed in space will rotate counterclockwise. The Steady Frame is centered in the same point as the Boat Frame but its orientation is unaffected by picthing and rolling of the boat. In other words it\textquotesingle{}s axes are just the canonical axes X = (1,0,0,) Y = (0,1,0) and Z = (0,0,1). Note that if the roll and pitch angles are 0, the Boat Frame and the Steady Frame are identical. By specifying pitch and roll axes, we tell the API how to transform the input so that is is expressed in the Steady Frame, that is, how to compensate for the boat rotations.
+
+The World Frame origin is expressed in WGS84 coordinate system and it corresponds to the Steady Frame transated to the actual positoin of the boat, and rotated so the the -\/Z axis points to the bow of the boat. The -\/Z axis is defined by specifying the boat orientation in degrees as specified in the function update\+Bow\+Direction. }\begin{DoxyCompactItemize}
+\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a190ca9a9585cf0efd67ee4d2f97f8c0a}{VRSubsystem\+::update\+Position\+WGS84}} (float Lat\+Decimal\+Degrees, float Long\+Decimal\+Degrees, float Elevation\+Meters)
+\begin{DoxyCompactList}\small\item\em update position WGS84 plus elevation \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a453497e50ecb5731504cfb976300c503}{VRSubsystem\+::update\+Pitch\+Roll}} (float pitch\+Degrees, float roll\+Degrees)
+\begin{DoxyCompactList}\small\item\em update pitch and roll \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_ad32cc21a878ac172fcbbf341f825b81f}{VRSubsystem\+::update\+Bow\+Direction}} (float angle\+Degrees)
+\begin{DoxyCompactList}\small\item\em update compass \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{Indent}
+\begin{Indent}\textbf{ Rendering}\par
+{\em Definition and manipulation of virtual cameras }\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_acd6eef4add5f23d07faa91b650f43dd1}{VRSubsystem\+::add\+Virtual\+Camera}} ()
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}{Virtual\+Camera\+IDs}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a0682487a055f5851952c439af1183ad4}{VRSubsystem\+::get\+Virtual\+Camera\+List}} (int $\ast$n\+\_\+cameras)
+\begin{DoxyCompactList}\small\item\em get list of virtual cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a380396b9c0ed8bdac2fed752cf3dd8eb}{VRSubsystem\+::render\+From\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em set a virtual camera as the one to use for rendering \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a7094f9c47c6c627c3a63e9cc93fe7645}{VRSubsystem\+::select\+Quality}} (float val)
+\begin{DoxyCompactList}\small\item\em Rendering quality \mbox{[}NOT YET IMPLEMENTED\mbox{]}. \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a761fc585af7ec39d22acd010ab38e84b}{VRSubsystem\+::sample\+Geometry}} (int xi, int yi, float $\ast$x\+Loc, float $\ast$y\+Loc, float $\ast$z\+Loc, float $\ast$longitude, float $\ast$latitude, float $\ast$height)
+\begin{DoxyCompactList}\small\item\em Sample geometry. \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_aa7b6a853161284c80d7ed4f95a1dc617}{VRSubsystem\+::enable\+Lidar}} (\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}} id)
+\begin{DoxyCompactList}\small\item\em include lidar\+ID in the reconstruction process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a116255c88fa39c7f59b8422a93856732}{VRSubsystem\+::enable\+All\+Lidars}} ()
+\begin{DoxyCompactList}\small\item\em enable all lidars in the reconstruction process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_af9fe6200b4a3720d18fdb95460bdfab7}{VRSubsystem\+::disable\+Lidar}} (\mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}} id)
+\begin{DoxyCompactList}\small\item\em exclude lidar\+ID from the rendering process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a3eae027f1f04b796d27424f768c56746}{VRSubsystem\+::disable\+All\+Lidars}} ()
+\begin{DoxyCompactList}\small\item\em exclude lidar\+ID from the rendering process \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_aa48fb3bd446a2a84509b653925f5f26e}{VRSubsystem\+::enable\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em include camera\+ID \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_abfef573983530203f493a4074727b243}{VRSubsystem\+::enable\+All\+Cameras}} ()
+\begin{DoxyCompactList}\small\item\em enable all cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a9af2c85a0bd21a1557dfbfa581799f9b}{VRSubsystem\+::disable\+Camera}} (\mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}} id)
+\begin{DoxyCompactList}\small\item\em exclude camera\+ID \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a5cab785d8cf5acb83dc85ef08252132b}{VRSubsystem\+::disable\+All\+Cameras}} ()
+\begin{DoxyCompactList}\small\item\em exclude all cameras \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a19983c0c3c6e240c9b9601eeec8081c3}{VRSubsystem\+::disable\+Background}} ()
+\begin{DoxyCompactList}\small\item\em exclude background from the scene \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_aa966c7e44252413f5410ca7779173c1b}{VRSubsystem\+::enable\+Background}} ()
+\begin{DoxyCompactList}\small\item\em include background in the scene \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{Indent}
+\begin{Indent}\textbf{ Gliphs}\par
+{\em functions to set up the system and get the stream going }\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}{marker\+ID}} NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a4a246a7eb105c39f395efa14bbb31d3b}{VRSubsystem\+::add\+Marker}} (char $\ast$png\+\_\+image, int size\+\_\+in\+\_\+bytes, float width\+\_\+mt, const char $\ast$label, int label\+\_\+length)
+\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a81f3971526b84cbec3fbf720a9f46641}{VRSubsystem\+::place\+Marker}} (\mbox{\hyperlink{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}{marker\+ID}} id, float longitude, float latitude, float altitude)
+\begin{DoxyCompactList}\small\item\em place a previously added marker in a specific position \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_ae7dcc4f642b2845c5d8d73a9261bc166}{VRSubsystem\+::show\+Marker}} (\mbox{\hyperlink{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}{marker\+ID}} id, int invisible\+\_\+visible)
+\begin{DoxyCompactList}\small\item\em enable/disable the visibility of a marker \end{DoxyCompactList}\item 
+void NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{namespace_v_r_subsystem_a9169a593a447070dd65ef522d761aade}{VRSubsystem\+::clear\+Markers}} ()
+\begin{DoxyCompactList}\small\item\em remove all previously added markers \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{Indent}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+constexpr int \mbox{\hyperlink{nausicaa__api_8h_a73a58eb5af6e6ef8cdd2f3ca8220548b}{MAX\+\_\+\+POLY\+\_\+\+LENGTH}} = 64
+\item 
+constexpr int \mbox{\hyperlink{nausicaa__api_8h_af59b5b99708654e3ec2c6f054049034a}{arr\+\_\+size}} = 3
+\item 
+enum NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{nausicaa__api_8h_a174670a17d321cee99650cca58ebbe11}{change\+Dir}}
+\begin{DoxyCompactList}\small\item\em enum direction \end{DoxyCompactList}\item 
+\mbox{\hyperlink{nausicaa__api_8h_a3956552f7baeced7ae359d97f05a8bcd}{xdir}} = 0
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_afd674048a6dda274da917875da7186e2}{ydir}}
+\item 
+enum NAUSICAA\+\_\+\+VR\+\_\+\+API \mbox{\hyperlink{nausicaa__api_8h_a27a698ce943e341f8814ffe5b5a86ddc}{angle\+Dir}}
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_aaeddb3af347c13f3d0915fb2e613acce}{yaw}} = 0
+\item 
+\mbox{\hyperlink{nausicaa__api_8h_afe627986b4147fc678023fb03e010791}{pitch}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Typedef Documentation}
+\mbox{\Hypertarget{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}\label{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!cameraID@{cameraID}}
+\index{cameraID@{cameraID}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{cameraID}{cameraID}}
+{\footnotesize\ttfamily typedef int \mbox{\hyperlink{nausicaa__api_8h_ac433fc3023ca0dfb22ea02f1e6eb84a6}{camera\+ID}}}
+
+
+
+unique identifier of a camera 
+
+\mbox{\Hypertarget{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}\label{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!image\_buffer@{image\_buffer}}
+\index{image\_buffer@{image\_buffer}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{image\_buffer}{image\_buffer}}
+{\footnotesize\ttfamily typedef char$\ast$ \mbox{\hyperlink{nausicaa__api_8h_a1c2439bb69184ee491aebe3b72ff1361}{image\+\_\+buffer}}}
+
+
+
+image buffer 
+
+\mbox{\Hypertarget{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}\label{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!lidarID@{lidarID}}
+\index{lidarID@{lidarID}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{lidarID}{lidarID}}
+{\footnotesize\ttfamily typedef int \mbox{\hyperlink{nausicaa__api_8h_a4dfb25a2af23de8b2c7e25e24c55559f}{lidar\+ID}}}
+
+
+
+unique identifier of a lidar sensor 
+
+\mbox{\Hypertarget{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}\label{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!markerID@{markerID}}
+\index{markerID@{markerID}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{markerID}{markerID}}
+{\footnotesize\ttfamily typedef int \mbox{\hyperlink{nausicaa__api_8h_a51f74d8e24cd3db8a6858dd27978234d}{marker\+ID}}}
+
+
+
+unique identifier of a type of gliph 
+
+\mbox{\Hypertarget{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}\label{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!VirtualCameraID@{VirtualCameraID}}
+\index{VirtualCameraID@{VirtualCameraID}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{VirtualCameraID}{VirtualCameraID}}
+{\footnotesize\ttfamily typedef int \mbox{\hyperlink{nausicaa__api_8h_a006fd47492230f29debe4aee74431e37}{Virtual\+Camera\+ID}}}
+
+
+
+unique identifier of a virtual camera 
+
+\mbox{\Hypertarget{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}\label{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!VirtualCameraIDs@{VirtualCameraIDs}}
+\index{VirtualCameraIDs@{VirtualCameraIDs}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{VirtualCameraIDs}{VirtualCameraIDs}}
+{\footnotesize\ttfamily typedef int$\ast$ \mbox{\hyperlink{nausicaa__api_8h_abe39d3e0fe452f652a3cc830ae33e410}{Virtual\+Camera\+IDs}}}
+
+
+
+unique identifier of a virtual camera 
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{nausicaa__api_8h_a27a698ce943e341f8814ffe5b5a86ddc}\label{nausicaa__api_8h_a27a698ce943e341f8814ffe5b5a86ddc}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!angleDir@{angleDir}}
+\index{angleDir@{angleDir}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{angleDir}{angleDir}}
+{\footnotesize\ttfamily enum NAUSICAA\+\_\+\+VR\+\_\+\+API angle\+Dir}
+
+\mbox{\Hypertarget{nausicaa__api_8h_af59b5b99708654e3ec2c6f054049034a}\label{nausicaa__api_8h_af59b5b99708654e3ec2c6f054049034a}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!arr\_size@{arr\_size}}
+\index{arr\_size@{arr\_size}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{arr\_size}{arr\_size}}
+{\footnotesize\ttfamily constexpr int arr\+\_\+size = 3\hspace{0.3cm}{\ttfamily [constexpr]}}
+
+\mbox{\Hypertarget{nausicaa__api_8h_a174670a17d321cee99650cca58ebbe11}\label{nausicaa__api_8h_a174670a17d321cee99650cca58ebbe11}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!changeDir@{changeDir}}
+\index{changeDir@{changeDir}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{changeDir}{changeDir}}
+{\footnotesize\ttfamily enum NAUSICAA\+\_\+\+VR\+\_\+\+API change\+Dir}
+
+
+
+enum direction 
+
+\mbox{\Hypertarget{nausicaa__api_8h_a73a58eb5af6e6ef8cdd2f3ca8220548b}\label{nausicaa__api_8h_a73a58eb5af6e6ef8cdd2f3ca8220548b}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!MAX\_POLY\_LENGTH@{MAX\_POLY\_LENGTH}}
+\index{MAX\_POLY\_LENGTH@{MAX\_POLY\_LENGTH}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{MAX\_POLY\_LENGTH}{MAX\_POLY\_LENGTH}}
+{\footnotesize\ttfamily constexpr int MAX\+\_\+\+POLY\+\_\+\+LENGTH = 64\hspace{0.3cm}{\ttfamily [constexpr]}}
+
+\mbox{\Hypertarget{nausicaa__api_8h_afe627986b4147fc678023fb03e010791}\label{nausicaa__api_8h_afe627986b4147fc678023fb03e010791}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!pitch@{pitch}}
+\index{pitch@{pitch}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{pitch}{pitch}}
+{\footnotesize\ttfamily pitch}
+
+\mbox{\Hypertarget{nausicaa__api_8h_a3956552f7baeced7ae359d97f05a8bcd}\label{nausicaa__api_8h_a3956552f7baeced7ae359d97f05a8bcd}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!xdir@{xdir}}
+\index{xdir@{xdir}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{xdir}{xdir}}
+{\footnotesize\ttfamily xdir = 0}
+
+\mbox{\Hypertarget{nausicaa__api_8h_aaeddb3af347c13f3d0915fb2e613acce}\label{nausicaa__api_8h_aaeddb3af347c13f3d0915fb2e613acce}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!yaw@{yaw}}
+\index{yaw@{yaw}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{yaw}{yaw}}
+{\footnotesize\ttfamily yaw = 0}
+
+\mbox{\Hypertarget{nausicaa__api_8h_afd674048a6dda274da917875da7186e2}\label{nausicaa__api_8h_afd674048a6dda274da917875da7186e2}} 
+\index{nausicaa\_api.h@{nausicaa\_api.h}!ydir@{ydir}}
+\index{ydir@{ydir}!nausicaa\_api.h@{nausicaa\_api.h}}
+\doxysubsubsection{\texorpdfstring{ydir}{ydir}}
+{\footnotesize\ttfamily ydir}
+

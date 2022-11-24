@@ -55,25 +55,23 @@ extern "C" {
 
 	namespace VRSubsystem
 	{
-
-
 		/** @name Setup
 		 * functions to set up the system and get the stream going
 		*/
 		///@{
 
-		//! read the configuration file
+		//! read the configuration file (not necessary, discontinued)
 		/*!
-			 \param callback function
+			 \param func callback function
 		*/
-		void NAUSICAA_VR_API setCallback(void (*ft)(const char*));
+		void NAUSICAA_VR_API setCallback(void (*func)(const char*));
 
 
-		//! read the configuration file
+		//! read the configuration file (not necessary, discontinued)
 		/*!
-			 \param path to the configuration file
+			 \param path path to the configuration file
 		*/
-		void NAUSICAA_VR_API readConfigFile(const char*);
+		void NAUSICAA_VR_API readConfigFile(const char* path);
 
 		//! connect to the VR server
 		/*!
@@ -88,21 +86,46 @@ extern "C" {
 		//! start streaming
 		void NAUSICAA_VR_API startStreaming();
 
-		//! read frame
+		//! stop streaming
+		void NAUSICAA_VR_API stopStreaming();
+		///@}
+
+		/** @name Readback from the server
+		 * functions that read data from the server
+		*/
+		///@{
+
+		//! read one frame (discontinued, frames are streamed)
 		image_buffer  NAUSICAA_VR_API readFrame(int* byteCount);
 
 		//! return a selection of the point clouds
 		/*!
-		  \param number of returned bytes
-		  \param only points with y coordinates greater than this value
-		  \param only points with y coordinates smaller than this value
-		  \param only points farther than this values from the origing
-		  \param only points closer than this values to the origing
+		  \param n_points number of points returned
+		  \param bottom only points with y coordinates greater than this value
+		  \param top only points with y coordinates smaller than this value
+		  \param innerRadius only points farther than this values from the origing
+		  \param outerRadius only points closer than this values to the origing
 		*/
-		image_buffer getPointCloud(int* byteCount, float bottom, float top, float innerRadius, float outerRadius);
+		image_buffer getPointCloud(int* n_points, float bottom, float top, float innerRadius, float outerRadius);
+		///@}
 
-		//! stop streaming
-		void NAUSICAA_VR_API stopStreaming();
+		/** @name Set the reference systems
+		 *  function to specify the reference systems.
+		 *  NausicaaVR uses three reference system: Boat Frame, Steady Frame (shown in the figure below) and World Frame 
+		 *  \image html  boat_frames.jpg
+		 * The Boat Frame is fixed with the boat, its Y axis orthogonal to the boat floor, its Z axis pointing towards the stern and its X axis pointing towards the right of the boat's starboard.
+		 * The origin of the Boat Frame (to be determined in the system calibration phase) is somewhere in the middle of the boat.
+		 * The point clouds are originally expressed in the Boat Frame. This means that if the boat rolls clockwise, the point cloud of an object fixed in space will rotate counterclockwise.
+		 * The Steady Frame is centered in the same point as the Boat Frame but its orientation is unaffected by picthing and rolling of the boat.
+		 * In other words it's axes are just the canonical axes X = (1,0,0,) Y = (0,1,0) and Z = (0,0,1).
+		 * Note that if the roll and pitch angles are 0, the Boat Frame and the Steady Frame are identical.
+		 * By specifying pitch and roll axes, we tell the API how to transform the input so that is is expressed in the Steady Frame,
+		 * that is, how to compensate for the boat rotations.
+		 * 
+		 * The World Frame origin is expressed in WGS84 coordinate system and it corresponds to the Steady Frame transated to the actual positoin of the boat,
+		 * and rotated so the the -Z axis points to the bow of the boat. The -Z axis is defined by specifying the boat orientation in degrees as specified in the function updateBowDirection.
+		*/
+		///@{
 
 		//! update position WGS84 plus elevation
 		/*!
@@ -124,9 +147,7 @@ extern "C" {
 		  \param angleDegrees: value between 0 and 360 (north) running clockwise (90-est, 180-south..). How the boat is oriented
 		*/
 		void NAUSICAA_VR_API updateBowDirection(float angleDegrees);
-
-
-		int NAUSICAA_VR_API connectToVRServer(const char* ip_addr);
+		///@}
 
 		/** @name Rendering
 		* Definition and manipulation of virtual cameras
@@ -147,7 +168,7 @@ extern "C" {
 
 		//! set a virtual camera as the one to use for rendering
 		/*!
-			 \param virtual camera unique identifier
+			 \param id virtual camera unique identifier
 		*/
 
 		void NAUSICAA_VR_API renderFromCamera(VirtualCameraID id);
@@ -157,57 +178,61 @@ extern "C" {
 		 *   which guarantees a constant frame rate of 25-30 frames per sencond.
 		 *   With higher quality you can have more accurate reconstructions
 		 *   with a less fluid rendering.
-			 \param valore between 0.0 e 1.0
+			 \param val value  between 0.0 e 1.0
 		*/
 		void NAUSICAA_VR_API selectQuality(float val);
 
 		////! Sample geometry
 		///*!
-		//	 \param pixel coordinates (xi)
-		//	 \param pixel coordinates (yi)
-		//	 \param 3D point (x)
-		//	 \param 3D point (y)
-		//	 \param 3D point (z)
+		//	 \param xi pixel coordinates (xi)
+		//	 \param yi pixel coordinates (yi)
+		//	 \param x 3D point (x)
+		//	 \param y 3D point (y)
+		//	 \param z 3D point (z)
 		//*/
 		//void sampleGeometry(float xi, float yi, float& x, float& y, float& z);
 
 		//! Sample geometry
 		/*!
-			 \param pixel coordinates (xi)
-			 \param pixel coordinates (yi)
+			 \param xi pixel coordinates x of the point clicked
+			 \param yi pixel coordinates y of the point clicked
+			 \param xLoc x position in the Steady Frame
+			 \param yLoc y position in the Steady Frame
+			 \param zLoc z position in the Steady Frame
 			 \param longitude
 			 \param latitude
+			 \param height above the sea
 		*/
 		void NAUSICAA_VR_API sampleGeometry(int xi, int yi, float *xLoc,float *yLoc, float *zLoc,float* longitude, float* latitude, float* height);
 
 		//! include lidarID in the reconstruction process
 		/*!
-			 \param unique identifier of the lidar to be included
+			 \param id unique identifier of the lidar to be included
 		*/
 		void NAUSICAA_VR_API enableLidar(lidarID id);
 
 
 		//! enable all lidars in the reconstruction process
 		/*!
-			 \param unique identifier of the lidar to be included
+			
 		*/
 		void NAUSICAA_VR_API enableAllLidars();
 
 		//! exclude lidarID from the rendering process
 		/*!
-			 \param unique identifier of the lidar to be excluded
+			 \param id unique identifier of the lidar to be excluded
 		*/
 		void NAUSICAA_VR_API disableLidar(lidarID id);
 
 		//! exclude lidarID from the rendering process
 		/*!
-			 \param unique identifier of the lidar to be excluded
+			
 		*/
 		void NAUSICAA_VR_API disableAllLidars();
 
 		//! include cameraID
 		/*!
-			 \param unique identifier of the camera to used in the rendering
+			 \param id unique identifier of the camera to used in the rendering
 		*/
 		void NAUSICAA_VR_API enableCamera(cameraID id);
 
@@ -218,7 +243,7 @@ extern "C" {
 
 		//! exclude cameraID
 		/*!
-			 \param unique identifier of the camera to be excluded from the rendering
+			 \param id unique identifier of the camera to be excluded from the rendering
 		*/
 		void NAUSICAA_VR_API disableCamera(cameraID id);
 
@@ -247,28 +272,28 @@ extern "C" {
 		///@{
 		//! define a marker
 		/*!
-			 \param image in binary format
-			 \param size of the image in bytes
-			 \param with of the icon in meters (heigth is inferred from proportion)
-			 \param label to be shown
-			 \param length of the label 
+			 \param png_image image in binary format
+			 \param size_in_bytes size of the image in bytes
+			 \param width_mt with of the icon in meters (heigth is inferred from proportion)
+			 \param label label to be shown
+			 \param label_length length of the label 
 			 \return unique identifier of the added marker
 		*/
 		markerID NAUSICAA_VR_API addMarker(char * png_image, int size_in_bytes, float width_mt, const char * label, int label_length);
 
 		//! place a previously added marker in a specific position
 		/*!
-			 \param marker ID
-			 \param longitude in WGS84 decimal degrees
-			 \param latitude in WGS84 decimal degrees
-			 \param altitude in meters
+			 \param id marker ID
+			 \param longitude longitude in WGS84 decimal degrees
+			 \param latitude latitude in WGS84 decimal degrees
+			 \param altitude altitude in meters (above the sea level)
 		*/
 		void NAUSICAA_VR_API placeMarker(markerID id, float longitude, float latitude, float altitude);
 
 		//! enable/disable the visibility of a marker
 		/*!
-			 \param marker ID
-			 \param 0: invisible; 1: visible (default is 1) 
+			 \param id marker ID
+			 \param invisible_visible 0: invisible; 1: visible (default is 1) 
 		*/
 		void NAUSICAA_VR_API showMarker(markerID id, int invisible_visible);
 
@@ -279,7 +304,7 @@ extern "C" {
 		///@}
 	}
 
-	///@}
+	
 	//!  Virtual Camera
 	/*!
 		definition of a virtual camera
@@ -326,20 +351,20 @@ extern "C" {
 		/// get the camera frustum
 		void NAUSICAA_VR_API getFrustum(VirtualCameraID cId, float* sx, float* dx, float* bt, float* tp, float* nr);
 
-		//! get the camera positoin and view frame
+		//! get the camera position and view frame
 		/*!
-			\param unique identifier of the camera
-			\param unique x position of the eye
-			\param unique y position of the eye
-			\param unique z position of the eye
+			\param cId  unique identifier of the camera
+			\param eyeX unique x position of the eye
+			\param eyeY unique y position of the eye
+			\param eyeZ unique z position of the eye
 
-			\param  x component of the view direction
-			\param  y component of the view direction
-			\param  z component of the view direction
+			\param  dirX x component of the view direction
+			\param  dirY y component of the view direction
+			\param  dirZ z component of the view direction
 
-			\param  x component of the up direction
-			\param  y component of the up direction
-			\param  z component of the up direction
+			\param  upX x component of the up direction
+			\param  upY y component of the up direction
+			\param  upZ z component of the up direction
 		*/
 		void NAUSICAA_VR_API getPositionAndDirection(VirtualCameraID cId, float *eyeX, float *eyeY, float *eyeZ, float *dirX, float *dirY, float *dirZ, float *upX, float *upY, float *upZ);
 	}

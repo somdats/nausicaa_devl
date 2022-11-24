@@ -1,0 +1,23 @@
+\hypertarget{serialize_8h_source}{}\doxysection{serialize.\+h}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{2 }
+\DoxyCodeLine{3 \textcolor{preprocessor}{\#include <string>}}
+\DoxyCodeLine{4 \textcolor{preprocessor}{\#include <cstdarg>}}
+\DoxyCodeLine{5 }
+\DoxyCodeLine{6 std::string serialize(\textcolor{keywordtype}{float} v);}
+\DoxyCodeLine{7 std::string serialize(\textcolor{keywordtype}{int} v);}
+\DoxyCodeLine{8 std::string serialize(std::string v);}
+\DoxyCodeLine{9 }
+\DoxyCodeLine{10 }
+\DoxyCodeLine{11 \textcolor{keyword}{struct }\mbox{\hyperlink{structmessage}{message}} \{}
+\DoxyCodeLine{12 }
+\DoxyCodeLine{13     \mbox{\hyperlink{structmessage}{message}} \&operator [](\textcolor{keywordtype}{float} v) \{ msg += serialize(v) + \textcolor{stringliteral}{"{}@"{}}; \textcolor{keywordflow}{return} *\textcolor{keyword}{this}; \}}
+\DoxyCodeLine{14     \mbox{\hyperlink{structmessage}{message}} \&operator [](\textcolor{keywordtype}{int} v) \{ msg += serialize(v) + \textcolor{stringliteral}{"{}@"{}}; \textcolor{keywordflow}{return} *\textcolor{keyword}{this}; \}}
+\DoxyCodeLine{15     \mbox{\hyperlink{structmessage}{message}} \&operator [](std::string v) \{ msg += serialize(v) + \textcolor{stringliteral}{"{}@"{}}; \textcolor{keywordflow}{return} *\textcolor{keyword}{this}; \}}
+\DoxyCodeLine{16 }
+\DoxyCodeLine{17     std::string msg;}
+\DoxyCodeLine{18 \};}
+
+\end{DoxyCode}

@@ -1,0 +1,29 @@
+\hypertarget{client_8h_source}{}\doxysection{client.\+h}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{2 \textcolor{preprocessor}{\#include <string>}}
+\DoxyCodeLine{3 \textcolor{preprocessor}{\#include<winsock2.h>}}
+\DoxyCodeLine{4 }
+\DoxyCodeLine{5 \textcolor{keyword}{struct }\mbox{\hyperlink{struct_client}{Client}}\{}
+\DoxyCodeLine{6 WSADATA wsa;}
+\DoxyCodeLine{7 SOCKET s;}
+\DoxyCodeLine{8 \textcolor{keyword}{struct }sockaddr\_in server;}
+\DoxyCodeLine{9 \textcolor{keywordtype}{char}  \mbox{\hyperlink{structmessage}{message}} [10485760], server\_reply[3000000];}
+\DoxyCodeLine{10 \textcolor{keywordtype}{int} recv\_size;}
+\DoxyCodeLine{11 \textcolor{keywordtype}{int} port;}
+\DoxyCodeLine{12 }
+\DoxyCodeLine{13 \textcolor{keywordtype}{int} connect(std::string addr,\textcolor{keywordtype}{int} port);}
+\DoxyCodeLine{14 }
+\DoxyCodeLine{15 \textcolor{keywordtype}{int} send\_message(std::string \mbox{\hyperlink{structmessage}{message}}, \textcolor{keywordtype}{char} * blob = NULL,  \textcolor{keywordtype}{int} blob\_size = 0);}
+\DoxyCodeLine{16 }
+\DoxyCodeLine{17 \textcolor{keywordtype}{int} receive\_int();}
+\DoxyCodeLine{18 }
+\DoxyCodeLine{19 \textcolor{keywordtype}{int} disconnect();}
+\DoxyCodeLine{20 \textcolor{keywordtype}{int} receive(std::string\& \mbox{\hyperlink{structmessage}{message}});}
+\DoxyCodeLine{21 }
+\DoxyCodeLine{22 \textcolor{keywordtype}{char}*  receive\_image(\textcolor{keywordtype}{int}* byteCount);}
+\DoxyCodeLine{23 }
+\DoxyCodeLine{24 \};}
+
+\end{DoxyCode}
