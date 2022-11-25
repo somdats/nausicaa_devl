@@ -1175,7 +1175,7 @@ void Display() {
 
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
                     glBindTexture(GL_TEXTURE_2D, cameraFBO.id_tex);
-                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelData);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, pixelData);
 
 
                     glMatrixMode(GL_PROJECTION);
@@ -1555,7 +1555,7 @@ void  TW_CALL saveCalibratedCamera(void * _iC) {
     int iC = (int)_iC;
     std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
 
-    if (SCENE_REPLAY)
+    if (SCENE_REPLAY || true)
         extrinsics_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iC].camID) + "\\" + extrinsics_file;
 
     FILE* fo = fopen(extrinsics_file.c_str(), "wb");
@@ -1587,7 +1587,7 @@ void TW_CALL loadAlignment(void*);
 void TW_CALL saveCalibration(void*) {
         saveAlignment(0);
         for (unsigned int i = 0; i < NUMCAM;++i)
-            saveCalibratedCamera((void*)i);
+            saveCalibratedCamera(&i);
 }
 void  TW_CALL loadCalibratedCamera(void* _iC);
 void TW_CALL loadCalibration(void*) {
@@ -1649,7 +1649,7 @@ void  TW_CALL loadCalibratedCamera(void * _iC) {
     int iC =  (int)_iC;
     std::string extrinsics_file = std::to_string(cameras[iC].camID) + "_camera_parameters.bin";
 
-    if (SCENE_REPLAY)
+    if (SCENE_REPLAY || true)
         extrinsics_file = DUMP_FOLDER_PATH + "\\Images\\" + std::to_string(cameras[iC].camID) + "\\" + extrinsics_file;
 
     FILE* fo = fopen(extrinsics_file.c_str(), "rb");
@@ -1677,7 +1677,7 @@ void TW_CALL loadAxis(void*) {
 void TW_CALL loadAlignment(void*) {
     std::string calibration_file = std::string("aln.bin");
 
-    if (SCENE_REPLAY)
+    if (SCENE_REPLAY || true)
         calibration_file = DUMP_FOLDER_PATH + "\\PointClouds\\" + calibration_file;
 
     FILE* fo = fopen(calibration_file.c_str(), "rb");
