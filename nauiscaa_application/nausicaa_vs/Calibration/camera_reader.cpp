@@ -285,6 +285,7 @@ string type2str(int type) {
 void Camera::start_reading() {
     int i = 0;
     int first_i;
+    
     if (SCENE_REPLAY){
         while (timed_images[i].first < start_time)++i;
         first_i = i;
@@ -386,6 +387,7 @@ void Camera::start_reading() {
         {
             latest_frame_mutex.lock();
             cap.read(frame);
+            this->epochtime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             latest_frame_mutex.unlock();
 
             //Mat temp(frame.size(), frame.type());
@@ -412,12 +414,14 @@ void Camera::start_reading() {
             if (SAVE_IMG)
             {
 
-                std::string tCam;
-                bool stat = logger::getTimeStamp(timeCamera1, tCam, false);
+                std::string tCam_;
+                bool stat = logger::getTimeStamp(timeCamera1, tCam_, false);
                 if (stat)
                 {
+                  
                     latest_frame_mutex.lock();
-                    logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
+                    std::string tCam = std::to_string(this->epochtime);
+                    logger::saveImages(DUMP_FOLDER_PATH, tCam, frame, std::to_string(inStPort));
                     latest_frame_mutex.unlock();
                     if (inStPort == 5000)
                         fprintf(fi1, "%s\n", tCam.c_str());

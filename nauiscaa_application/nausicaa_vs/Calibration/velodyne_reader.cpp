@@ -64,6 +64,8 @@ void Lidar::start_reading() {
     std::string* data = new std::string();
     unsigned int* dataLength = new unsigned int();
     std::deque<PacketDecoder::HDLFrame> frames;
+   
+    ;
 
     if (SCENE_REPLAY) {
         while (timed_pointclouds[i].first < start_time)++i;
@@ -129,14 +131,16 @@ void Lidar::start_reading() {
             frames = decoder.GetFrames();
             latest_frame_mutex.lock();
             decoder.GetLatestFrame(&latest_frame);
+            this->epochtime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             latest_frame_mutex.unlock();
         }
         if (SAVE_PC) {
-            std::string l1Cam;
-            bool stat = logger::getTimeStamp(timeLidar, l1Cam);
+            std::string l1Cam_;
+            bool stat = logger::getTimeStamp(timeLidar, l1Cam_);
             if (stat)
             {
                 latest_frame_mutex.lock();
+                std::string l1Cam = std::to_string(epochtime);
                 logger::savePointCloudBinary(lidarPort, l1Cam, DUMP_FOLDER_PATH, latest_frame);
                 latest_frame_mutex.unlock();
                 if (lidarPort == 2368)
