@@ -12,6 +12,11 @@ struct LidarRender {
     Lidar  lidar;
 
     vcg::Box3f bbox;
+
+    int cs;
+    std::vector< std::vector < float > >  samples_mem;
+    std::vector< std::vector < float > > distances_mem;
+
     std::vector < float > samples;
     std::vector < float > distances;
     GLuint buffers[3];
@@ -40,12 +45,26 @@ struct LidarRender {
                 // Engineears suck
                 j = (j % 2) ? 7 + j / 2 + 1 : j / 2;
 
-                samples[(idStrip * NL + j) * 3] = lidar.latest_frame.x[i];
-                samples[(idStrip * NL + j) * 3 + 1] = lidar.latest_frame.y[i];
-                samples[(idStrip * NL + j) * 3 + 2] = lidar.latest_frame.z[i];
-                distances[(idStrip * NL + j)] = lidar.latest_frame.distance[i];
+                int offset = (idStrip * NL + j);
+                samples_mem[cs][offset * 3    ] = samples[offset * 3    ] = lidar.latest_frame.x[i];
+                samples_mem[cs][offset * 3 + 1] = samples[offset * 3 + 1] = lidar.latest_frame.y[i];
+                samples_mem[cs][offset * 3 + 2] = samples[offset * 3 + 2] = lidar.latest_frame.z[i];
+                distances_mem[cs][offset] = distances[offset] = lidar.latest_frame.distance[i];
+   
                 assert(idStrip < n_strips);
                 assert((idStrip * NL + j) * 3 + 2 < samples.size());
+            }
+
+        for(int  i = 0; i < distances.size(); ++i)
+            if (distances[i] < 0.1) {
+                // no value, check in the recent history
+                for (int ip = 0; ip < distances_mem.size() - 1; ++ip) {
+                    int iM = (cs + distances_mem.size()) % distances_mem.size();
+                    if (distances_mem[iM][i] > 0.f) {
+                        memcpy(&samples[i * 3], &samples_mem[iM][i * 3], sizeof(float) * 3);
+                        distances[i] = distances_mem[iM][i];
+                    }
+                }
             }
 
         glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
@@ -55,9 +74,13 @@ struct LidarRender {
         glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
         glBufferData(GL_ARRAY_BUFFER, n_verts * sizeof(float), &(*distances.begin()), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        cs = (cs+1)%distances_mem.size();
     }
 
-    void init() {
+    void init(int memsize = 5) {
+
+
         int ns = 0;
         if (lidar.latest_frame.azimuth.empty())
             return;
@@ -72,8 +95,14 @@ struct LidarRender {
         n_verts = ceil(n_strips * NL);
 
         samples.resize(n_verts * 3);
-
         distances.resize(n_verts, 0.f);
+        cs = 0;
+        samples_mem.resize(memsize);
+        for (int i = 0; i < samples_mem.size(); ++i)
+            samples_mem[i].resize(n_verts * 3);
+        distances_mem.resize(memsize);
+        for (int i = 0; i < distances_mem.size(); ++i)
+            distances_mem[i].resize(n_verts * 3,0.f);
 
         glCreateBuffers(3, buffers);
         GLERR();
@@ -99,6 +128,8 @@ struct LidarRender {
                 iTriangles.push_back((i + 1) * NL + j);
                 iTriangles.push_back((i + 1) * NL + j + 1);
             }
+
+
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, iTriangles.size() * sizeof(int), &*iTriangles.begin(), GL_STATIC_DRAW);

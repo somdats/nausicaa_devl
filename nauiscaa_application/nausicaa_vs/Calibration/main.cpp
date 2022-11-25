@@ -370,9 +370,7 @@ void updatePC(int il) {
     if (sel_points && il == 1) {
         std::lock_guard lk(m_sel);
         selected_points = true;
-        sel_points = false;
         cond_sel.notify_one();
-       
     }
 
 }
@@ -921,28 +919,26 @@ void Display() {
         corrDet.draw_debug();
 
     for (int iL = 0; iL < 2; ++iL)
-        if (splitScreen || drawAllLidars || (!splitScreen && iL == currentLidar))
+        if (splitScreen || (!splitScreen && iL == currentLidar))
         {
-
-            currentLidar = iL;
-            updatePC(currentLidar);
-            glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
-            if (lidars[currentLidar].lidar.reading && !mesh.vert.empty()) {
+            updatePC(iL);
+            glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
+            if (lidars[iL].lidar.reading && !mesh.vert.empty()) {
                 vcg::Matrix44f toCurrCamera;
                 GLfloat mm[16], pm[16];
 
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
-                gluPerspective(40, vpl[currentLidar][2] / (float)vpl[currentLidar][3], 0.1, 100);
+                gluPerspective(40, vpl[iL][2] / (float)vpl[iL][3], 0.1, 100);
                 glMatrixMode(GL_MODELVIEW);
                 glLoadIdentity();
                 gluLookAt(1, 1, 5, 0, 0, 0, 0, 1, 0);
 
 
-                track[currentLidar].center = vcg::Point3f(0, 0, 0);
-                track[currentLidar].radius = 1.0;
-                track[currentLidar].GetView();
-                track[currentLidar].Apply();
+                track[iL].center = vcg::Point3f(0, 0, 0);
+                track[iL].radius = 1.0;
+                track[iL].GetView();
+                track[iL].Apply();
 
 
                 glPushMatrix();
@@ -951,7 +947,7 @@ void Display() {
                 draw_frame(boatFrame);
                 glUseProgram(0);
                 glDisable(GL_LIGHTING);
-                if ((selecting || boxpicking) && wnd == currentLidar) {
+                if ((selecting || boxpicking) && wnd == iL) {
                     vcg::Point3f p;
                     GLdouble mm[16], pm[16];
                     GLint view[4];
@@ -968,9 +964,9 @@ void Display() {
                         glBegin(GL_POINTS);
                         for (unsigned int i = 0; i < mesh.vert.size(); ++i) {
                             p = mesh.vert[i].cP();
-                            p = lidars[currentLidar].transfLidar * p;
+                            p = lidars[iL].transfLidar * p;
                             gluProject(p[0], p[1], p[2], mm, pm, view, &x, &y, &z);
-                            if (boxsel.IsIn(vcg::Point3f(x - vpl[currentLidar][0], y - vpl[currentLidar][1], 0))) {
+                            if (boxsel.IsIn(vcg::Point3f(x - vpl[iL][0], y - vpl[iL][1], 0))) {
                                 selected.push_back(vcg::Point3f(p[0], p[1], p[2]));
                                 glVertex3f(selected.back()[0], selected.back()[1], selected.back()[2]);
                                 if (z < zmin) {
@@ -984,12 +980,12 @@ void Display() {
                         glPointSize(1.0);
 
                         if (boxpicking && !selected.empty())
-                            corrDet.currentP3D[currentLidar] = vcg::Inverse(lidars[currentLidar].transfLidar)* closest_sel;
+                            corrDet.currentP3D[iL] = vcg::Inverse(lidars[iL].transfLidar)* closest_sel;
                         boxpicking = false;
 
                         if (selected.size() > 4) {
-                            vcg::FitPlaneToPointSet(selected, planes[currentLidar][currentPlane]);
-                            PlaneC& pl = planes[currentLidar][currentPlane];
+                            vcg::FitPlaneToPointSet(selected, planes[iL][currentPlane]);
+                            PlaneC& pl = planes[iL][currentPlane];
 
                             pl.o = selected[0];
                             for (uint i = 1; i < selected.size(); ++i)
@@ -1003,9 +999,9 @@ void Display() {
 
                 if (showPlanes)
                     for (int ip = 0; ip < 3; ++ip)
-                        if (planes[currentLidar][ip].valid) {
+                        if (planes[iL][ip].valid) {
                             glColor3f(ip == 0, ip == 1, ip == 2);
-                            drawPlane(planes[currentLidar][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
+                            drawPlane(planes[iL][ip], vcg::Point2f(-1, -1), vcg::Point2f(1, 1));
                         }
 
                 bool virtualCamerasExist = !virtualCameras.empty();
@@ -1066,7 +1062,7 @@ void Display() {
 
                 }
 
-                glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+                glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
                 glClearColor(0.0, 0.0, 0.0, 1.0);
                 // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
                 GLERR(__LINE__, __FILE__);
@@ -1097,10 +1093,10 @@ void Display() {
                         glPopMatrix();
                     }
                 {
-                    glColor3f(corrDet.trackingState[currentLidar] == 1, corrDet.trackingState[currentLidar] == 0, corrDet.trackingState[currentLidar] == 2);
+                    glColor3f(corrDet.trackingState[iL] == 1, corrDet.trackingState[iL] == 0, corrDet.trackingState[iL] == 2);
                     glPushMatrix();
                     //            vcg::Point3f p = marker3D;
-                    vcg::Point3f p = lidars[currentLidar].transfLidar * ::corrDet.currentP3D[currentLidar];
+                    vcg::Point3f p = lidars[iL].transfLidar * ::corrDet.currentP3D[iL];
 
                     glTranslatef(p[0], p[1], p[2]);
                     gluSphere(gluNewQuadric(), 0.1, 10, 10);
@@ -1185,7 +1181,7 @@ void Display() {
                     glPushMatrix();
                     glLoadIdentity();
 
-                    glViewport(vpl[currentLidar][0], vpl[currentLidar][1], vpl[currentLidar][2], vpl[currentLidar][3]);
+                    glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
                     glDisable(GL_DEPTH_TEST);
 
                     glActiveTexture(GL_TEXTURE0);
@@ -1217,7 +1213,7 @@ void Display() {
                 glPopMatrix();
 
 
-                track[currentLidar].DrawPostApply();
+                track[iL].DrawPostApply();
             }
         }
 
