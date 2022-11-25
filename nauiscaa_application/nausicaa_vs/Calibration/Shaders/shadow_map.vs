@@ -10,11 +10,12 @@ out VS_OUT {
 } vs_out;
 
 
-uniform mat4 toCam;
+
+uniform mat4 toCamSpace;
+
 
 void main()
 {
-    vec4 pos = toCam * vec4(aPos, 1.0);
-    gl_Position   = pos;
+    gl_Position   = toCamSpace* vec4(aPos, 1.0);
     vs_out.d = d;
 }

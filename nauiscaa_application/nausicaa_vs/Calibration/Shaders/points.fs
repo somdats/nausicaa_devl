@@ -25,7 +25,7 @@ void main()
             tCoord[ic] = (tCoord[ic]+1.0)*0.5;
             tCoord[ic].y = 1.0 - tCoord[ic].y; // REVERSE Y FOR OPENCVV
              weight[ic] = 0.0;
-             if(!( textureCoordFS[ic].z < 0.0 ||   tCoord[ic].x < 0.0 ||  tCoord[ic].x > 1.0 || tCoord[ic].y < 0.0 ||  tCoord[ic].y > 1.0))
+             if( !( textureCoordFS[ic].z < 0.0 ||   tCoord[ic].x < 0.0 ||  tCoord[ic].x > 1.0 || tCoord[ic].y < 0.0 ||  tCoord[ic].y > 1.0))
                   {   
                     vec4 dep  = texture2D(camDepth[ic],vec2(tCoord[ic].x,1.0-tCoord[ic].y),1.0);
                     vec4 col;

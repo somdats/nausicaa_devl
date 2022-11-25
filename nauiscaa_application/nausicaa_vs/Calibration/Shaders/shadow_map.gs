@@ -5,6 +5,9 @@ layout (triangle_strip, max_vertices = 3) out;
 out vec4 p;// texture coordinate for camera 0
 //out vec4 color;
 
+
+uniform mat4 toCam;
+
 in VS_OUT {
     float d;
 } gs_in[];
@@ -21,17 +24,27 @@ void main() {
     if( abs(gs_in[1].d - gs_in[2].d) > 0.5 ) return;
     if( abs(gs_in[0].d - gs_in[2].d) > 0.5 ) return;
 
-    gl_Position = gl_in[0].gl_Position;
+    vec4 bary = (gl_in[0].gl_Position +  gl_in[1].gl_Position + gl_in[2].gl_Position )/3.0;
+
+    vec4 pos;
+
+    pos = gl_in[0].gl_Position;
+    pos.xy = pos.xy+ (pos.xy-bary.xy);
+    gl_Position = toCam*pos;
     p = gl_in[0].gl_Position;
     EmitVertex();
 
 
-    gl_Position = gl_in[1].gl_Position;
+    pos = gl_in[1].gl_Position;
+    pos.xy = pos.xy+ (pos.xy-bary.xy);
+    gl_Position = toCam*pos;
     p = gl_in[1].gl_Position;
     EmitVertex();
 
 
-    gl_Position = gl_in[2].gl_Position;
+    pos = gl_in[2].gl_Position;
+    pos.xy = pos.xy+(pos.xy-bary.xy);
+    gl_Position = toCam*pos;
     p = gl_in[2].gl_Position;
     EmitVertex();
 

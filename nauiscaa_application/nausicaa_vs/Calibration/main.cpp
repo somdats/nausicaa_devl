@@ -462,6 +462,7 @@ void initializeGLStuff() {
     }
     shadow_shader.Validate();
     GLERR(__LINE__,__FILE__);
+    shadow_shader.bind("toCamSpace");
     shadow_shader.bind("toCam");
     assert(_CrtCheckMemory());
 
@@ -1027,9 +1028,10 @@ void Display() {
 
                             for (int il = 0; il < N_LIDARS; ++il) {
 
-                                toCurrCamera = oglP * cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
+                                toCurrCamera =  cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
 
-                                glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &toCurrCamera[0][0]);
+                                glUniformMatrix4fv(shadow_shader["toCamSpace"], 1, GL_TRUE, &toCurrCamera[0][0]);
+                                glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &oglP[0][0]);
 
                                 GLERR(__LINE__,__FILE__);
                                 glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
@@ -1050,13 +1052,13 @@ void Display() {
                             glUseProgram(0);
 
                             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                            //if (true || iCam == 0) {
-                            //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                            //   cv::Mat ima(1096,1948,CV_8UC3);
-                            //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                            //   cv::flip(ima, ima, 0);
-                            //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                            //}
+                           if (iCam == 0) {
+                              glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                              cv::Mat ima(1096,1948,CV_8UC3);
+                              glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                              cv::flip(ima, ima, 0);
+                              cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                           }
                         }
 
 
