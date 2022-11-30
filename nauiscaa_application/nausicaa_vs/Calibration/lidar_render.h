@@ -13,6 +13,8 @@ struct LidarRender {
 
     vcg::Box3f bbox;
 
+    uint64_t epochtime;
+
     int cs;
     std::vector< std::vector < float > >  samples_mem;
     std::vector< std::vector < float > > distances_mem;

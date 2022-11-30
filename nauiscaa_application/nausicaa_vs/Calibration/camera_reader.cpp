@@ -376,19 +376,18 @@ void Camera::start_reading() {
                     if (ii != i)
                     {
                         i = ii;
-                        std::this_thread::sleep_for(10ms);
                         latest_frame_mutex.lock();
                         dst = cv::imread(timed_images[i].second.c_str());
+                        epochtime = timed_images[i].first;
                         latest_frame_mutex.unlock();
                     }
             }
         }
         else
         {
-            latest_frame_mutex.lock();
+            uint64_t epochtimeL = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             cap.read(frame);
-            this->epochtime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            latest_frame_mutex.unlock();
+           
 
             //Mat temp(frame.size(), frame.type());
             //dst = frame.clone();
@@ -396,6 +395,8 @@ void Camera::start_reading() {
             //std::cout << " Iam done with undistortion:" << std::endl;
             if (!frame.empty())
             {
+                latest_frame_mutex.lock();
+                this->epochtime = epochtimeL;
                 cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
                 if (histoEq)
                 {
@@ -403,6 +404,7 @@ void Camera::start_reading() {
                     imgprocess::AGCWD(dst, dstEq, 0.5);
                     dst = dstEq.clone();
                 }
+                latest_frame_mutex.unlock();
             }
             else
             {
@@ -413,16 +415,13 @@ void Camera::start_reading() {
 //#if SAVE_IMG
             if (SAVE_IMG)
             {
-
                 std::string tCam_;
                 bool stat = logger::getTimeStamp(timeCamera1, tCam_, false);
                 if (stat)
                 {
-                  
-                    latest_frame_mutex.lock();
                     std::string tCam = std::to_string(this->epochtime);
                     logger::saveImages(DUMP_FOLDER_PATH, tCam, frame, std::to_string(inStPort));
-                    latest_frame_mutex.unlock();
+
                     if (inStPort == 5000)
                         fprintf(fi1, "%s\n", tCam.c_str());
                     if (inStPort == 5001)
@@ -449,10 +448,12 @@ void Camera::start_reading() {
         }
 
 #else
+    latest_frame_mutex.lock();
     if(SCENE_REPLAY)
             dst = cv::imread("image.jpg");
     else 
             cap.read(dst);
+    latest_frame_mutex.lock();
 
 #endif  
 
@@ -479,10 +480,10 @@ void Camera::start_reading() {
         if (cv::waitKey(1) == 'b') {
              break;
         }
-        //latest_frame_mutex.lock();
+        
     }
 
-    //latest_frame_mutex.unlock();
+    
     cv::destroyAllWindows();
 }
 void Camera::stop_reading(){

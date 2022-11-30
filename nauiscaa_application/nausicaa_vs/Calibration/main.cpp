@@ -366,6 +366,8 @@ void updatePC(int il) {
         lidars[il].bbox = mesh.bbox;
         first[il] = false;
     }
+    lidars[il].epochtime = lidars[il].lidar.epochtime;
+
     lidars[il].lidar.latest_frame_mutex.unlock();
     if (sel_points && il == 1) {
         std::lock_guard lk(m_sel);
@@ -596,12 +598,12 @@ void drawScene() {
                 glActiveTexture(GL_TEXTURE5 + ic);
                 glBindTexture(GL_TEXTURE_2D, textures[ic]);
 
-                cameras[ic].latest_frame_mutex.lock();
+                //cameras[ic].latest_frame_mutex.lock();
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, cameras[ic].dst.ptr());
-                cameras[ic].latest_frame_mutex.unlock();
+                //cameras[ic].latest_frame_mutex.unlock();
 
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
-                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 2.0, 150.0) * cameras[ic].opengl_extrinsics();
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.1, 150.0) * cameras[ic].opengl_extrinsics();
                 //glUniformMatrix4fv(triangle_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
@@ -1009,12 +1011,20 @@ void Display() {
                 GLERR(__LINE__,__FILE__);
 
 
-         //       for (int il = 0; il < N_LIDARS; ++il)
-         //           updatePC(il);
+                printf("times\n");
+                for (int il = 0; il < N_LIDARS; ++il)
+                {
+                    updatePC(il);
+                    std::cout << il << "   " << lidars[il].epochtime << std::endl;
+                }
+                for (int ic = 0; ic < NUMCAM; ++ic) {
+                    cameras[ic].latest_frame_mutex.lock();
+                    std::cout << ic << "   " << cameras[ic].epochtime << std::endl;
+                }
 
                 if (enable_proj) {
                     for (int iCam = 0; iCam < NUMCAM; ++iCam)
-                        if (cameras[iCam].aligned)
+                        if (cameras[iCam].aligned && cameras[iCam].used)
                         {
                             // create shadow maps
                             glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
@@ -1024,7 +1034,7 @@ void Display() {
                             glEnable(GL_DEPTH_TEST);
 
                             glUseProgram(shadow_shader.pr);
-                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 2.0, 150.0);
+                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
 
                             for (int il = 0; il < N_LIDARS; ++il) {
 
@@ -1052,16 +1062,14 @@ void Display() {
                             glUseProgram(0);
 
                             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                           if (iCam == 0) {
-                              glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                              cv::Mat ima(1096,1948,CV_8UC3);
-                              glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                              cv::flip(ima, ima, 0);
-                              cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                           }
+                           //if (iCam == 0) {
+                           //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
+                           //   cv::Mat ima(1096,1948,CV_8UC3);
+                           //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+                           //   cv::flip(ima, ima, 0);
+                           //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
+                           //}
                         }
-
-
                 }
 
                 glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
@@ -1211,6 +1219,8 @@ void Display() {
                     glPopMatrix();
 
                 }
+                for (int ic = 0; ic < NUMCAM; ++ic)
+                    cameras[ic].latest_frame_mutex.unlock();
 
                 glPopMatrix();
 

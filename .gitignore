@@ -75,3 +75,8 @@ NAUSICAA_VR_API/NAUSICAA_API/header/docs/VRSubsystem.html
 *.stl
 *.xyz
 *.tlog
+*.idb
+*.iobj
+*.ipdb
+*.tlog
+*.tlog

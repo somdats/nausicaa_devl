@@ -118,6 +118,7 @@ void Lidar::start_reading() {
                         i = ii;
                         latest_frame_mutex.lock();
                         logger::LoadPointCloudBinary(timed_pointclouds[i].second, latest_frame);
+                        this->epochtime = timed_pointclouds[i].first;
                         latest_frame_mutex.unlock();
                     }
             }
