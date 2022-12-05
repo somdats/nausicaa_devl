@@ -40,6 +40,7 @@ struct Camera {
 
     float _debk;
     std::uint64_t epochtime;
+    uint64_t startTimeACQ;
 
     void opencv2opengl_camera_params(cv::Mat cam, int wx, int wy, float nr, float& r, float& l, float& t, float& b) {
         float k = cam.at<float>(0, 0) / cam.at<float>(1, 1); // fx/fy

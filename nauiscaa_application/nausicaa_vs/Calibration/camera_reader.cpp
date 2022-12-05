@@ -31,7 +31,6 @@ FILE* fi5 = nullptr;
 FILE* fi6 = nullptr;
 //#endif // SAVE_IMG
 
- 
 
 using namespace std;
 
@@ -285,7 +284,7 @@ string type2str(int type) {
 void Camera::start_reading() {
     int i = 0;
     int first_i;
-    
+    startTimeACQ = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (SCENE_REPLAY){
         while (timed_images[i].first < start_time)++i;
         first_i = i;
@@ -385,8 +384,15 @@ void Camera::start_reading() {
         }
         else
         {
-            uint64_t epochtimeL = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            //uint64_t epochtimeL = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             cap.read(frame);
+            uint64_t acqTime =  cap.get(cv::CAP_PROP_POS_MSEC);
+            std::cout << "acq-time:" << acqTime << std::endl;
+            if (acqTime > 0)
+            {
+                acqTime += startTimeACQ;
+                //std::cout << "acq-time:" << acqTime << std::endl;
+            }
            
 
             //Mat temp(frame.size(), frame.type());
@@ -396,7 +402,7 @@ void Camera::start_reading() {
             if (!frame.empty())
             {
                 latest_frame_mutex.lock();
-                this->epochtime = epochtimeL;
+                this->epochtime = acqTime;
                 cv::remap(frame, dst, map1, map2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
                 if (histoEq)
                 {
@@ -419,8 +425,8 @@ void Camera::start_reading() {
                 bool stat = logger::getTimeStamp(timeCamera1, tCam_, false);
                 if (stat)
                 {
-                    std::string tCam = std::to_string(this->epochtime);
-                    logger::saveImages(DUMP_FOLDER_PATH, tCam, frame, std::to_string(inStPort));
+                    std::string tCam = std::to_string(acqTime);
+                    logger::saveImages(DUMP_FOLDER_PATH, tCam, dst, std::to_string(inStPort));
 
                     if (inStPort == 5000)
                         fprintf(fi1, "%s\n", tCam.c_str());
