@@ -39,6 +39,9 @@ extern "C" {
 	//! image buffer
 	typedef char* image_buffer;
 
+	//! points buffer
+	typedef float* points_buffer;
+
 	//! enum direction
 	typedef enum NAUSICAA_VR_API  changeDir
 	{
@@ -65,7 +68,7 @@ extern "C" {
 			 \param func callback function
 		*/
 		void NAUSICAA_VR_API setCallback(void (*func)(const char*));
-
+		 
 
 		//! read the configuration file (not necessary, discontinued)
 		/*!
@@ -106,7 +109,7 @@ extern "C" {
 		  \param innerRadius only points farther than this values from the origing
 		  \param outerRadius only points closer than this values to the origing
 		*/
-		image_buffer getPointCloud(int* n_points, float bottom, float top, float innerRadius, float outerRadius);
+		points_buffer getPointCloud(int* n_points, float bottom, float top, float innerRadius, float outerRadius);
 		///@}
 
 		/** @name Set the reference systems

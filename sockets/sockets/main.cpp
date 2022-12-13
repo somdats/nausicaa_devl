@@ -20,7 +20,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 
 int _ = 20;
 
-void main() {
+void main(int argc, char**argv) {
 	cv::namedWindow("monitor", 1);
 	cv::setMouseCallback("monitor", CallBackFunc, 0);
 
@@ -32,21 +32,22 @@ void main() {
 	fread(data, 1, length, iconF);
 	fclose(iconF);
 
-
-	int err = VRSubsystem::connectToVRServer("127.0.0.1");
+	int err = VRSubsystem::connectToVRServer(argv[1]);
+//	int err = VRSubsystem::connectToVRServer("127.0.0.1");
+//	int err = VRSubsystem::connectToVRServer("192.168.200.91");
 	if (err != 0)
 	{
 		std::cout << "connection failed with err \n" << err << std::endl;
 		exit(0);
 	};
 
-	if(0) {
+	if (0) {
 		int mid;
 
 		for (int i = 0; i < 10; ++i) {
 			printf("Add MArker\n");
 			mid = VRSubsystem::addMarker(data, length, 1.0, "MM", 5);
-			VRSubsystem::placeMarker(mid, -5 + i*2, 1, 3.0 - i * 4.0);
+			VRSubsystem::placeMarker(mid, -5 + i * 2, 1, 3.0 - i * 4.0);
 			VRSubsystem::showMarker(mid, 1);
 		}
 	}
@@ -54,51 +55,63 @@ void main() {
 	{
 		int* cameras, n;
 		cameras = VRSubsystem::getVirtualCameraList(&n);
-waitKey(_);
+
 		printf("number of cameras: %d\n", n);
 		for (int i = 0;i < n; ++i)
 			printf("camera id: %d\n", cameras[i]);
 	}
 
+
+
 	int newCamera = VRSubsystem::addVirtualCamera();
-	waitKey(_);
+
 	VirtualCamera::setCameraFrustrum(newCamera, -0.2, 0.2, -0.2, 0.2, 0.2,
 		640, 480);
-	waitKey(_);
-	VirtualCamera::setPosition(newCamera,-0.0, 6.0, 5.0);
-	waitKey(_);
-	VirtualCamera::setViewDirection(newCamera,0.0, 0.0, -1.0);
-	waitKey(_);
+
+	VirtualCamera::setPosition(newCamera, -0.0, 6.0, 5.0);
+
+	VirtualCamera::setViewDirection(newCamera, 0.0, 0.0, -1.0);
+
 
 	float  sx, dx, bt, tp, nr;
 	VirtualCamera::getFrustum(newCamera, &sx, &dx, &bt, &tp, &nr);
-	printf("cam %d, frustum:  %f %f %f %f %f \n", newCamera,sx, dx, bt, tp, nr);
-	waitKey(_);
+	printf("cam %d, frustum:  %f %f %f %f %f \n", newCamera, sx, dx, bt, tp, nr);
+
 
 	float eX, eY, eZ, dX, dY, dZ, uX, uY, uZ;
-	VirtualCamera::getPositionAndDirection(newCamera, &eX, &eY,&eZ, &dX, &dY, &dZ, &uX,&uY,&uZ);
+	VirtualCamera::getPositionAndDirection(newCamera, &eX, &eY, &eZ, &dX, &dY, &dZ, &uX, &uY, &uZ);
 	printf("cam %d, posdir: %f %f %f %f %f %f %f %f %f \n", newCamera, eX, eY, eZ, dX, dY, dZ, uX, uY, uZ);
-	waitKey(_);
+
 
 
 	VRSubsystem::renderFromCamera(newCamera);
-	waitKey(_);
+
 
 	VRSubsystem::startStreaming();
-	waitKey(_);
+	
 
-	VRSubsystem::disableLidar(0);
-	waitKey(_);
-	VRSubsystem::enableLidar(0);
-	waitKey(_);
-	VRSubsystem::disableCamera(0);
-	waitKey(_);
-	VRSubsystem::enableCamera(0);
-	waitKey(_);
+	//VRSubsystem::disableLidar(0);
+	//
+	//VRSubsystem::enableLidar(0);
+	//
+	//VRSubsystem::disableCamera(0);
+	//
+	//VRSubsystem::enableCamera(0);
+	//
 
+	VRSubsystem::enableBackground();
 	char * frame;
 	int size;
-	while(true) {
+	int  n_points;
+	float * pc = VRSubsystem::getPointCloud(&n_points, -100, 100, 0, 100);
+
+	FILE* fo = fopen("pc.stl", "w");
+	
+	for (int i = 0; i < n_points; ++i)
+		fprintf(fo, "%f %f %f \n", *(float*)&pc[i * 12], *(float*)&pc[i * 12 + 4], *(float*)&pc[i * 12 + 8]);
+	fclose(fo);
+
+	while(false) {
 		frame = VRSubsystem::readFrame(&size);
 		if (frame) {
 
