@@ -110,7 +110,7 @@ void CorrespondencesDetector::drawAll2DCorrs(int camID) {
 	for (unsigned int i = 0; i < correspondences3D2D[camID].size();++i) {
 		p = correspondences3D2D[camID][i].second;
 		//cv::circle(cameras[camID].dst, cv::Point2f(p[0],p[1]), 30, cv::Scalar(0, 0, 255), 10);
-		cv::drawMarker(cameras[camID].dst, cv::Point2f(p[0], p[1]), cv::Scalar(0, 0, 255),cv::MARKER_CROSS, 5);
+		cv::drawMarker(cameras[camID].dst, cv::Point2f(p[0], p[1]), cv::Scalar(0, 0, 255),cv::MARKER_CROSS, 10);
 	}
 }
 

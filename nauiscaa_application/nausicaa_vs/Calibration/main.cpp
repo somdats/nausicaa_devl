@@ -156,6 +156,7 @@ struct LineC : public vcg::Line3f {
 Server servC, servS;
 std::vector<::Camera>  cameras;
 
+int shownLidar = 0;
 int currentLidar = 0;
 int currentPlane = 0;
 int currentCamera = 0;
@@ -372,6 +373,7 @@ void updatePC(int il) {
     if (sel_points && il == 1) {
         std::lock_guard lk(m_sel);
         selected_points = true;
+        sel_points = false;
         cond_sel.notify_one();
     }
 
@@ -603,7 +605,7 @@ void drawScene() {
                 //cameras[ic].latest_frame_mutex.unlock();
 
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
-                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.1, 150.0) * cameras[ic].opengl_extrinsics();
+                toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 1, 20) * cameras[ic].opengl_extrinsics();
                 //glUniformMatrix4fv(triangle_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
@@ -622,16 +624,16 @@ void drawScene() {
     for (int il = 0; il < lines3d.size(); ++il)
         drawLine(lines3d[il]);
 
-    for (int il = 0; il < N_LIDARS; ++il)if (currentLidar == il || drawAllLidars) {
+    for (int il = 0; il < N_LIDARS; ++il)if (shownLidar == il || drawAllLidars) {
         glPushMatrix();
 
         // draw axis
         for (int il = 0; il < 3; ++il)
-            if (axis[currentLidar][il].valid) {
+            if (axis[shownLidar][il].valid) {
                 glColor3f(il == 0, il == 1, il == 2);
                 glBegin(GL_LINES);
-                glVertex(axis[currentLidar][il].Origin());
-                glVertex(axis[currentLidar][il].Origin() + axis[currentLidar][il].Direction());
+                glVertex(axis[shownLidar][il].Origin());
+                glVertex(axis[shownLidar][il].Origin() + axis[shownLidar][il].Direction());
                 glEnd();
             }
         GLERR(__LINE__,__FILE__);
@@ -911,7 +913,7 @@ void Display() {
       // calibration
     if (calibrating) {
         corrDet.detect();
-        if (corrDet.trackingState[0] * corrDet.trackingState[1] == 0)
+        if (corrDet.trackingState[0] + corrDet.trackingState[1] == 0)
             //       if (corrDet.trackingState[0] == 0)
             if (time_running)
                 time_startstop(0);
@@ -924,6 +926,7 @@ void Display() {
     for (int iL = 0; iL < 2; ++iL)
         if (splitScreen || (!splitScreen && iL == currentLidar))
         {
+            shownLidar = iL;
             updatePC(iL);
             glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
             if (lidars[iL].lidar.reading && !mesh.vert.empty()) {
@@ -1034,7 +1037,7 @@ void Display() {
                             glEnable(GL_DEPTH_TEST);
 
                             glUseProgram(shadow_shader.pr);
-                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 0.1, 150.0);
+                            vcg::Matrix44f oglP = cameras[iCam].opencv2opengl_camera(cameras[iCam].cameraMatrix, 1948, 1096, 1, 20);
 
                             for (int il = 0; il < N_LIDARS; ++il) {
 
@@ -1225,7 +1228,7 @@ void Display() {
                 glPopMatrix();
 
 
-                track[iL].DrawPostApply();
+               // track[iL].DrawPostApply();
             }
         }
 
@@ -1595,7 +1598,7 @@ void TW_CALL loadAlignment(void*);
 void TW_CALL saveCalibration(void*) {
         saveAlignment(0);
         for (unsigned int i = 0; i < NUMCAM;++i)
-            saveCalibratedCamera(&i);
+            saveCalibratedCamera((void*)i);
 }
 void  TW_CALL loadCalibratedCamera(void* _iC);
 void TW_CALL loadCalibration(void*) {

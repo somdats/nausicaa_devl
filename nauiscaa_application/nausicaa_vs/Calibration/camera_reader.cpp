@@ -37,9 +37,9 @@ using namespace std;
 
 
 
-int radiusCircle = 10;
+int radiusCircle = 20;
 cv::Scalar colorCircle1(255,255,255);
-int thicknessCircle1 = 2;
+int thicknessCircle1 = 4;
 
 
 
@@ -378,6 +378,8 @@ void Camera::start_reading() {
                         i = ii;
                         latest_frame_mutex.lock();
                         dst = cv::imread(timed_images[i].second.c_str());
+//                        cv::cvtColor(dst, dst, cv::COLOR_RGB2GRAY);
+//                        cv::cvtColor(dst, dst, cv::COLOR_GRAY2RGB);
                         epochtime = timed_images[i].first;
                         latest_frame_mutex.unlock();
                     }
@@ -464,17 +466,18 @@ void Camera::start_reading() {
             // markerFinder.detectMarker(dst, pos);
             // cv::circle(dst, pos, 30, cv::Scalar(0, 0, 255), 10);
             /////------------------------------------------------------
-
+            cv::Mat to_show;
+            dst.copyTo(to_show);
             for (int i = 0; i < this->p2i.size(); ++i)
                 if (p2i[i] != cv::Point2f(-1, -1)) {
-                    cv::Scalar col(255, 255, 255);
-                    cv::circle(dst, p2i[i], radiusCircle, col, thicknessCircle1);
-                    cv::putText(dst, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2, false);
+                    cv::Scalar col(255, 0, 0);
+                    cv::circle(to_show, p2i[i], radiusCircle, col, thicknessCircle1);
+                    cv::putText(to_show, cv::String(std::to_string(i)), p2i[i], cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar(0, 255, 0), 2, false);
                 }
             cv::namedWindow(std::to_string(this->camID).c_str(), cv::WINDOW_AUTOSIZE);
             cv::resizeWindow(std::to_string(this->camID).c_str(), cv::Size(500, dst.rows * 500.f / dst.cols));
             cv::Mat resized;
-            cv::resize(dst, resized, cv::Size(500, dst.rows * 500.f / dst.cols));
+            cv::resize(to_show, resized, cv::Size(500, to_show.rows * 500.f / to_show.cols));
             cv::imshow(std::to_string(this->camID).c_str(), resized);
         }
         if (cv::waitKey(1) == 'b') {

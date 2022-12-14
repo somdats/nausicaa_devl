@@ -29,21 +29,21 @@ void main() {
     vec4 pos;
 
     pos = gl_in[0].gl_Position;
-    pos.xy = pos.xy+ (pos.xy-bary.xy);
+  //  pos.xy = pos.xy+ (pos.xy-bary.xy);
     gl_Position = toCam*pos;
     p = gl_in[0].gl_Position;
     EmitVertex();
 
 
     pos = gl_in[1].gl_Position;
-    pos.xy = pos.xy+ (pos.xy-bary.xy);
+  //  pos.xy = pos.xy+ (pos.xy-bary.xy);
     gl_Position = toCam*pos;
     p = gl_in[1].gl_Position;
     EmitVertex();
 
 
     pos = gl_in[2].gl_Position;
-    pos.xy = pos.xy+(pos.xy-bary.xy);
+  //  pos.xy = pos.xy+(pos.xy-bary.xy);
     gl_Position = toCam*pos;
     p = gl_in[2].gl_Position;
     EmitVertex();

@@ -6,6 +6,7 @@ out vec4 textureCoordFS[6];// texture coordinate for camera 0
 //out vec4 color;
 
 in VS_OUT {
+    vec3 pos_vs;
     vec4 textureCoord[6];
     float d;
 } gs_in[];
@@ -21,9 +22,20 @@ void main() {
     float mind = 1000.0;
     float maxd = 0.0;
 
-    if( abs(gs_in[0].d - gs_in[1].d) > 0.5 ) return;
-    if( abs(gs_in[1].d - gs_in[2].d) > 0.5 ) return;
-    if( abs(gs_in[0].d - gs_in[2].d) > 0.5 ) return;
+    vec3 n;
+    vec3 n01 = normalize(gs_in[1].pos_vs -gs_in[0].pos_vs);
+    vec3 n02 = normalize(gs_in[2].pos_vs -gs_in[0].pos_vs);
+    n = normalize(cross(n01,n02));
+
+    if(n.z < 0.8 || 
+    gs_in[0].pos_vs.z > -1.0 || 
+    gs_in[1].pos_vs.z > -1.0 || 
+    gs_in[2].pos_vs.z > -1.0  
+    ){ 
+        if( abs(gs_in[0].d - gs_in[1].d) > 0.5 ) return;
+        if( abs(gs_in[1].d - gs_in[2].d) > 0.5 ) return;
+        if( abs(gs_in[0].d - gs_in[2].d) > 0.5 ) return;
+        }
 
     for(int i = 0;i < 6; ++i)
         textureCoordFS[i] = gs_in[0].textureCoord[i];

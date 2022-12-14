@@ -29,7 +29,7 @@ void main()
                   {   
                     vec4 dep  = texture2D(camDepth[ic],vec2(tCoord[ic].x,1.0-tCoord[ic].y),1.0);
                     vec4 col;
-                    if ( ( tCoord[ic].z   < dep.x + 0.01)){ 
+                    if ( ( tCoord[ic].z   < dep.x + 0.005)){ 
                        weight[ic] = max( length(dFdx(tCoord[ic]).xy)  , length(dFdy(tCoord[ic]).xy) );
                        total_weigth = total_weigth + weight[ic];
                     }

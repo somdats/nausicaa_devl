@@ -103,12 +103,12 @@ void main(int argc, char**argv) {
 	char * frame;
 	int size;
 	int  n_points;
-	float * pc = VRSubsystem::getPointCloud(&n_points, -100, 100, 0, 100);
+	float * pc = VRSubsystem::getPointCloud(&n_points, 0.0, 100, 0, 5.0);
 
-	FILE* fo = fopen("pc.stl", "w");
+	FILE* fo = fopen("pc.xyz", "w");
 	
 	for (int i = 0; i < n_points; ++i)
-		fprintf(fo, "%f %f %f \n", *(float*)&pc[i * 12], *(float*)&pc[i * 12 + 4], *(float*)&pc[i * 12 + 8]);
+		fprintf(fo, "%f %f %f \n", pc[i * 3],pc[i * 3 + 1], pc[i * 3 + 2]);
 	fclose(fo);
 
 	while(false) {
