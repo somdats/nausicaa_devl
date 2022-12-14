@@ -64,9 +64,7 @@ void Lidar::start_reading() {
     std::string* data = new std::string();
     unsigned int* dataLength = new unsigned int();
     std::deque<PacketDecoder::HDLFrame> frames;
-   
-    ;
-
+  
     if (SCENE_REPLAY) {
         while (timed_pointclouds[i].first < start_time)++i;
         first_i = i;
