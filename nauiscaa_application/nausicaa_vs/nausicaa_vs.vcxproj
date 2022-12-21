@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\3rdParty\vcglib\wrap\gui\trackball.cpp" />
     <ClCompile Include="..\..\..\3rdParty\vcglib\wrap\gui\trackmode.cpp" />
+    <ClCompile Include="..\..\..\3rdParty\vcglib\wrap\ply\plylib.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API\src\serialize.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\deserialize.cpp" />
     <ClCompile Include="..\..\NAUSICAA_VR_API\NAUSICAA_API_SERVER\src\nausicaa_api_server.cpp" />
@@ -58,8 +59,18 @@
     <ClInclude Include="OpenCV_GStreamer-master\Source\pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Calibration\Shaders\flat.fs" />
+    <None Include="Calibration\Shaders\flat.gs" />
+    <None Include="Calibration\Shaders\flat.vs" />
+    <None Include="Calibration\Shaders\points.fs" />
+    <None Include="Calibration\Shaders\points.gs" />
+    <None Include="Calibration\Shaders\points.vs" />
+    <None Include="Calibration\Shaders\shadow_map.fs" />
+    <None Include="Calibration\Shaders\shadow_map.gs" />
+    <None Include="Calibration\Shaders\shadow_map.vs" />
     <None Include="Calibration\Shaders\texture.fs" />
     <None Include="Calibration\Shaders\texture.vs" />
+    <None Include="Calibration\Shaders\triangles.gs" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -166,7 +177,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\..\3rdParty\AntTweakBar\lib;..\..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\..\3rdParty\freeglut\lib\Debug;..\..\..\3rdParty\opencv-4.6.0\x64\vc17\lib;..\..\..\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglutd.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460d.lib;opencv_calib3d460d.lib;opencv_ccalib460d.lib;opencv_core460d.lib;opencv_imgcodecs460d.lib;opencv_imgproc460d.lib;opencv_highgui460d.lib;opencv_ximgproc460d.lib;opencv_features2d460d.lib;opencv_videoio460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglutd.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460d.lib;opencv_calib3d460d.lib;opencv_ccalib460d.lib;opencv_core460d.lib;opencv_imgcodecs460d.lib;opencv_imgproc460d.lib;opencv_highgui460d.lib;opencv_ximgproc460d.lib;opencv_features2d460d.lib;opencv_videoio460d.lib;opencv_stitching460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -178,7 +189,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\..\3rdParty\vcglib;..\..\..\3rdParty\VelodyneHDL;..\..\..\3rdParty\boost_1_78_0;..\..\..\3rdParty\opencv-4.6.0\include;..\..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\..\3rdParty\freeglut-3.2.1\include;..\..\..\3rdParty\glew-2.1.0\include;..\..\..\3rdParty\Anttweakbar\include;..\..\..\3rdParty\freeglut\include;..\..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

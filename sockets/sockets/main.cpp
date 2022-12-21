@@ -102,14 +102,17 @@ void main(int argc, char**argv) {
 	VRSubsystem::enableBackground();
 	char * frame;
 	int size;
-	int  n_points;
-	float * pc = VRSubsystem::getPointCloud(&n_points, 0.0, 100, 0, 5.0);
 
-	FILE* fo = fopen("pc.xyz", "w");
-	
-	for (int i = 0; i < n_points; ++i)
-		fprintf(fo, "%f %f %f \n", pc[i * 3],pc[i * 3 + 1], pc[i * 3 + 2]);
-	fclose(fo);
+	for (int u = 0; u < 5; ++u) {
+		int  n_points;
+		float* pc = VRSubsystem::getPointCloud(&n_points, 0.0, 100, 0, (u!=4) * 5.0);
+
+		FILE* fo = fopen((std::string("pc")+std::to_string(u)+".xyz").c_str(), "w");
+
+		for (int i = 0; i < n_points; ++i)
+			fprintf(fo, "%f %f %f \n", pc[i * 3], pc[i * 3 + 1], pc[i * 3 + 2]);
+		fclose(fo);
+	}
 
 	while(false) {
 		frame = VRSubsystem::readFrame(&size);

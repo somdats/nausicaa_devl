@@ -134,10 +134,16 @@ void call_API_function(std::string message) {
 		outer_sel	= deserialize_float(message);
 
 		std::unique_lock lk(m_sel);
+		points_to_send.clear();
 		sel_points = true;
 		cond_sel.wait(lk, [] {return selected_points;});
 		selected_points = false;
-		serverComm.send((char*)&points_to_send[0], points_to_send.size() *3* sizeof(float));
+		if (points_to_send.empty()) {
+			char dummy=0;
+			serverComm.send((char*)&dummy, 1);
+		}
+		else
+			serverComm.send((char*)&points_to_send[0], points_to_send.size() *3* sizeof(float));
 	}
 	else
 	if (fname == std::string("enableLidar"))

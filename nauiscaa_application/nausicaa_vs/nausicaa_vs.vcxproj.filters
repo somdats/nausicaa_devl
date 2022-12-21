@@ -72,6 +72,9 @@
     <ClCompile Include="src\imgproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\3rdParty\vcglib\wrap\ply\plylib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration\camera_reader.h">
