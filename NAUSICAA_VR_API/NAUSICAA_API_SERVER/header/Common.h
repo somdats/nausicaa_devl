@@ -15,6 +15,7 @@ extern std::map<unsigned int, vcg::Shotf> virtualCameras;
 extern std::map<unsigned int, Marker> markers;
 extern unsigned int activeCamera;
 extern bool streamON;
+extern bool distancemapON;
 extern bool lidarOn[2];
 extern bool camerasOn[6];
 extern bool showBackground;

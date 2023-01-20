@@ -91,6 +91,11 @@ void VRSubsystem::renderFromCamera(VirtualCameraID id) {
 	std::cout << "render camera with:" << id << std::endl;
 }
 
+void VRSubsystem::renderDistanceMap(bool value) {
+	clientComm.send_message(message()[std::string("renderDistanceMap")][(value)?1:0].msg);
+	std::cout << "renderDistanceMap:" << value << std::endl;
+}
+
 
 void VRSubsystem::selectQuality(float val) {
 	std::cout << "Quality selection:" << val << std::endl;
@@ -216,6 +221,12 @@ void VirtualCamera::setViewDirection(VirtualCameraID cId, float dirX, float dirY
 	clientComm.send_message(message()[std::string("setViewDirection")][cId][dirX][dirY][dirZ].msg);
 	std::cout << "setViewDirection" << std::endl;
 }
+
+void VirtualCamera::setViewDirectionUp(VirtualCameraID cId, float dirX, float dirY, float dirZ, float upX, float upY, float upZ) {
+	clientComm.send_message(message()[std::string("setViewDirectionUp")][cId][dirX][dirY][dirZ][upX][upY][upZ].msg);
+	std::cout << "setViewDirectionUp" << std::endl;
+}
+
 void VirtualCamera::setCameraFrustrum(VirtualCameraID cId, float sx, float dx, float bt, float tp, float focalLength,
 	int viewPortX, int viewPortY) {
 	clientComm.send_message(message()[std::string("setCameraFrustum")][cId][sx][dx][bt][tp][focalLength][viewPortX][viewPortY].msg);
@@ -253,6 +264,11 @@ void VirtualCamera::getPositionAndDirection(VirtualCameraID cId, float* eyeX, fl
 
 	std::cout << "get CameraFrustrum" << std::endl;
 }
+void VirtualCamera::setOrtho(VirtualCameraID cId, float left, float right, float bottom, float up, int viewportX, int viewportY) {
+	clientComm.send_message(message()[std::string("setOrtho")][cId][left][right][bottom][up][viewportX][viewportY].msg);
+	std::cout << "set ortho:" << std::endl;
+}
+
 
 void VirtualCamera::setPerspective(VirtualCameraID cId, float AngleDeg, float AspectRatio, float Focal, int viewportX, int viewportY) {
 	clientComm.send_message(message()[std::string("setPerspective")][cId][AngleDeg][AspectRatio][Focal][viewportX][viewportY].msg);

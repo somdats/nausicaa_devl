@@ -16,6 +16,7 @@ std::map<unsigned int, vcg::Shotf> virtualCameras;
 std::map<unsigned int, Marker> markers;
 unsigned int activeCamera;
 bool streamON;
+bool distancemapON;
 bool lidarOn[2];
 bool camerasOn[6];
 bool showBackground = false;
@@ -104,6 +105,15 @@ void call_API_function(std::string message) {
 		std::cout << "rendering from camera:" << std::endl;
 	}
 	else
+		if (fname == std::string("renderDistanceMap"))
+		{
+			int value = deserialize_int(message);
+			distancemapON = (value == 1);
+
+			std::cout << "rendering distance map : " << value << std::endl;
+		}
+		else
+
 	if (fname == std::string("selectQuality"))
 	{
 		float q = deserialize_float(message);
@@ -234,6 +244,19 @@ void call_API_function(std::string message) {
 		markers.clear();
 	}
 	else
+	if (fname == std::string("setOrtho"))
+	{
+		int id = deserialize_int(message);
+		float left = deserialize_float(message);
+		float right = deserialize_float(message);
+		float bottom = deserialize_float(message);
+		float top = deserialize_float(message);
+		int viewportX = deserialize_int(message);
+		int viewportY = deserialize_int(message);
+
+		virtualCameras[id].Intrinsics.SetOrtho(left, right, bottom, top, vcg::Point2i(viewportX, viewportY));
+	}
+	else
 	if (fname == std::string("setPerspective"))
 	{
 		int id			= deserialize_int(message);
@@ -313,6 +336,20 @@ void call_API_function(std::string message) {
 		float dirZ = deserialize_float(message);
 
 		virtualCameras[id].LookTowards(vcg::Point3f(dirX, dirY, dirZ), vcg::Point3f(0.0, 1.0, 0.0));
+		std::cout << "view-direction set:" << std::endl;
+	}
+	else
+	if (fname == std::string("setViewDirectionUp"))
+	{
+		int id = deserialize_int(message);
+		float dirX = deserialize_float(message);
+		float dirY = deserialize_float(message);
+		float dirZ = deserialize_float(message);
+		float upX = deserialize_float(message);
+		float upY = deserialize_float(message);
+		float upZ = deserialize_float(message);
+
+		virtualCameras[id].LookTowards(vcg::Point3f(dirX, dirY, dirZ), vcg::Point3f(upX,upY,upZ));
 		std::cout << "view-direction set:" << std::endl;
 	}
 	else

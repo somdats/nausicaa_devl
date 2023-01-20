@@ -235,7 +235,7 @@ unsigned int* textures;
 unsigned int markersTextureID;
 int markers_pos_x = 0, markers_pos_y = 0;
 
-Shader triangle_shader, shadow_shader, texture_shader, flat_shader;
+Shader triangle_shader, shadow_shader, texture_shader, flat_shader,distancemap_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
 TwBar* bar, // Pointer to the tweak bar
@@ -347,18 +347,25 @@ void updatePC(int il) {
   
     glWrap.m = &mesh;
     vcg::tri::Allocator<CMesh>::AddVertices(*glWrap.m, lidars[il].lidar.latest_frame.x.size());
+    
+    if (distancemapON) 
+        points_to_send.clear();
 
     for (unsigned int i = 0; i < lidars[il].lidar.latest_frame.x.size(); ++i) {
         mesh.vert[i].P()[0] = lidars[il].lidar.latest_frame.x[i];
         mesh.vert[i].P()[1] = lidars[il].lidar.latest_frame.y[i];
         mesh.vert[i].P()[2] = lidars[il].lidar.latest_frame.z[i];
 
-        if (sel_points) {
+        if (sel_points || distancemapON) {
+           
             vcg::Point3f p = lidars[il].transfLidar * mesh.vert[i].P();
             if (p.Y() > bottom_sel && p.Y() < top_sel && p.Norm() > inner_sel && p.Norm() < outer_sel)
                 points_to_send.push_back(p);
         }
     }
+
+    if (distancemapON && !points_to_send.empty())
+        lidars[il].fillSubset(points_to_send);
 
     lidars[il].fillGrid();
 
@@ -434,6 +441,17 @@ void drawLine(vcg::Line3f l) {
 BoxRender box_render;
 
 void initializeGLStuff() {
+
+    if (distancemap_shader.SetFromFile("./Calibration/Shaders/distancemap.vs", NULL,
+        "./Calibration/Shaders/distancemap.fs") < 0)
+    {
+        printf("SHADER ERR");
+    }
+    distancemap_shader.Validate();
+    distancemap_shader.bind("mm");
+    distancemap_shader.bind("pm");
+    distancemap_shader.bind("maxdist");
+
 
     if (triangle_shader.SetFromFile("./Calibration/Shaders/points.vs", "./Calibration/Shaders/triangles.gs"/* "points.gs" */,
         "./Calibration/Shaders/points.fs") < 0)
@@ -580,7 +598,38 @@ void drawString(vcg::Point3f p, const char* string, int size) {
     }
 }
 //char* _data[2048 * 2048 * 4];
+void drawSubset() {
+    glUseProgram(distancemap_shader.pr);
+   
+    GLfloat pm[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, pm);
+    glUniformMatrix4fv(distancemap_shader["pm"], 1, GL_FALSE, pm);
+ 
+    glUniform1f(distancemap_shader["maxdist"], 0.5 / std::min(pm[0], pm[5]));
 
+    GLint curr_buf;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &curr_buf);
+    for (int il = 0; il < N_LIDARS; ++il) {
+        glPushMatrix();
+        GLERR(__LINE__, __FILE__);
+        glMultMatrix(toSteadyFrame);
+ 
+        GLfloat mm[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+        glUniformMatrix4fv(distancemap_shader["mm"], 1, GL_FALSE, mm);
+        glBindBuffer(GL_ARRAY_BUFFER, lidars[il].sub_buffer);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glDrawArrays(GL_POINTS, 0, lidars[il].subset_size );
+         
+        glPopMatrix();
+        GLERR(__LINE__, __FILE__);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, curr_buf);
+    glDisableVertexAttribArray(0);
+    glUseProgram(0);
+}
 void drawScene() {
     vcg::Matrix44f toCamera[6];
     GLfloat mm[16], pm[16], mm1[16];
@@ -1014,15 +1063,15 @@ void Display() {
                 GLERR(__LINE__,__FILE__);
 
 
-                printf("times\n");
+                // printf("times\n");
                 for (int il = 0; il < N_LIDARS; ++il)
                 {
                     updatePC(il);
-                    std::cout << il << "   " << lidars[il].epochtime << std::endl;
+                 //   std::cout << il << "   " << lidars[il].epochtime << std::endl;
                 }
                 for (int ic = 0; ic < NUMCAM; ++ic) {
                     cameras[ic].latest_frame_mutex.lock();
-                    std::cout << ic << "   " << cameras[ic].epochtime << std::endl;
+                //    std::cout << ic << "   " << cameras[ic].epochtime << std::endl;
                 }
 
                 if (enable_proj) {
@@ -1146,40 +1195,48 @@ void Display() {
 
                     float sx, dx, bt, tp, n;
                     activeCamera_mutex.lock();
-                    virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+                    if (!virtualCameras[activeCamera].Intrinsics.IsOrtho())
+                        virtualCameras[activeCamera].Intrinsics.GetFrustum(sx, dx, bt, tp, n);
+                    else
+                        n = 1.0;
+
                     GlShot<vcg::Shotf>::SetView(virtualCameras[activeCamera], n, 3000);
                     activeCamera_mutex.unlock();
+                    if (distancemapON) {
+                         drawSubset();
+                    }
+                    else
+                    {
+                        drawScene();
+                        if (::pick_point) {
+                            double  x3d, y3d, z3d;
+                            float z;
+                            GLdouble mm[16], pm[16];
+                            GLint view[4];
+                            glGetDoublev(GL_MODELVIEW_MATRIX, mm);
+                            glGetDoublev(GL_PROJECTION_MATRIX, pm);
+                            glGetIntegerv(GL_VIEWPORT, view);
 
-                    drawScene();
-                    if (::pick_point) {
-                        double  x3d, y3d, z3d;
-                        float z;
-                        GLdouble mm[16], pm[16];
-                        GLint view[4];
-                        glGetDoublev(GL_MODELVIEW_MATRIX, mm);
-                        glGetDoublev(GL_PROJECTION_MATRIX, pm);
-                        glGetIntegerv(GL_VIEWPORT, view);
+                            glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 
-                        glReadPixels(pick_x, pick_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+                            gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
 
-                        gluUnProject(pick_x, pick_y, z, mm, pm, view, &x3d, &y3d, &z3d);
+                            picked_point[0] = x3d;
+                            picked_point[1] = y3d;
+                            picked_point[2] = z3d;
+                            vcg::Point4f xyzGeo = toGeoFrame * vcg::Point4f(x3d, y3d, z3d, 1.0);
+                            picked_point[3] = xyzGeo[0];
+                            picked_point[4] = xyzGeo[1];
+                            picked_point[5] = xyzGeo[2];
 
-                        picked_point[0] = x3d;
-                        picked_point[1] = y3d;
-                        picked_point[2] = z3d;
-                        vcg::Point4f xyzGeo = toGeoFrame * vcg::Point4f(x3d, y3d, z3d, 1.0);
-                        picked_point[3] = xyzGeo[0];
-                        picked_point[4] = xyzGeo[1];
-                        picked_point[5] = xyzGeo[2];
-
-                        {
-                            std::lock_guard lk(m);
-                            picked = true;
-                            ::pick_point = false;
-                            condv.notify_one();
+                            {
+                                std::lock_guard lk(m);
+                                picked = true;
+                                ::pick_point = false;
+                                condv.notify_one();
+                            }
                         }
                     }
-
                     GlShot<vcg::Shotf>::UnsetView(); ;
 
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);

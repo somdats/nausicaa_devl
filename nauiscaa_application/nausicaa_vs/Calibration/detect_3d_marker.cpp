@@ -6,7 +6,7 @@
 #include <vcg/space/intersection3.h> 
 #include <wrap/io_trimesh/export.h>
 
-#define PRINTOUT_DEBUG
+// #define PRINTOUT_DEBUG
 float EDGE_QUAD = 0.99;
 
 void _save_points(std::vector<vcg::Point3f> ps,const char * filename) {

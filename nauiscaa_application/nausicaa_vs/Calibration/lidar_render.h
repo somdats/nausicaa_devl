@@ -7,6 +7,7 @@
 #include "common.h"
 
 #define NL 16
+
 struct LidarRender {
 
     Lidar  lidar;
@@ -22,13 +23,24 @@ struct LidarRender {
     std::vector < float > samples;
     std::vector < float > distances;
     GLuint buffers[3];
+    GLuint sub_buffer;
+
     vcg::Matrix44f  transfLidar;
 
     std::vector<GLuint> iTriangles;
 
+    int subset_size;
     int n_strips;
     int n_verts;
     float deltaA;
+
+    void fillSubset(std::vector<vcg::Point3f> & points) {
+        glBindBuffer(GL_ARRAY_BUFFER, sub_buffer);
+        glBufferData(GL_ARRAY_BUFFER, points.size() * 3 * sizeof(float), &(*points.begin()), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        subset_size = points.size();
+    }
+
 
     void fillGrid() {
         memset(&samples[0], 0, sizeof(float) * 3 * n_verts);
@@ -56,7 +68,7 @@ struct LidarRender {
                 assert(idStrip < n_strips);
                 assert((idStrip * NL + j) * 3 + 2 < samples.size());
             }
-
+        //if(0)
         for(int  i = 0; i < distances.size(); ++i)
             if (distances[i] < 0.1) {
                 // no value, check in the recent history
@@ -137,6 +149,11 @@ struct LidarRender {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, iTriangles.size() * sizeof(int), &*iTriangles.begin(), GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+        // init for the selection
+        glCreateBuffers(1, &sub_buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, sub_buffer);
+        glBufferData(GL_ARRAY_BUFFER, n_verts * 3 * sizeof(float), &(*samples.begin()), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
 };

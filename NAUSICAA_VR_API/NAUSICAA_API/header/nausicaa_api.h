@@ -176,6 +176,12 @@ extern "C" {
 
 		void NAUSICAA_VR_API renderFromCamera(VirtualCameraID id);
 
+		//! set a virtual camera as the one to use for rendering
+		/*!
+			 \param show or not the distance map
+		*/
+		void NAUSICAA_VR_API renderDistanceMap(bool yes_no);
+
 		//! Rendering quality [NOT YET IMPLEMENTED]
 		/*!  Lowest qualiy corresponds to an output-sensitive rendering
 		 *   which guarantees a constant frame rate of 25-30 frames per sencond.
@@ -316,6 +322,9 @@ extern "C" {
 	{
 
 		/// specify the intrinsics parameters of the virtual camera
+		void NAUSICAA_VR_API setOrtho(VirtualCameraID cId, float left, float right, float bottom, float up,int viewportX, int viewportY);
+
+		/// specify the intrinsics parameters of the virtual camera
 		void NAUSICAA_VR_API setPerspective(VirtualCameraID cId, float AngleDeg, float AspectRatio, float Focal, int viewportX, int viewportY);
 
 		/// update (change) viewport
@@ -336,8 +345,11 @@ extern "C" {
 		/// update (change) camera position
 		void NAUSICAA_VR_API setPosition(VirtualCameraID cId, float eyeX, float eyeY, float eyeZ);
 
+		/// update (change) view direction (up vector is assumed 0,1,0)
+		void NAUSICAA_VR_API setViewDirection(VirtualCameraID cId, float dirX, float dirY, float dirZ);
+
 		/// update (change) view direction
-		void NAUSICAA_VR_API setViewDirection(VirtualCameraID cId, float eyeX, float eyeY, float eyeZ);
+		void NAUSICAA_VR_API setViewDirectionUp(VirtualCameraID cId, float dirX, float dirY, float dirZ, float upX, float upY, float upZ);
 
 		/// move camera along the specified axis (0:x, 1:y, 2:z) by the specified amount (in meters)
 		void NAUSICAA_VR_API move(VirtualCameraID cId, changeDir xyz, float amount);
