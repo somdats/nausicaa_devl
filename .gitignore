@@ -81,14 +81,8 @@ NAUSICAA_VR_API/NAUSICAA_API/header/docs/VRSubsystem.html
 *.tlog
 *.tlog
 nauiscaa_application/nausicaa_vs/Calibration/camera_reader - Copy.cpp
-nauiscaa_application/nausicaa_vs/x64/Debug/nausicaa_vs.ilk
-nauiscaa_application/nausicaa_vs/main_stitch_example.cpp
-nauiscaa_application/nausicaa_vs/nausicaa_vs.vcxproj
-nauiscaa_application/nausicaa_vs/nausicaa_vs.vcxproj
-nauiscaa_application/nausicaa_vs/nausicaa_vs.vcxproj.filters
-nauiscaa_application/nausicaa_vs/result.jpg
-nauiscaa_application/nausicaa_vs/x64/Debug/correspondences_detector.obj.enc
-nauiscaa_application/nausicaa_vs/x64/Debug/nausicaa_vs.exe.recipe
-nauiscaa_application/nausicaa_vs/x64/Debug/correspondences_detector.obj.enc
+nauiscaa_application/nausicaa_vs/x64/
 nauiscaa_application/.vs/nausicaa_vs/v17/
 nauiscaa_application/nausicaa_vs/x64/
+nauiscaa_application/nausicaa_vs/result.jpg
+nauiscaa_application/nausicaa_vs/main_stitch_example.cpp
