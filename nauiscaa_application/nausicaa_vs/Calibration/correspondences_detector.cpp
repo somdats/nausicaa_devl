@@ -124,7 +124,7 @@ bool CorrespondencesDetector::lockAll() {
 	// locklidar
 	lidars[0].lidar.latest_frame_mutex.lock();
 	lidars[1].lidar.latest_frame_mutex.lock();
-
+	
 	for (unsigned int i = 0; i < cameras.size(); ++i)
 		cameras[i].latest_frame_mutex.lock();
 
@@ -142,16 +142,23 @@ bool CorrespondencesDetector::unlockAll(){
 }
 
 void CorrespondencesDetector::detect(){ 
+
+	int delta_th = 33;
+
 	lockAll();
 
-	 
+	int delta = max(lidars[0].epochtime, lidars[1].epochtime) - min(lidars[0].epochtime, lidars[1].epochtime);
+
 	bool detected3D[2] = { false,false };
  	for (unsigned int i = 0; i < 2; ++i)
  		detected3D[i] = detect3D(i, currentP3D[i]);
 
 	if (detected3D[0] && detected3D[1]) {
-		correspondences3D3D.push_back(Correspondence3D3D(std::pair(currentP3D[0], currentP3D[1])));
-		correspondences3D3D_size = correspondences3D3D.size();
+		if (delta < delta_th) {
+			correspondences3D3D.push_back(Correspondence3D3D(std::pair(currentP3D[0], currentP3D[1])));
+			correspondences3D3D_size = correspondences3D3D.size();
+		}
+		std::cout << "3d delta "<< delta << std::endl;
 	}
 
 	if (detected3D[0] || detected3D[1])
@@ -163,11 +170,14 @@ void CorrespondencesDetector::detect(){
 			for (unsigned int i = 0; i < nCams; ++i)
 				if (cameras[i].reading)
 					if (detect2D(i, p2D[i]))
-						for (int iL = 0; iL < 2; ++iL)
-							if (detected3D[iL]) {
+						for (int iL = 0; iL < 2; ++iL) {
+							delta = max(cameras[i].epochtime, lidars[iL].epochtime) - min(cameras[i].epochtime, lidars[iL].epochtime);
+							if (detected3D[iL] && delta < delta_th*2) {
+								std::cout << "image  delta " << delta << std::endl;
 								correspondences3D2D[i].push_back(Correspondence3D2D(std::pair(currentP3D[iL], p2D[i]), iL));
 								correspondences3D2D_size[i] = correspondences3D2D[i].size();
 							}
+						}
 	}
 
 

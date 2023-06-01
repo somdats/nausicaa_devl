@@ -2169,6 +2169,7 @@ void TW_CALL startInput(void*) {
     if (SCENE_REPLAY)
         time_startstop(0);
     currentCamera = 0;
+    TwRemoveVar(calibrationBar, "loadLidarAndCameras");
 }
 
 void HistogramEqualize(void*)
