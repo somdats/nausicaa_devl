@@ -1,10 +1,10 @@
-NUMCAM=2
-Dump_path=D:\Nausicaa_Data\Data_18102022_1
+NUMCAM=4
+Dump_path=..\..\..\..\data\nausicaa\Data_03032023
 cam_ini_file=..\calib_results_02092022.txt
 cam_converter =..\calib_results_02092022_mei.txt
 AUTOLAUNCH=0
-SCENE_REPLAY=0
+SCENE_REPLAY=2
 SAVE_PC=0
 VC_STATE=0
 SAVE_IMG=0
-histoEq=1
+histoEq=0

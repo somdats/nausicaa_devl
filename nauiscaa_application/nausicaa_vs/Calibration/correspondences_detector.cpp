@@ -270,7 +270,8 @@ void CorrespondencesDetector::load_correspondences(const char* filename) {
 		fread(&n, 4, 1, fo);
 		correspondences3D2D[i].resize(n);
 		correspondences3D2D_size[i] = correspondences3D2D[i].size();
-		fread(&*correspondences3D2D[i].begin(), sizeof(Correspondence3D2D), correspondences3D2D[i].size(), fo);
+		if(!correspondences3D2D[i].empty())
+			fread(&*correspondences3D2D[i].begin(), sizeof(Correspondence3D2D), correspondences3D2D[i].size(), fo);
 	}
 	fclose(fo);
 }

@@ -93,7 +93,7 @@ bool h_5000 = false;
 bool h_5001 = false;
 bool h_5002 = false;
 bool h_5003 = false;
-
+bool optimize_extrinsics = false;
 
 int CameraCount;
 int NUMCAM;
@@ -160,6 +160,7 @@ int shownLidar = 0;
 int currentLidar = 0;
 int currentPlane = 0;
 int currentCamera = 0;
+int referenceCamera = 0;
 int ax = 0;
 bool showPlanes = false;
 bool showCameras = false;
@@ -238,6 +239,8 @@ int markers_pos_x = 0, markers_pos_y = 0;
 Shader triangle_shader, shadow_shader, texture_shader, flat_shader,distancemap_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
+
+
 TwBar* bar, // Pointer to the tweak bar
 * frameBar,
 * pointsBar,
@@ -630,6 +633,8 @@ void drawSubset() {
     glDisableVertexAttribArray(0);
     glUseProgram(0);
 }
+
+
 void drawScene() {
     vcg::Matrix44f toCamera[6];
     GLfloat mm[16], pm[16], mm1[16];
@@ -910,6 +915,7 @@ void drawScene() {
 }
 void TW_CALL detectMarker(void*);
 void TW_CALL time_startstop(void*);
+void compute_error();
 
 void Display() {
     GLERR(__LINE__, __FILE__);
@@ -1183,6 +1189,10 @@ void Display() {
                     drawScene();
                     GlShot<vcg::Shotf>::UnsetView();
                     glViewport(0, 0, width, height);
+
+                    if (optimize_extrinsics) {
+                        ::compute_error();
+                    }
                 }
                 if (streamON && virtualCamerasExist)
                 {
@@ -2207,6 +2217,83 @@ void HistogramEqualize(void*)
     }
 }
 
+/* Camera extrinsics optimization section    */
+#include <nlopt.h>
+
+FBO opt_FBO;
+Shader fsq_shader,error_shader;
+
+
+void init_extrinsic_optimization() {
+    opt_FBO.Create(1948, 1096);
+
+    if (fsq_shader.SetFromFile("./Calibration/Shaders/fsq.vs",0, "./Calibration/Shaders/fsq.fs") < 0)
+    {
+        printf("shadow SHADER ERR");
+    }
+    fsq_shader.Validate();
+    GLERR(__LINE__, __FILE__);
+    fsq_shader.bind("uTexture");
+    assert(_CrtCheckMemory());
+    glUseProgram(fsq_shader.pr);
+    glUniform1i(fsq_shader["uTexture"], 16);
+    glUseProgram(0);
+
+    if (error_shader.SetFromFile("./Calibration/Shaders/fsq.vs", 0, "./Calibration/Shaders/compute_error.fs") < 0)
+    {
+        printf("shadow SHADER ERR");
+    }
+    error_shader.Validate();
+    GLERR(__LINE__, __FILE__);
+    error_shader.bind("uTextureRef");
+    error_shader.bind("uTextureCam");
+    assert(_CrtCheckMemory());
+    glUseProgram(error_shader.pr);
+    glUniform1i(error_shader["uTextureRef"], 17);
+    glUniform1i(error_shader["uTextureCam"], 18);
+    glUseProgram(0);
+
+}
+void compute_error(){ 
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0,0, opt_FBO.w, opt_FBO.h);
+    GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
+
+    drawScene();
+    GlShot<vcg::Shotf>::UnsetView();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // show rendering result
+ 
+     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+    glUseProgram(error_shader.pr);
+
+    glActiveTexture(GL_TEXTURE17);
+    glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+    glActiveTexture(GL_TEXTURE18);
+    glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
+
+    glBegin(GL_QUADS);
+    glVertex3f(-1, -1, 0.0);
+    glVertex3f(1.0, -1, 0.0);
+    glVertex3f(1.0, 1.0, 0.0);
+    glVertex3f(-1.0, 1.0, 0.0);
+    glEnd();
+
+    glUseProgram(0);
+
+
+
+}
+
+
+
+
+
+/* - - - - - - - - - - - - - - - - - - - - - */
 int main(int argc, char* argv[])
 {
     assert(_CrtCheckMemory());
@@ -2345,9 +2432,12 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "saveAln", ::saveAlignment, 0, " label='saveAlignemnt' group=`Register Lidars` help=` ` ");
     TwAddButton(bar, "loadAln", ::loadAlignment, 0, " label='loadAlignment' group=`Register Lidars` help=` ` ");
 
+    TwAddVarRW(bar, "_opt_test_", TW_TYPE_BOOL8, &optimize_extrinsics, " label='_opt_test_' group=`Align Cameras` help=`_opt_test_` ");
+
     TwAddVarRW(bar, "Debug Cor", TW_TYPE_BOOL8, &corrDet.debug_mode, " label='debug coors' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "align cameras", ::autoalignCameras, 0, " label='Align All Cameras' group=`Align Cameras` help=`Align` ");
     TwAddVarRW(bar, "Current Camera", TW_TYPE_UINT32, &currentCamera, std::string(" label='currrent Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" + std::to_string(NUMCAM)).c_str());
+    TwAddVarRW(bar, "Reference Camera", TW_TYPE_UINT32, &referenceCamera, std::string(" label='reference Camera' min=0 max=2 group=`Align Cameras` help = ` current camera` min=0 max =" + std::to_string(NUMCAM)).c_str());
     TwAddVarCB(bar, "Map Color", TW_TYPE_BOOL8, setMapColor, getMapColor, (void*)0, " label='map color' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "assign points", ::assignPointsToCamera, 0, " label='assign 3D points' group=`Align Cameras` help=`copy points` ");
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
@@ -2476,5 +2566,7 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "glutMainLoop " << std::endl;
+
+    init_extrinsic_optimization();
     glutMainLoop();
 }

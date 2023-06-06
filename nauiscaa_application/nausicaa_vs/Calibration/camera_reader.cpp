@@ -1,5 +1,5 @@
 #include "camera_reader.h"
-
+#include <vcg/math/matrix44.h>
 
 #include <opencv2/calib3d/calib3d_c.h>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -810,3 +810,14 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
     return shot;
 
 }
+
+vcg::Shotf Camera::update(double alpha, double beta, double gamma, double x, double y, double z) {
+    vcg::Matrix44f R;
+    R.FromEulerAngles(alpha, beta, gamma);
+    vcg::Point3f p = calibrated.Extrinsics.Rot().GetColumn3(3);
+    R = R * calibrated.Extrinsics.Rot();
+    R.SetColumn(3, p + vcg::Point3f(x, y, z));
+    calibrated.Extrinsics.SetRot(R);
+    return calibrated;
+}
+

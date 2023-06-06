@@ -26,17 +26,17 @@ void main() {
     vec3 n01 = normalize(gs_in[1].pos_vs -gs_in[0].pos_vs);
     vec3 n02 = normalize(gs_in[2].pos_vs -gs_in[0].pos_vs);
     n = normalize(cross(n01,n02));
-
-    if(n.z < 0.8 || 
-    gs_in[0].pos_vs.z > -1.0 || 
-    gs_in[1].pos_vs.z > -1.0 || 
-    gs_in[2].pos_vs.z > -1.0  
+ 
+    if(n.y < 0.8 || 
+    gs_in[0].pos_vs.y > 0.0 || 
+    gs_in[1].pos_vs.y > 0.0 || 
+    gs_in[2].pos_vs.y > 0.0  
     ){ 
         if( abs(gs_in[0].d - gs_in[1].d) > 0.5 ) return;
         if( abs(gs_in[1].d - gs_in[2].d) > 0.5 ) return;
         if( abs(gs_in[0].d - gs_in[2].d) > 0.5 ) return;
         }
-
+ 
     for(int i = 0;i < 6; ++i)
         textureCoordFS[i] = gs_in[0].textureCoord[i];
     gl_Position = gl_in[0].gl_Position;

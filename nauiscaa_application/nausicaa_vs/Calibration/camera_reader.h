@@ -228,7 +228,7 @@ struct Camera {
 
     cv::Mat distCoeffs;
 
-    vcg::Shotf calibrated;
+    vcg::Shotf calibrated, calibrated_saved;
 
     std::mutex latest_frame_mutex;
 
@@ -248,6 +248,9 @@ struct Camera {
     bool histoEq = false;
 
     std::vector<std::pair<unsigned long long, std::string>> timed_images;
+
+    // post processing alignment
+    vcg::Shotf update(double alpha, double beta, double gamma, double x, double y, double z);
 };
 
 #endif // CAMERA_READER_H

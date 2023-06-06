@@ -25,5 +25,5 @@ void main()
     for(int i= 0;i < 6; ++i)
         vs_out.textureCoord[i]  =  toCam[i] * lidarToWorld * vec4(aPos, 1.0);
     vs_out.d = d;
-    vs_out.pos_vs = (vec4(aPos, 1.0)).xyz;
+    vs_out.pos_vs = ( lidarToWorld * vec4(aPos, 1.0)).xyz;
 }
