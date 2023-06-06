@@ -68,7 +68,7 @@ struct LidarRender {
                 assert(idStrip < n_strips);
                 assert((idStrip * NL + j) * 3 + 2 < samples.size());
             }
-        //if(0)
+        if(0)
         for(int  i = 0; i < distances.size(); ++i)
             if (distances[i] < 0.1) {
                 // no value, check in the recent history

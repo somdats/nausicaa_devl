@@ -2222,7 +2222,7 @@ void HistogramEqualize(void*)
 
 FBO opt_FBO;
 Shader fsq_shader,error_shader;
-
+GLuint id_query;
 
 void init_extrinsic_optimization() {
     opt_FBO.Create(1948, 1096);
@@ -2253,6 +2253,8 @@ void init_extrinsic_optimization() {
     glUniform1i(error_shader["uTextureCam"], 18);
     glUseProgram(0);
 
+    glGenQueries(1, &id_query);
+
 }
 void compute_error(){ 
     
@@ -2267,6 +2269,7 @@ void compute_error(){
 
     // show rendering result
  
+    glClearColor(1, 1, 1, 1);
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
     glUseProgram(error_shader.pr);
@@ -2276,15 +2279,23 @@ void compute_error(){
     glActiveTexture(GL_TEXTURE18);
     glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
 
+    glBeginQuery(GL_SAMPLES_PASSED, id_query);
     glBegin(GL_QUADS);
     glVertex3f(-1, -1, 0.0);
     glVertex3f(1.0, -1, 0.0);
     glVertex3f(1.0, 1.0, 0.0);
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
+    glEndQuery(GL_SAMPLES_PASSED);
+
+    GLuint n;
+    glGetQueryObjectuiv(id_query, GL_QUERY_RESULT, &n);
+
+    std::cout << "samples " << n << std::endl;
 
     glUseProgram(0);
 
+    glClearColor(0,0,0,1);
 
 
 }
