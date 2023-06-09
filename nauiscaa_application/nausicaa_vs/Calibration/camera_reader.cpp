@@ -814,7 +814,7 @@ vcg::Shotf Camera::SolvePnP_new(std::vector <Correspondence3D2D> corrs) {
 vcg::Shotf Camera::update(double alpha, double beta, double gamma, double x, double y, double z) {
     vcg::Matrix44f R;
     R.FromEulerAngles(alpha, beta, gamma);
-    vcg::Point3f p = calibrated.Extrinsics.Rot().GetColumn3(3);
+    vcg::Point3f p = calibrated_saved.Extrinsics.Rot().GetColumn3(3);
     R = R * calibrated.Extrinsics.Rot();
     R.SetColumn(3, p + vcg::Point3f(x, y, z));
     calibrated.Extrinsics.SetRot(R);

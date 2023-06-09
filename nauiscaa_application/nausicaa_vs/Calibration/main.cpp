@@ -93,8 +93,14 @@ bool h_5000 = false;
 bool h_5001 = false;
 bool h_5002 = false;
 bool h_5003 = false;
+
+std::mutex error_comp_mutex;;
+std::condition_variable erro_comp_cv;
+bool error_computed = false;
 bool optimize_extrinsics = false;
 
+
+double curr_err;
 int CameraCount;
 int NUMCAM;
 int autoLaunch = 0;
@@ -915,7 +921,7 @@ void drawScene() {
 }
 void TW_CALL detectMarker(void*);
 void TW_CALL time_startstop(void*);
-void compute_error();
+int compute_error();
 
 void Display() {
     GLERR(__LINE__, __FILE__);
@@ -1190,8 +1196,15 @@ void Display() {
                     GlShot<vcg::Shotf>::UnsetView();
                     glViewport(0, 0, width, height);
 
+                    std::lock_guard lk(error_comp_mutex);
+
                     if (optimize_extrinsics) {
-                        ::compute_error();
+                        curr_err = ::compute_error();
+                        optimize_extrinsics = false;
+                        error_computed = true;
+                        std::cout << "display\n";
+                        condv.notify_one();
+                        error_comp_mutex.unlock();
                     }
                 }
                 if (streamON && virtualCamerasExist)
@@ -1428,6 +1441,7 @@ void TW_CALL alignCamera(void*) {
 void TW_CALL autoalignCameras(void*) {
     corrDet.alignCamera(currentCamera);
 }
+
 
 void TW_CALL autoalignCamera(void*ic) {
     corrDet.alignCamera((int)ic);
@@ -1887,7 +1901,7 @@ void TW_CALL CopyCDStringToClient(char** destPtr, const char* src)
         strncpy(*destPtr, src, srcLen);
     (*destPtr)[srcLen] = '\0'; // null-terminated string
 }
-std::thread  tComm, tStream, tacc, taccSt;
+std::thread  tComm, tStream, tacc, taccSt,tOpt;
 std::thread tLidars[2], tCameras[6];
 
 void start_lidar(int iL) {
@@ -2042,28 +2056,19 @@ void TW_CALL time_startstop(void*) {
 
 void TW_CALL runTest(void*) {
     ::initLidars(0);
-    if (SCENE_REPLAY)
-        time_startstop(0);
-
-    //::loadAxis(0);
-    //::computeTranformation(0);
-    loadAlignment(0);
 
     ::initCameras(0);
+    time_startstop(0);
 
-    
-    for (int i = 0; i < NUMCAM; ++i) {
-        
-        // load the extrinsics parameters of the camera (NEW approach, loads the aln.bin file if present)
-        ::loadCalibratedCamera((void*)i);
+    loadCalibration(0);
 
-        // load the correspondence points and align (OLD approach, load the correspondences.txt if present and then solvepnp)
-        ::loadImPoints(i);
-        ::alignCamera(i);
-    }
 
-    currentCamera = 0;
+    currentCamera = 2;
+    cameras[0].used = cameras[1].used = cameras[2].used = false;
+    cameras[3].used = true;
+    ::showfromcamera = true;
     ::enable_proj = true;
+     
 }
 // to be used 
 void TW_CALL startVideoStreaming(void*) {
@@ -2218,7 +2223,7 @@ void HistogramEqualize(void*)
 }
 
 /* Camera extrinsics optimization section    */
-#include <nlopt.h>
+#include <nlopt.hpp>
 
 FBO opt_FBO;
 Shader fsq_shader,error_shader;
@@ -2256,7 +2261,8 @@ void init_extrinsic_optimization() {
     glGenQueries(1, &id_query);
 
 }
-void compute_error(){ 
+
+int compute_error(){ 
     
     glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2297,11 +2303,50 @@ void compute_error(){
 
     glClearColor(0,0,0,1);
 
+    return n;
 
 }
 
+// --- NLOPT setup ----------
+double error_func(const std::vector<double>& x, std::vector<double>& grad, void* my_func_data)
+{
+    cameras[currentCamera].update(x[0], x[1], x[2], x[3], x[4], x[5]);
+    {
+        std::lock_guard lk(error_comp_mutex);
+        optimize_extrinsics = true;
+    }
 
+    erro_comp_cv.notify_one();
 
+    {
+        std::unique_lock lk(error_comp_mutex);
+        erro_comp_cv.wait(lk, [] {return error_computed;});
+        error_computed = false;
+        std::cout << "error_func\n";
+        return 1000000-curr_err;
+    }
+}
+
+void optimize_nlopt() {
+    cameras[currentCamera].calibrated_saved = cameras[currentCamera].calibrated;
+
+    nlopt::opt opt(nlopt::LD_MMA, 6);
+    std::vector<double> lb(6);
+    for(int i = 0; i < 6; ++i) lb[i] = -HUGE_VAL; 
+    opt.set_lower_bounds(lb);
+    opt.set_min_objective(error_func, NULL);
+   // my_constraint_data data[2] = { {2,0}, {-1,1} };
+   // opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
+   // opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
+    opt.set_xtol_rel(1e-4);
+    std::vector<double> x(6);
+    x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = 0.0;
+    double minf;
+    nlopt::result result = opt.optimize(x, minf);
+}
+
+void TW_CALL optimize(void*) {
+    tOpt = std::thread(&optimize_nlopt);}
 
 
 /* - - - - - - - - - - - - - - - - - - - - - */
@@ -2444,6 +2489,7 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "loadAln", ::loadAlignment, 0, " label='loadAlignment' group=`Register Lidars` help=` ` ");
 
     TwAddVarRW(bar, "_opt_test_", TW_TYPE_BOOL8, &optimize_extrinsics, " label='_opt_test_' group=`Align Cameras` help=`_opt_test_` ");
+    TwAddButton(bar, "optimize", ::optimize, 0, " label='optimize' group=`Align Cameras` help=`Align` ");
 
     TwAddVarRW(bar, "Debug Cor", TW_TYPE_BOOL8, &corrDet.debug_mode, " label='debug coors' group=`Align Cameras` help=`map color` ");
     TwAddButton(bar, "align cameras", ::autoalignCameras, 0, " label='Align All Cameras' group=`Align Cameras` help=`Align` ");
