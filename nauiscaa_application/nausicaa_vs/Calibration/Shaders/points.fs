@@ -36,11 +36,18 @@ void main()
                   }
         }
 
-     for(int ic = 0; ic < 4; ++ic)
+ 
+     for(int ic = 0; ic < 4; ++ic){ 
          weight[ic] = weight[ic] / total_weigth;
+     }
 
     // opengl matrices
     FragColor = vec4(0.0,0.0,0.0,1.0);
     for(int ic = 0; ic < 4; ++ic)
         FragColor += weight[ic]*texture2D(camTex[ic],tCoord[ic].xy,1.0);
+
+    // patch for the added minimization
+    // If total_weight is 0 return black
+    if(total_weigth==0)
+         FragColor = vec4(0,0,0,1);
  }

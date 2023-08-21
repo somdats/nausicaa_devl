@@ -19,7 +19,9 @@ float error_naive(vec3 c0,vec3 c1){
      return 1.0;
     return length(c0-c1);
 }
-
+bool isnanvec3(vec3 v){
+    return (isnan(v.x) || isnan(v.y) || isnan(v.z));
+}
 void main(void) 
 { 
     color = (texture(uTextureRef,vTexCoord)+texture(uTextureCam,vec2(vTexCoord.x,1.0-vTexCoord.y)))*0.5;
@@ -32,5 +34,10 @@ void main(void)
 
     vec3 c1 = texture(uTextureCam,vec2(vTexCoord.x,1.0-vTexCoord.y)).xyz;
     color = vec4((error_naive(c0,c1)),0.0,0.0,1.0);
+
+
+
+     if(isnanvec3(c0))
+        color = vec4(0,0,1,1);
 
 } 

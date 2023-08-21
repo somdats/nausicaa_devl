@@ -95,7 +95,6 @@ bool h_5002 = false;
 bool h_5003 = false;
 
 std::mutex error_comp_mutex;;
-std::condition_variable erro_comp_cv;
 bool error_computed = false;
 bool optimize_extrinsics = false;
 
@@ -245,6 +244,7 @@ int markers_pos_x = 0, markers_pos_y = 0;
 Shader triangle_shader, shadow_shader, texture_shader, flat_shader,distancemap_shader;
 std::vector<FBO> shadowFBO;
 FBO cameraFBO;
+FBO errorFBO;
 
 
 TwBar* bar, // Pointer to the tweak bar
@@ -922,6 +922,7 @@ void drawScene() {
 void TW_CALL detectMarker(void*);
 void TW_CALL time_startstop(void*);
 int compute_error();
+float  compute_error_sum();
 
 void Display() {
     GLERR(__LINE__, __FILE__);
@@ -1196,16 +1197,15 @@ void Display() {
                     GlShot<vcg::Shotf>::UnsetView();
                     glViewport(0, 0, width, height);
 
-                    std::lock_guard lk(error_comp_mutex);
+                    error_comp_mutex.lock();
+                    if (!error_computed) {
+    //                    curr_err = ::compute_error();
+                         curr_err = ::compute_error_sum();
 
-                    if (optimize_extrinsics) {
-                        curr_err = ::compute_error();
-                        optimize_extrinsics = false;
                         error_computed = true;
-                        std::cout << "display\n";
-                        condv.notify_one();
-                        error_comp_mutex.unlock();
+                        std::cout << "error computed\n";                         
                     }
+                    error_comp_mutex.unlock();
                 }
                 if (streamON && virtualCamerasExist)
                 {
@@ -2226,7 +2226,7 @@ void HistogramEqualize(void*)
 #include <nlopt.hpp>
 
 FBO opt_FBO;
-Shader fsq_shader,error_shader;
+Shader fsq_shader,error_shader,error_sum_shader;
 GLuint id_query;
 
 void init_extrinsic_optimization() {
@@ -2246,7 +2246,7 @@ void init_extrinsic_optimization() {
 
     if (error_shader.SetFromFile("./Calibration/Shaders/fsq.vs", 0, "./Calibration/Shaders/compute_error.fs") < 0)
     {
-        printf("shadow SHADER ERR");
+        printf("error SHADER ERR");
     }
     error_shader.Validate();
     GLERR(__LINE__, __FILE__);
@@ -2260,11 +2260,33 @@ void init_extrinsic_optimization() {
 
     glGenQueries(1, &id_query);
 
+
+    if (error_sum_shader.SetFromFile("./Calibration/Shaders/fsq.vs", 0, "./Calibration/Shaders/compute_error_sum.fs") < 0)
+    {
+        printf("erro sum  SHADER ERR");
+    }
+    error_sum_shader.Validate();
+    GLERR(__LINE__, __FILE__);
+    error_sum_shader.bind("uTextureRef");
+    error_sum_shader.bind("uTextureCam");
+    error_sum_shader.bind("uSize_x");
+    error_sum_shader.bind("uSize_y");
+    assert(_CrtCheckMemory());
+    glUseProgram(error_sum_shader.pr);
+    glUniform1i(error_sum_shader["uTextureRef"], 17);
+    glUniform1i(error_sum_shader["uTextureCam"], 18);
+    glUniform1i(error_sum_shader["uSize_x"], 1948);
+    glUniform1i(error_sum_shader["uSize_y"], 1096);
+    glUseProgram(0);
+
+    errorFBO.Create(1, 1);
+
 }
 
 int compute_error(){ 
     
     glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0,0, opt_FBO.w, opt_FBO.h);
     GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
@@ -2307,37 +2329,123 @@ int compute_error(){
 
 }
 
+float compute_error_sum() {
+
+    GLERR(__LINE__, __FILE__);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, opt_FBO.w, opt_FBO.h);
+    GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
+
+    drawScene();
+    GlShot<vcg::Shotf>::UnsetView();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // show rendering result
+  
+    static int ii = 0;
+    cv::Mat ima(1096, 1948, CV_8UC3);
+    if (ii == 1 ) {
+        glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, ima.ptr());
+        cv::imwrite("c1.png", ima);
+    }
+    
+    glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+   
+    glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
+    cv::flip(ima, ima, 0);
+
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, errorFBO.id_fbo);
+    glClearColor(0.2, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, 1,1);
+    glUseProgram(error_sum_shader.pr);
+
+    glActiveTexture(GL_TEXTURE17);
+    glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+    glActiveTexture(GL_TEXTURE18);
+    glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
+     
+    glBegin(GL_QUADS);
+    glVertex3f(-10, -10, 0.0);
+    glVertex3f(10.0, -10, 0.0);
+    glVertex3f(10.0, 10.0, 0.0);
+    glVertex3f(-10.0, 10.0, 0.0);
+    glEnd();
+    GLERR(__LINE__, __FILE__);
+    glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+    GLfloat err[3] = { 8.0,8.0,8.0 };
+    //glReadPixels(0, 0, 1, 1, GL_RGB, GL_FLOAT, &err[0]);
+    GLERR(__LINE__, __FILE__);
+
+//     glGetTextureImage(errorFBO.id_tex, 0, GL_RGB, GL_FLOAT, 12, err);
+
+    glBindTexture(GL_TEXTURE_2D, errorFBO.id_tex);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT,  err );
+
+    GLERR(__LINE__, __FILE__);
+
+    std::cout << "error " << err[0] << std::endl;
+
+    glUseProgram(0);
+
+    glClearColor(0, 0, 0, 1);
+
+    GLERR(__LINE__, __FILE__);
+
+    cv::imwrite(std::string("c0_") + std::to_string(ii) + std::string("_") + std::to_string(err[0]) +std::string(".png"), ima);
+    ii++;
+
+
+
+    return (double) err[0];
+
+}
 // --- NLOPT setup ----------
 double error_func(const std::vector<double>& x, std::vector<double>& grad, void* my_func_data)
 {
+    float res;
     cameras[currentCamera].update(x[0], x[1], x[2], x[3], x[4], x[5]);
-    {
-        std::lock_guard lk(error_comp_mutex);
-        optimize_extrinsics = true;
-    }
-
-    erro_comp_cv.notify_one();
-
-    {
-        std::unique_lock lk(error_comp_mutex);
-        erro_comp_cv.wait(lk, [] {return error_computed;});
+    error_comp_mutex.lock();
+    do {
+        error_comp_mutex.unlock();       
+        error_comp_mutex.lock();
+    } while (!error_computed);
+    
+    if (error_computed) {
+        std::cout << "request err\n";
         error_computed = false;
-        std::cout << "error_func\n";
-        return 1000000-curr_err;
+        res = curr_err;
+        std::cout << x[0] <<" " << x[1] << " " << x[2] << " "<< x[3] << " "<<  x[4] << " " << x[5] << std::endl;
     }
+    error_comp_mutex.unlock();
+
+
+
+    return res;
+
 }
 
 void optimize_nlopt() {
     cameras[currentCamera].calibrated_saved = cameras[currentCamera].calibrated;
 
-    nlopt::opt opt(nlopt::LD_MMA, 6);
-    std::vector<double> lb(6);
-    for(int i = 0; i < 6; ++i) lb[i] = -HUGE_VAL; 
-    opt.set_lower_bounds(lb);
+    nlopt::opt opt(nlopt::LN_NEWUOA, 6);
+//    std::vector<double> lb(6);
+//    for (int i = 0; i < 6; ++i) lb[i] = -HUGE_VAL;
+//    opt.set_lower_bounds(lb);
     opt.set_min_objective(error_func, NULL);
-   // my_constraint_data data[2] = { {2,0}, {-1,1} };
-   // opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
-   // opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
+
+    std::vector<double> lb = {-15.0,-15.0,-15.0,-0.009,-0.009,-0.009};
+    std::vector<double>  ub = {15.0, 15.0, 15.0, 0.009, 0.009, 0.009};
+    opt.set_lower_bounds(lb);
+    opt.set_upper_bounds(ub);
+        
     opt.set_xtol_rel(1e-4);
     std::vector<double> x(6);
     x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = 0.0;
