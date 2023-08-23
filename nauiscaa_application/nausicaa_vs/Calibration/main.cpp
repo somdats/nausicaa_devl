@@ -2225,12 +2225,15 @@ void HistogramEqualize(void*)
 /* Camera extrinsics optimization section    */
 #include <nlopt.hpp>
 
-FBO opt_FBO;
-Shader fsq_shader,error_shader,error_sum_shader;
+FBO opt_FBO,mask_FBO;
+Shader fsq_shader,error_shader,error_sum_shader,mask_border_shader;
 GLuint id_query;
+GLuint edges_tex;
 
 void init_extrinsic_optimization() {
     opt_FBO.Create(1948, 1096);
+    mask_FBO.Create(1948, 1096);
+
 
     if (fsq_shader.SetFromFile("./Calibration/Shaders/fsq.vs",0, "./Calibration/Shaders/fsq.fs") < 0)
     {
@@ -2279,6 +2282,27 @@ void init_extrinsic_optimization() {
     glUniform1i(error_sum_shader["uSize_y"], 1096);
     glUseProgram(0);
 
+    if (mask_border_shader.SetFromFile("./Calibration/Shaders/fsq.vs", 0, "./Calibration/Shaders/mask_borders.fs") < 0)
+    {
+        printf("erro mask border  SHADER ERR");
+    }
+    mask_border_shader.Validate();
+    GLERR(__LINE__, __FILE__);
+    mask_border_shader.bind("uTexture");
+    assert(_CrtCheckMemory());
+    glUseProgram(mask_border_shader.pr);
+    glUniform1i(mask_border_shader["uTexture"], 19);
+    glUseProgram(0);
+
+    glGenTextures(1, &edges_tex);
+    glBindTexture(GL_TEXTURE_2D, edges_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1948, 1096, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    
     errorFBO.Create(1, 1);
 
 }
@@ -2328,7 +2352,72 @@ int compute_error(){
     return n;
 
 }
+using namespace cv;
 
+void mask_borders(int id_tex, FBO & res) {
+    glBindFramebuffer(GL_FRAMEBUFFER, res.id_fbo);
+    glClearColor(0,1,0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, res.w, res.h);
+    glUseProgram(mask_border_shader.pr);
+
+    glActiveTexture(GL_TEXTURE19);
+    glBindTexture(GL_TEXTURE_2D, id_tex);
+
+    glBegin(GL_QUADS);
+    glVertex3f(-10, -10, 0.0);
+    glVertex3f(10.0, -10, 0.0);
+    glVertex3f(10.0, 10.0, 0.0);
+    glVertex3f(-10.0, 10.0, 0.0);
+    glEnd();
+    GLERR(__LINE__, __FILE__);
+    glUseProgram(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+void edge_detect(Mat img, Mat &res) {
+       
+        // Display original image
+//        imshow("original Image", img);
+//        waitKey(0);
+
+        // Convert to graycsale
+        Mat img_gray;
+        cvtColor(img, img_gray, COLOR_BGR2GRAY);
+ //       imshow("gray", img_gray);
+        // Blur the image for better edge detection
+   //     resize(img_gray, img_gray, Size(img.cols/2.0, img.rows / 2.0), INTER_LINEAR);
+        Mat img_blur;
+       GaussianBlur(img_gray, img_blur, Size(3, 3), 0);
+ //        bilateralFilter(img_gray, img_blur, 3, 50, 50);
+        //// Sobel edge detection
+       // Mat sobelx, sobely, sobelxy;
+ //     Sobel(img_blur, sobelx, CV_64F, 1, 0, 3,1.0/16.0);
+ //     Sobel(img_blur, sobely, CV_64F, 0, 1, 3, 1.0 / 16.0);
+        Sobel(img_blur, res, CV_32F, 1, 1, 3, 1.0 / 16.0);
+
+         
+        // Display Sobel edge detection images
+  //      imshow("edges", res);
+  //      waitKey(0);
+  
+   //     imshow("Sobel XY using Sobel() function", sobelxy);
+   //     Mat ker = getStructuringElement(MORPH_RECT, Size(3, 3));
+  //      erode(sobelxy, sobelxy, ker);
+  //      dilate(sobelxy, sobelxy, ker);
+  /*      waitKey(0);
+        imshow("eroded", sobelxy);*/
+    //    waitKey(0);
+
+        // Canny edge detection
+        //Mat edges;
+        //Canny(img_blur, edges, 100, 200, 3, false);
+        // Display canny edge detected image
+        //imshow("Canny edge detection", edges);
+        //waitKey(0);
+
+ //       destroyAllWindows();
+        
+    }
 float compute_error_sum() {
 
     GLERR(__LINE__, __FILE__);
@@ -2343,21 +2432,52 @@ float compute_error_sum() {
     GlShot<vcg::Shotf>::UnsetView();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // show rendering result
   
+    // save for debug
     static int ii = 0;
-    cv::Mat ima(1096, 1948, CV_8UC3);
+    cv::Mat im_camera(1096, 1948, CV_8UC3);
     if (ii == 1 ) {
         glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, ima.ptr());
-        cv::imwrite("c1.png", ima);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, im_camera.ptr());
+        cv::imwrite("c1.png", im_camera);
     }
-    
+    cv::Mat im_rendering(1096, 1948, CV_8UC3);
     glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
    
-    glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-    cv::flip(ima, ima, 0);
+    glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE, im_rendering.ptr());
 
+    Mat im_edges;
+    edge_detect(im_rendering,im_edges);
+    cv::imshow("edges", im_edges);
+    cv::waitKey(0);
+    cv::destroyWindow("edges");
+
+    cv::imwrite("A_edges.png", im_edges);
+
+    glActiveTexture(GL_TEXTURE19);
+    glBindTexture(GL_TEXTURE_2D, edges_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, im_rendering.ptr());
+    mask_borders(edges_tex,mask_FBO);
+    // DBG show to whole texture    
+    cv::Mat im_mask_border(1096, 1948, CV_32FC1);
+    glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+    GLERR(__LINE__, __FILE__);
+     cv::imwrite("A_mask_border.png", im_mask_border);
+     cv::imwrite("A_rendering.png", im_rendering);
+     cv::imshow("mask", im_mask_border);
+     cv::waitKey(0);
+     cv::destroyWindow("mask");
+
+     int t1 = im_edges.type();
+     int t2 = im_mask_border.type();
+
+    Mat masked = im_edges.mul(im_mask_border);
+//    cv::flip(im_rendering, im_rendering, 0);
+    cv::imwrite("A_masked_edges.png", masked);
+    cv::imshow("masked edges", masked);
+    cv::waitKey(0);
+    cv::destroyWindow("masked edges");
 
 
     glBindFramebuffer(GL_FRAMEBUFFER, errorFBO.id_fbo);
@@ -2399,7 +2519,7 @@ float compute_error_sum() {
 
     GLERR(__LINE__, __FILE__);
 
-    cv::imwrite(std::string("c0_") + std::to_string(ii) + std::string("_") + std::to_string(err[0]) +std::string(".png"), ima);
+    cv::imwrite(std::string("c0_") + std::to_string(ii) + std::string("_") + std::to_string(err[0]) +std::string(".png"), im_rendering);
     ii++;
 
 
@@ -2441,8 +2561,8 @@ void optimize_nlopt() {
 //    opt.set_lower_bounds(lb);
     opt.set_min_objective(error_func, NULL);
 
-    std::vector<double> lb = {-15.0,-15.0,-15.0,-0.009,-0.009,-0.009};
-    std::vector<double>  ub = {15.0, 15.0, 15.0, 0.009, 0.009, 0.009};
+    std::vector<double> lb = {-15.0,-15.0,-15.0,-0.09,-0.09,-0.09};
+    std::vector<double>  ub = {15.0, 15.0, 15.0, 0.09, 0.09, 0.09};
     opt.set_lower_bounds(lb);
     opt.set_upper_bounds(ub);
         
