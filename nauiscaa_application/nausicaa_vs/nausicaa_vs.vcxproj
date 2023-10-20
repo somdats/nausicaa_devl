@@ -54,14 +54,21 @@
     <ClInclude Include="Calibration\fbo.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Calibration\Shaders\mask_borders.fs" />
     <ClInclude Include="Calibration\shader_basic.h" />
     <ClInclude Include="Calibration\velodyne_reader.h" />
     <ClInclude Include="OpenCV_GStreamer-master\Source\pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Calibration\Shaders\compute_error.fs" />
+    <None Include="Calibration\Shaders\compute_error_sum.fs" />
+    <None Include="Calibration\Shaders\distancemap.fs" />
+    <None Include="Calibration\Shaders\distancemap.vs" />
     <None Include="Calibration\Shaders\flat.fs" />
     <None Include="Calibration\Shaders\flat.gs" />
     <None Include="Calibration\Shaders\flat.vs" />
+    <None Include="Calibration\Shaders\fsq.fs" />
+    <None Include="Calibration\Shaders\fsq.vs" />
     <None Include="Calibration\Shaders\points.fs" />
     <None Include="Calibration\Shaders\points.gs" />
     <None Include="Calibration\Shaders\points.vs" />
@@ -169,15 +176,15 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\..\3rdParty\vcglib;..\..\..\3rdParty\VelodyneHDL;..\..\..\3rdParty\boost_1_78_0;..\..\..\3rdParty\opencv-4.6.0\include;..\..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\..\3rdParty\freeglut-3.2.1\include;%(AdditionalIncludeDirectories);..\..\..\3rdParty\glew-2.1.0\include;..\..\..\3rdParty\Anttweakbar\include;..\..\..\3rdParty\freeglut\include;..\..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\3rdParty\vcglib;..\..\..\3rdParty\VelodyneHDL;..\..\..\3rdParty\boost_1_78_0;..\..\..\3rdParty\opencv-4.6.0\include;..\..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\..\3rdParty\freeglut-3.2.1\include;%(AdditionalIncludeDirectories);..\..\..\3rdParty\glew-2.1.0\include;..\..\..\3rdParty\Anttweakbar\include;..\..\..\3rdParty\freeglut\include;..\..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers;..\..\..\3rdParty\nlopt</AdditionalIncludeDirectories>
       <BrowseInformation>true</BrowseInformation>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\3rdParty\AntTweakBar\lib;..\..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\..\3rdParty\freeglut\lib\Debug;..\..\..\3rdParty\opencv-4.6.0\x64\vc17\lib;..\..\..\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglutd.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460d.lib;opencv_calib3d460d.lib;opencv_ccalib460d.lib;opencv_core460d.lib;opencv_imgcodecs460d.lib;opencv_imgproc460d.lib;opencv_highgui460d.lib;opencv_ximgproc460d.lib;opencv_features2d460d.lib;opencv_videoio460d.lib;opencv_stitching460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\3rdParty\AntTweakBar\lib;..\..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\..\3rdParty\freeglut\lib\Debug;..\..\..\3rdParty\opencv-4.6.0\x64\vc17\lib;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\nlopt;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglutd.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460d.lib;opencv_calib3d460d.lib;opencv_ccalib460d.lib;opencv_core460d.lib;opencv_imgcodecs460d.lib;opencv_imgproc460d.lib;opencv_highgui460d.lib;opencv_ximgproc460d.lib;opencv_features2d460d.lib;opencv_videoio460d.lib;opencv_stitching460d.lib;nlopt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -191,7 +198,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING;NOMINMAX;_WINSOCK_DEPRECATED_NO_WARNINGS;OPENCV_DISABLE_EIGEN_TENSOR_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\..\3rdParty\vcglib;..\..\..\3rdParty\VelodyneHDL;..\..\..\3rdParty\boost_1_78_0;..\..\..\3rdParty\opencv-4.6.0\include;..\..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\..\3rdParty\freeglut-3.2.1\include;..\..\..\3rdParty\glew-2.1.0\include;..\..\..\3rdParty\Anttweakbar\include;..\..\..\3rdParty\freeglut\include;..\..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\3rdParty\vcglib;..\..\..\3rdParty\VelodyneHDL;..\..\..\3rdParty\boost_1_78_0;..\..\..\3rdParty\opencv-4.6.0\include;..\..\..\3rdParty\eigen-3.4.0\eigen-3.4.0;..\..\..\3rdParty\vcglib\wrap\newuoa\include;..\..\..\3rdParty\freeglut-3.2.1\include;..\..\..\3rdParty\glew-2.1.0\include;..\..\..\3rdParty\Anttweakbar\include;..\..\..\3rdParty\freeglut\include;..\..\..\3rdParty\vcglib\eigenlib;.\..\nausicaa_vs\headers;..\..\..\3rdParty\nlopt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -199,8 +206,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\3rdParty\AntTweakBar\lib;..\..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\..\3rdParty\freeglut\lib\Release;..\..\..\3rdParty\opencv-4.6.0\x64\vc17\lib;..\..\..\3rdParty\VelodyneHDL\build\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglut.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460.lib;opencv_calib3d460.lib;opencv_ccalib460.lib;opencv_core460.lib;opencv_imgcodecs460.lib;opencv_imgproc460.lib;opencv_highgui460.lib;opencv_ximgproc460.lib;opencv_features2d460.lib;opencv_videoio460.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\3rdParty\AntTweakBar\lib;..\..\..\3rdParty\glew-2.1.0\lib\Release\x64;..\..\..\3rdParty\freeglut\lib\Release;..\..\..\3rdParty\opencv-4.6.0\x64\vc17\lib;..\..\..\3rdParty\VelodyneHDL\build\Debug;..\..\..\3rdParty\nlopt;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>AntTweakBar64.lib;glew32.lib;freeglut.lib;opengl32.lib;glu32.lib;PacketBundleDecoder.lib;PacketBundler.lib;PacketDecoder.lib;PacketDriver.lib;opencv_aruco460.lib;opencv_calib3d460.lib;opencv_ccalib460.lib;opencv_core460.lib;opencv_imgcodecs460.lib;opencv_imgproc460.lib;opencv_highgui460.lib;opencv_ximgproc460.lib;opencv_features2d460.lib;opencv_videoio460.lib;nlopt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

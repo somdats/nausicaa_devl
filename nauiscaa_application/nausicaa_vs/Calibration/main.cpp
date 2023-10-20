@@ -178,6 +178,10 @@ bool splitScreen = false;
 float alphaFrame, betaFrame, gammaFrame;
 float xFrame, yFrame, zFrame;
 
+// values to define the boatFrame
+float alphaCam, betaCam, gammaCam;
+float xCam, yCam, zCam;
+
 // values to define the boatFrameWS (set by the client)
 
 float  LatDecimalDegrees = 0.f;
@@ -666,6 +670,21 @@ void drawScene() {
 
                 // toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 0.5, 50) * cameras[ic].opengl_extrinsics() * toSteadyFrame * transfLidar[il];
                 toCamera[ic] = cameras[ic].opencv2opengl_camera(cameras[ic].cameraMatrix, 1948, 1096, 1, 20) * cameras[ic].opengl_extrinsics();
+                
+                if (cameras[ic].used) {
+                    GlShot<vcg::Shotf>::SetView(cameras[ic].calibrated, 1, 20);
+                    vcg::Matrix44f _pm, _mm,toCam,extr;
+                    glGetFloatv(GL_MODELVIEW_MATRIX, &_mm[0][0]);
+                    _mm = _mm.transpose();
+                    glGetFloatv(GL_PROJECTION_MATRIX, &_pm[0][0]);
+                    _pm = _pm.transpose();
+                    toCam = _pm * _mm;
+                    extr = cameras[ic].opengl_extrinsics();
+                    GlShot<vcg::Shotf>::UnsetView();
+                    toCamera[ic] = toCam;
+                }
+
+                
                 //glUniformMatrix4fv(triangle_shader["toCam"], 1, GL_TRUE, &toCamera[0][0]);         
                 GLERR(__LINE__,__FILE__);
                 aligned[ic] = 1;
@@ -1088,14 +1107,16 @@ void Display() {
                 }
 
                 if (enable_proj) {
-                    for (int iCam = 0; iCam < NUMCAM; ++iCam)
-                        if (cameras[iCam].aligned && cameras[iCam].used)
+                    for (int iCam = 0; iCam < NUMCAM; ++iCam) {
+                       glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
+                       glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
+                       glClearColor(1.0, 1.0, 1.0, 1.0);
+                       glClearDepth(1.0);
+                       glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);  
+                       if (cameras[iCam].aligned && cameras[iCam].used)
                         {
                             // create shadow maps
-                            glViewport(0, 0, shadowFBO[iCam].w, shadowFBO[iCam].h); // shadowFBO will be one for each camera
-                            glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO[iCam].id_fbo);
-                            glClearColor(1.0, 1.0, 1.0, 1.0);
-                            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
                             glEnable(GL_DEPTH_TEST);
 
                             glUseProgram(shadow_shader.pr);
@@ -1103,12 +1124,12 @@ void Display() {
 
                             for (int il = 0; il < N_LIDARS; ++il) {
 
-                                toCurrCamera =  cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
+                                toCurrCamera = cameras[iCam].opengl_extrinsics() * toSteadyFrame * lidars[il].transfLidar;  // opengl matrices
 
                                 glUniformMatrix4fv(shadow_shader["toCamSpace"], 1, GL_TRUE, &toCurrCamera[0][0]);
                                 glUniformMatrix4fv(shadow_shader["toCam"], 1, GL_TRUE, &oglP[0][0]);
 
-                                GLERR(__LINE__,__FILE__);
+                                GLERR(__LINE__, __FILE__);
                                 glBindBuffer(GL_ARRAY_BUFFER, lidars[il].buffers[0]);
                                 glEnableVertexAttribArray(0);
                                 glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
@@ -1126,15 +1147,9 @@ void Display() {
 
                             glUseProgram(0);
 
-                            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                           //if (iCam == 0) {
-                           //   glBindTexture(GL_TEXTURE_2D, shadowFBO[iCam].id_tex);
-                           //   cv::Mat ima(1096,1948,CV_8UC3);
-                           //   glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE,ima.ptr());
-                           //   cv::flip(ima, ima, 0);
-                           //   cv::imwrite((std::string("depth_ogl")+std::to_string(iCam)+".png").c_str(), ima);
-                           //}
                         }
+                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    }
                 }
 
                 glViewport(vpl[iL][0], vpl[iL][1], vpl[iL][2], vpl[iL][3]);
@@ -1199,11 +1214,10 @@ void Display() {
 
                     error_comp_mutex.lock();
                     if (!error_computed) {
-    //                    curr_err = ::compute_error();
-                         curr_err = ::compute_error_sum();
+                        curr_err = ::compute_error();
+       //                  curr_err = ::compute_error_sum();
 
                         error_computed = true;
-                        std::cout << "error computed\n";                         
                     }
                     error_comp_mutex.unlock();
                 }
@@ -1688,7 +1702,11 @@ void TW_CALL loadCalibration(void*) {
         loadCalibratedCamera((void*)i);
 }
 
-void TW_CALL setFrame(void*) {
+void TW_CALL setCam(void*) {
+    cameras[currentCamera].update(alphaCam, betaCam, gammaCam, xCam, yCam, zCam);
+}
+
+    void TW_CALL setFrame(void*) {
     for (int i = 0; i < N_LIDARS; ++i)
         lidars[i].transfLidar = vcg::Inverse(boatFrame) * lidars[i].transfLidar;
 
@@ -2068,7 +2086,6 @@ void TW_CALL runTest(void*) {
     cameras[3].used = true;
     ::showfromcamera = true;
     ::enable_proj = true;
-     
 }
 // to be used 
 void TW_CALL startVideoStreaming(void*) {
@@ -2229,6 +2246,7 @@ FBO opt_FBO,mask_FBO;
 Shader fsq_shader,error_shader,error_sum_shader,mask_border_shader;
 GLuint id_query;
 GLuint edges_tex;
+GLuint edges_cam;
 
 void init_extrinsic_optimization() {
     opt_FBO.Create(1948, 1096);
@@ -2255,10 +2273,13 @@ void init_extrinsic_optimization() {
     GLERR(__LINE__, __FILE__);
     error_shader.bind("uTextureRef");
     error_shader.bind("uTextureCam");
+    error_shader.bind("uMaskRegion");
     assert(_CrtCheckMemory());
     glUseProgram(error_shader.pr);
     glUniform1i(error_shader["uTextureRef"], 17);
     glUniform1i(error_shader["uTextureCam"], 18);
+    glUniform1i(error_shader["uMaskRegion"], 19);
+
     glUseProgram(0);
 
     glGenQueries(1, &id_query);
@@ -2272,12 +2293,15 @@ void init_extrinsic_optimization() {
     GLERR(__LINE__, __FILE__);
     error_sum_shader.bind("uTextureRef");
     error_sum_shader.bind("uTextureCam");
+    error_sum_shader.bind("uMaskRegion");
+
     error_sum_shader.bind("uSize_x");
     error_sum_shader.bind("uSize_y");
     assert(_CrtCheckMemory());
     glUseProgram(error_sum_shader.pr);
     glUniform1i(error_sum_shader["uTextureRef"], 17);
     glUniform1i(error_sum_shader["uTextureCam"], 18);
+    glUniform1i(error_shader["uMaskRegion"], 21);
     glUniform1i(error_sum_shader["uSize_x"], 1948);
     glUniform1i(error_sum_shader["uSize_y"], 1096);
     glUseProgram(0);
@@ -2289,9 +2313,11 @@ void init_extrinsic_optimization() {
     mask_border_shader.Validate();
     GLERR(__LINE__, __FILE__);
     mask_border_shader.bind("uTexture");
+    mask_border_shader.bind("uErode_dilate");
     assert(_CrtCheckMemory());
     glUseProgram(mask_border_shader.pr);
     glUniform1i(mask_border_shader["uTexture"], 19);
+    glUniform1i(mask_border_shader["uErode_dilate"], 0);
     glUseProgram(0);
 
     glGenTextures(1, &edges_tex);
@@ -2302,13 +2328,62 @@ void init_extrinsic_optimization() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1948, 1096, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-    
+    glGenTextures(1, &edges_cam);
+    glBindTexture(GL_TEXTURE_2D, edges_cam);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1948, 1096, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
     errorFBO.Create(1, 1);
 
 }
 
+using namespace cv;
+
+void mask_borders(int id_tex, int erode_dilate, FBO& res) {
+    glBindFramebuffer(GL_FRAMEBUFFER, res.id_fbo);
+    glClearColor(0, 1, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, res.w, res.h);
+    glUseProgram(mask_border_shader.pr);
+    glUniform1i(mask_border_shader["erode_dilate"], erode_dilate);
+
+    glActiveTexture(GL_TEXTURE19);
+    glBindTexture(GL_TEXTURE_2D, id_tex);
+
+    glBegin(GL_QUADS);
+    glVertex3f(-10, -10, 0.0);
+    glVertex3f(10.0, -10, 0.0);
+    glVertex3f(10.0, 10.0, 0.0);
+    glVertex3f(-10.0, 10.0, 0.0);
+    glEnd();
+    GLERR(__LINE__, __FILE__);
+    glUseProgram(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+void edge_detect(Mat img, Mat& res) {
+    Mat img_gray;
+    cvtColor(img, img_gray, COLOR_BGR2GRAY);
+    Mat img_blur;
+    GaussianBlur(img_gray, img_blur, Size(5, 5), 0);
+    Mat gradX, gradY;
+    Sobel(img_blur, gradX, CV_32F, 1, 0, 3, 1.0 / 1.0);
+    Sobel(img_blur, gradY, CV_32F, 0, 1, 3, 1.0 / 1.0);
+
+    cv::Mat magnitude, direction;
+    cv::cartToPolar(gradX, gradY, magnitude, direction);
+
+    // Applicazione di una soglia per evidenziare i bordi
+    double thresholdValue = 100.0;
+
+    cv::threshold(magnitude, res, thresholdValue, 150, cv::THRESH_TOZERO);
+}
+
+
 int compute_error(){ 
-    
+    static int ii = 0;
     glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2319,9 +2394,45 @@ int compute_error(){
     GlShot<vcg::Shotf>::UnsetView();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+    if (ii == 1) {
+        Mat im_rendering(1096, 1948, CV_8UC3);;
+        glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, im_rendering.ptr());
+
+        glActiveTexture(GL_TEXTURE19);
+        glBindTexture(GL_TEXTURE_2D, edges_tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, im_rendering.ptr());
+
+
+        mask_borders(edges_tex, 1, mask_FBO);
+        cv::Mat im_mask_border(1096, 1948, CV_32FC1);
+        glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+        //cv::imshow("mask", im_mask_border);
+        //cv::waitKey(0);
+        //cv::destroyWindow("mask");
+    }
+    //{
+    //    glClearColor(0, 1, 0, 1);
+    //    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //    glViewport(0, 0, width, height);
+    //    glUseProgram(::fsq_shader.pr);
+
+    //    glActiveTexture(GL_TEXTURE17);
+    //    glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+    //   
+    //    glBegin(GL_QUADS);
+    //    glVertex3f(-1, -1, 0.0);
+    //    glVertex3f(1.0, -1, 0.0);
+    //    glVertex3f(1.0, 1.0, 0.0);
+    //    glVertex3f(-1.0, 1.0, 0.0);
+    //    glEnd();
+    //}
+
     // show rendering result
  
-    glClearColor(1, 1, 1, 1);
+    glClearColor(0, 1, 0, 1);
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
     glUseProgram(error_shader.pr);
@@ -2330,6 +2441,9 @@ int compute_error(){
     glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
     glActiveTexture(GL_TEXTURE18);
     glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
+    glActiveTexture(GL_TEXTURE19);
+    glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
+    
 
     glBeginQuery(GL_SAMPLES_PASSED, id_query);
     glBegin(GL_QUADS);
@@ -2347,137 +2461,98 @@ int compute_error(){
 
     glUseProgram(0);
 
+    cv::Mat im(height,width, CV_8UC3);
+    glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, im.ptr());
+    cv::flip(im, im, 0);
+    cv::imwrite(std::string("c0_") + std::to_string(ii) + std::string("_") +  std::to_string(n) + std::string("_") +  std::string(".png"), im);
+     
+
     glClearColor(0,0,0,1);
 
+    ii++;
     return n;
 
-}
-using namespace cv;
+}   
 
-void mask_borders(int id_tex, FBO & res) {
-    glBindFramebuffer(GL_FRAMEBUFFER, res.id_fbo);
-    glClearColor(0,1,0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, res.w, res.h);
-    glUseProgram(mask_border_shader.pr);
-
-    glActiveTexture(GL_TEXTURE19);
-    glBindTexture(GL_TEXTURE_2D, id_tex);
-
-    glBegin(GL_QUADS);
-    glVertex3f(-10, -10, 0.0);
-    glVertex3f(10.0, -10, 0.0);
-    glVertex3f(10.0, 10.0, 0.0);
-    glVertex3f(-10.0, 10.0, 0.0);
-    glEnd();
-    GLERR(__LINE__, __FILE__);
-    glUseProgram(0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-void edge_detect(Mat img, Mat &res) {
-       
-        // Display original image
-//        imshow("original Image", img);
-//        waitKey(0);
-
-        // Convert to graycsale
-        Mat img_gray;
-        cvtColor(img, img_gray, COLOR_BGR2GRAY);
- //       imshow("gray", img_gray);
-        // Blur the image for better edge detection
-   //     resize(img_gray, img_gray, Size(img.cols/2.0, img.rows / 2.0), INTER_LINEAR);
-        Mat img_blur;
-       GaussianBlur(img_gray, img_blur, Size(3, 3), 0);
- //        bilateralFilter(img_gray, img_blur, 3, 50, 50);
-        //// Sobel edge detection
-       // Mat sobelx, sobely, sobelxy;
- //     Sobel(img_blur, sobelx, CV_64F, 1, 0, 3,1.0/16.0);
- //     Sobel(img_blur, sobely, CV_64F, 0, 1, 3, 1.0 / 16.0);
-        Sobel(img_blur, res, CV_32F, 1, 1, 3, 1.0 / 16.0);
-
-         
-        // Display Sobel edge detection images
-  //      imshow("edges", res);
-  //      waitKey(0);
-  
-   //     imshow("Sobel XY using Sobel() function", sobelxy);
-   //     Mat ker = getStructuringElement(MORPH_RECT, Size(3, 3));
-  //      erode(sobelxy, sobelxy, ker);
-  //      dilate(sobelxy, sobelxy, ker);
-  /*      waitKey(0);
-        imshow("eroded", sobelxy);*/
-    //    waitKey(0);
-
-        // Canny edge detection
-        //Mat edges;
-        //Canny(img_blur, edges, 100, 200, 3, false);
-        // Display canny edge detected image
-        //imshow("Canny edge detection", edges);
-        //waitKey(0);
-
- //       destroyAllWindows();
-        
-    }
 float compute_error_sum() {
 
     GLERR(__LINE__, __FILE__);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, opt_FBO.w, opt_FBO.h);
-    GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
-
-    drawScene();
-    GlShot<vcg::Shotf>::UnsetView();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    { // rendering of the scene from the camera
+        glBindFramebuffer(GL_FRAMEBUFFER, opt_FBO.id_fbo);
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, opt_FBO.w, opt_FBO.h);
+        GlShot<vcg::Shotf>::SetView(cameras[currentCamera].calibrated, 0.1, 10);
+        drawScene();
+        GlShot<vcg::Shotf>::UnsetView();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
   
     // save for debug
     static int ii = 0;
     cv::Mat im_camera(1096, 1948, CV_8UC3);
     if (ii == 1 ) {
+        Mat im_edges_cam;
         glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
         glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, im_camera.ptr());
         cv::imwrite("c1.png", im_camera);
+
+        edge_detect(im_camera, im_edges_cam);
+        cv::imshow("edges", im_edges_cam);
+        cv::waitKey(0);
+        cv::destroyWindow("edges");
+        cv::imwrite("A_edges_cam.png", im_edges_cam);
+        glBindTexture(GL_TEXTURE_2D, edges_cam);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, im_edges_cam.ptr());
+
     }
+
     cv::Mat im_rendering(1096, 1948, CV_8UC3);
     glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
-   
     glGetTexImage(GL_TEXTURE_2D,0,GL_BGR,GL_UNSIGNED_BYTE, im_rendering.ptr());
+
 
     Mat im_edges;
     edge_detect(im_rendering,im_edges);
-    cv::imshow("edges", im_edges);
-    cv::waitKey(0);
-    cv::destroyWindow("edges");
-
-    cv::imwrite("A_edges.png", im_edges);
-
+;
+if (ii == 1) {
     glActiveTexture(GL_TEXTURE19);
     glBindTexture(GL_TEXTURE_2D, edges_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1948, 1096, 0, GL_BGR, GL_UNSIGNED_BYTE, im_rendering.ptr());
-    mask_borders(edges_tex,mask_FBO);
-    // DBG show to whole texture    
+
+
+    mask_borders(edges_tex, 1, mask_FBO);
     cv::Mat im_mask_border(1096, 1948, CV_32FC1);
     glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+    cv::imshow("mask", im_mask_border);
+    cv::destroyWindow("mask");
+}
+ 
+
     GLERR(__LINE__, __FILE__);
-     cv::imwrite("A_mask_border.png", im_mask_border);
-     cv::imwrite("A_rendering.png", im_rendering);
-     cv::imshow("mask", im_mask_border);
-     cv::waitKey(0);
-     cv::destroyWindow("mask");
+//    cv::imwrite("A_mask_border.png", im_mask_border);
+     //cv::imwrite("A_rendering.png", im_rendering);
+//      cv::imshow("mask", im_mask_border);
+//      cv::waitKey(0);
+//      cv::destroyWindow("mask");
+
+    cv::Mat im_mask_border(1096, 1948, CV_32FC1);
+    glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+
 
      int t1 = im_edges.type();
      int t2 = im_mask_border.type();
 
     Mat masked = im_edges.mul(im_mask_border);
 //    cv::flip(im_rendering, im_rendering, 0);
-    cv::imwrite("A_masked_edges.png", masked);
-    cv::imshow("masked edges", masked);
-    cv::waitKey(0);
-    cv::destroyWindow("masked edges");
+    //cv::imwrite("A_masked_edges.png", masked);
+    //cv::imshow("masked edges", masked);
+    //cv::waitKey(0);
+    //cv::destroyWindow("mask");
 
 
     glBindFramebuffer(GL_FRAMEBUFFER, errorFBO.id_fbo);
@@ -2488,9 +2563,28 @@ float compute_error_sum() {
 
     glActiveTexture(GL_TEXTURE17);
     glBindTexture(GL_TEXTURE_2D, opt_FBO.id_tex);
+    //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+    //cv::imshow("cam", im_mask_border); 
+    //cv::waitKey(0);
+    //cv::destroyWindow("cam");
+  
+
     glActiveTexture(GL_TEXTURE18);
     glBindTexture(GL_TEXTURE_2D, textures[currentCamera]);
-     
+    //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+    //cv::imshow("ref", im_mask_border);
+    //cv::waitKey(0);
+    //cv::destroyWindow("ref");
+   
+
+    glActiveTexture(GL_TEXTURE21);
+    glBindTexture(GL_TEXTURE_2D, mask_FBO.id_tex);
+    //glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, im_mask_border.ptr());
+    //cv::imshow("mask", im_mask_border);
+    //cv::waitKey(0);
+    // cv::destroyWindow("mask");
+
+
     glBegin(GL_QUADS);
     glVertex3f(-10, -10, 0.0);
     glVertex3f(10.0, -10, 0.0);
@@ -2531,7 +2625,7 @@ float compute_error_sum() {
 double error_func(const std::vector<double>& x, std::vector<double>& grad, void* my_func_data)
 {
     float res;
-    cameras[currentCamera].update(x[0], x[1], x[2], x[3], x[4], x[5]);
+    cameras[currentCamera].update(x[0]  , x[1]  , x[2]  , x[3] * 1000.0, x[4] * 1000.0, x[5] * 1000.0);
     error_comp_mutex.lock();
     do {
         error_comp_mutex.unlock();       
@@ -2539,7 +2633,6 @@ double error_func(const std::vector<double>& x, std::vector<double>& grad, void*
     } while (!error_computed);
     
     if (error_computed) {
-        std::cout << "request err\n";
         error_computed = false;
         res = curr_err;
         std::cout << x[0] <<" " << x[1] << " " << x[2] << " "<< x[3] << " "<<  x[4] << " " << x[5] << std::endl;
@@ -2553,24 +2646,42 @@ double error_func(const std::vector<double>& x, std::vector<double>& grad, void*
 }
 
 void optimize_nlopt() {
+    ::showfromcamera = true;
+
     cameras[currentCamera].calibrated_saved = cameras[currentCamera].calibrated;
 
-    nlopt::opt opt(nlopt::LN_NEWUOA, 6);
-//    std::vector<double> lb(6);
-//    for (int i = 0; i < 6; ++i) lb[i] = -HUGE_VAL;
-//    opt.set_lower_bounds(lb);
+    nlopt::opt opt(nlopt::LN_BOBYQA, 6);
+
     opt.set_min_objective(error_func, NULL);
 
-    std::vector<double> lb = {-15.0,-15.0,-15.0,-0.09,-0.09,-0.09};
-    std::vector<double>  ub = {15.0, 15.0, 15.0, 0.09, 0.09, 0.09};
+    std::vector<double> lb =  {-0.3,-0.3,-0.01,-0.1,-0.3,-0.3 };
+    std::vector<double>  ub = { 0.3, 0.3, 0.01, 0.1, 0.3, 0.3 };
     opt.set_lower_bounds(lb);
     opt.set_upper_bounds(ub);
         
-    opt.set_xtol_rel(1e-4);
+    opt.set_xtol_rel(1e-8);
+    opt.set_initial_step(0.001);
+    opt.set_maxeval(-1);
+
     std::vector<double> x(6);
     x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = 0.0;
     double minf;
     nlopt::result result = opt.optimize(x, minf);
+
+    if (result != nlopt::result::SUCCESS) {
+        cameras[currentCamera].calibrated = cameras[currentCamera].calibrated_saved;
+        std::cout << "failed optimization " << result << std::endl;
+    }
+    else
+    {
+        std::cout << "SUCCESS \n";
+        cameras[currentCamera].update(x[0]  , x[1]   , x[2]  , x[3]*1000.0, x[4] * 1000.0, x[5] * 1000.0);
+        std::cout << "sol: " << x[0] << " " << x[1] << " " << x[2] << " " << x[3] << " " << x[4] << " " << x[5] << std::endl;
+//        result = opt.optimize(x, minf);
+//        cameras[currentCamera].update(x[0], x[1], x[2], x[3] * 1000.0, x[4] * 1000.0, x[5] * 1000.0);
+    }
+    ::showfromcamera = false;
+
 }
 
 void TW_CALL optimize(void*) {
@@ -2728,6 +2839,16 @@ int main(int argc, char* argv[])
     TwAddButton(bar, "align camera", ::alignCamera, 0, " label='Align Camera' group=`Align Cameras` help=`Align` ");
     TwAddButton(bar, "saveIP", ::saveImPoints, 0, " label='saveImPoints' group=`Align Cameras` help=` ` ");
     TwAddButton(bar, "loadIP", ::loadImPoints, 0, " label='loadImPoints' group=`Align Cameras` help=` ` ");
+
+    TwAddSeparator(bar, NULL, "group=`move camera` ");
+    TwAddButton(bar, "setCam", ::setCam, 0, " label='apply ' group=`move camera` help=` ` ");
+    TwAddVarRW(bar, "alphaC", TW_TYPE_FLOAT, &alphaCam, " value = 0 label='alpha' group='move camera' help=` alpha angle` ");
+    TwAddVarRW(bar, "betaC", TW_TYPE_FLOAT, &betaCam, " value = 0  label='beta' group='move camera' help=` beta angle` ");
+    TwAddVarRW(bar, "gammaC", TW_TYPE_FLOAT, &gammaCam, " value = 0  label='gamma' group='move camera' help=` gamma angle` ");
+    TwAddSeparator(bar, NULL, "group=`move camera` ");
+    TwAddVarRW(bar, "xC", TW_TYPE_FLOAT, &xCam, "value = 0  step = 0.01 label='x' group='move camera' help=` select` ");
+    TwAddVarRW(bar, "yC", TW_TYPE_FLOAT, &yCam, " value = 0 step = 0.01  label='y' group='move camera' help=` select` ");
+    TwAddVarRW(bar, "zC", TW_TYPE_FLOAT, &zCam, "value = 0  step = 0.01  label='z' group='move camera' help=` select` ");
 
 
 

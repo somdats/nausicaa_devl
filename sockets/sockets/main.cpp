@@ -99,13 +99,13 @@ void main(int argc, char**argv) {
 	//VRSubsystem::enableCamera(0);
 	//
 
-	VRSubsystem::enableBackground();
+	//VRSubsystem::enableBackground();
 	char * frame;
 	int size;
 
-	for (int u = 0; u < 5; ++u) {
+	for (int u = 0; u < 1; ++u) {
 		int  n_points;
-		float* pc = VRSubsystem::getPointCloud(&n_points, 0.0, 100, 0, (u!=4) * 5.0);
+		float* pc = VRSubsystem::getPointCloud(& n_points, 0.0, 100, 0, (u != 4) * 5.0);
 
 		FILE* fo = fopen((std::string("pc")+std::to_string(u)+".xyz").c_str(), "w");
 
@@ -114,21 +114,31 @@ void main(int argc, char**argv) {
 		fclose(fo);
 	}
 
-	while(false) {
-		frame = VRSubsystem::readFrame(&size);
-		if (frame) {
+	int  n_points;
+	VRSubsystem::getPointCloud(&n_points, -100.0, 100, 0.0, 100.0);
 
-			FILE* fo = fopen("frame.jpg", "wb");
-			fwrite(frame, size, 1, fo);
-			fclose(fo);
-			im = cv::imread("frame.jpg");
-			cv::imshow("monitor", im);
-			if (cv::waitKey(1) == 'b') {
-				break;
-			}
-		}
-		}
-}
+	VirtualCamera::setOrtho(newCamera, -64, 64, -36, 36,640, 360);
+	VirtualCamera::setPosition(newCamera, 0.0,2.0,0.0);
+	VirtualCamera::setViewDirectionUp(newCamera, 0.0, -1.0, 0.0,0,0,-1);
+	VRSubsystem::renderFromCamera(newCamera);
+
+ 	VRSubsystem::renderDistanceMap(true);
+
+	//while(false) {
+	//	frame = VRSubsystem::readFrame(&size);
+	//	if (frame) {
+
+	//		FILE* fo = fopen("frame.jpg", "wb");
+	//		fwrite(frame, size, 1, fo);
+	//		fclose(fo);
+	//		im = cv::imread("frame.jpg");
+	//		cv::imshow("monitor", im);
+	//		if (cv::waitKey(1) == 'b') {
+	//			break;
+	//		}
+	//	}
+	//	}
+	while (true);}
 
 
 

@@ -6,6 +6,7 @@ out vec4 color;
 
 uniform sampler2D uTextureRef;
 uniform sampler2D uTextureCam;
+uniform sampler2D uMaskRegion;
 
 uniform int uSize_x;
 uniform int uSize_y;
@@ -38,10 +39,18 @@ void main(void)
     vec3 c0,c1;
 
     for(int i = 0; i < uSize_x;++i)
-        for(int j = 0; j < uSize_y;++j){   
-            c0 = texelFetch(uTextureRef,ivec2(i,j),0).xyz;
-            c1 = texelFetch(uTextureCam,ivec2(i,uSize_y-j),0).xyz;
-            err += error_naive(c0,c1) ;
-        }
+        for(int j = 0; j < uSize_y;++j)
+         if(texelFetch(uMaskRegion,ivec2(i,uSize_y-j),0).xyz == vec3(0,0,0))
+         { 
+            err +=1.73;
+         }
+            else
+            {   
+                c0 = texelFetch(uTextureRef,ivec2(i,j),0).xyz;
+                c1 = texelFetch(uTextureCam,ivec2(i,uSize_y-j),0).xyz;
+                if(error_naive(c0,c1) > 0.5)
+                    err +=1.73;
+//                err += error_naive(c0,c1) ;
+            }
    color.x = float(err);
  } 
